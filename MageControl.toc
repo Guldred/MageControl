@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: MageControl
+## Notes: Ermöglicht das Wirken von Mage Zaubern.
+## Author: Guldred
+## Version: 1.0
+
+MageControl.lua
