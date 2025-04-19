@@ -4,14 +4,14 @@ SLASH_MAGECONTROL2 = "/mc"
 SlashCmdList["MAGECONTROL"] = function(msg)
     local command = string.lower(msg)
 
-    if command == "atk" then
-        
+    if command == "explosion" then
+        QueueArcaneExplosion()
     elseif command == "arcane" then
         isRuptureRepeated = false
         checkChannelFinished()
         CastArcaneAttack()
     else
-        print("MageControl: Unknown command. Available commands: arcane")
+        print("MageControl: Unknown command. Available commands: arcane, explosion")
     end
 end
 
@@ -22,6 +22,8 @@ local globalCooldownActive = false
 local globalCooldownStart = 0
 local lastSpellCast = ""
 local isRuptureRepeated = false;
+
+local GLOBAL_COOLDOWN_IN_SECONDS = 1.5
 
 local FIREBLAST_ID = 10199
 local ARCANE_SURGE_ID = 51936
@@ -74,6 +76,8 @@ MageControlFrame:SetScript("OnEvent", function()
         end
     end
     if (event=="SPELLCAST_FAILED" or event=="SPELLCAST_INTERRUPTED") then
+        isChanneling = false
+        isCastingArcaneRupture = false
         if (lastSpellCast == "Arcane Rupture" and not isRuptureRepeated) then
             isRuptureRepeated = true;
             CastArcaneAttack()
@@ -87,10 +91,17 @@ function checkChannelFinished()
     end
 end
 
+function QueueArcaneExplosion()
+    local gcdRemain = GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - globalCooldownStart)
+    if(gcdRemain < 0.75) then
+        QueueSpellByName("Arcane Explosion")
+    end
+end
+
 
 function CastArcaneAttack()
     -- Manage global CD
-    if (GetTime() - globalCooldownStart > 1.5) then
+    if (GetTime() - globalCooldownStart > GLOBAL_COOLDOWN_IN_SECONDS) then
         globalCooldownActive = false
     end
 
@@ -103,7 +114,7 @@ function CastArcaneAttack()
     local arcaneRuptureIsReady = IsActionSlotCooldownReady(2)
     local arcaneSurgeIsReadyAndActive = IsActionSlotCooldownReady(5)
     local isCurrentlyChannelingSomeSpell = isChanneling
-    local playerHasLowMana = IsLowMana()
+    --local playerHasLowMana = IsLowMana()
     local isFireblastReady = IsActionSlotCooldownReady(1)
 
     --print("Fireblast CD is " .. getFireblastCooldown)
@@ -148,10 +159,10 @@ function CastArcaneAttack()
         return
     end
 
-    if clearcastingBuff and playerHasLowMana then
-        QueueSpellByName("Arcane Missiles")
-        return
-    end
+    --if clearcastingBuff and playerHasLowMana then
+    --    QueueSpellByName("Arcane Missiles")
+    --    return
+    --end
 
     if arcaneRuptureIsReady and not isCastingArcaneRupture then
         QueueSpellByName("Arcane Rupture")
