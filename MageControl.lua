@@ -144,13 +144,13 @@ function CastArcaneAttack()
         return
     end
 
-    if clearcastingBuff and arcaneRuptureBuff and arcaneRuptureBuff.duration and arcaneRuptureBuff.duration > 2 then
-        QueueSpellByName("Arcane Missiles")
+    if arcaneSurgeIsReadyAndActive then
+        QueueSpellByName("Arcane Surge")
         return
     end
 
-    if arcaneSurgeIsReadyAndActive then
-        QueueSpellByName("Arcane Surge")
+    if clearcastingBuff and arcaneRuptureBuff and arcaneRuptureBuff.duration and arcaneRuptureBuff.duration > 2 then
+        QueueSpellByName("Arcane Missiles")
         return
     end
 
