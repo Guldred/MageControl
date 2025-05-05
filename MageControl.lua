@@ -134,8 +134,9 @@ function CastArcaneAttack()
         ChannelStopCastingNextTick()
         if (arcaneSurgeIsReadyAndActive) then
             QueueSpellByName("Arcane Surge")
+        else
+            QueueSpellByName("Arcane Rupture")
         end
-        QueueSpellByName("Arcane Rupture")
         return
     end
 
@@ -151,11 +152,6 @@ function CastArcaneAttack()
 
     if clearcastingBuff and arcaneRuptureBuff and arcaneRuptureBuff.duration and arcaneRuptureBuff.duration > 2 then
         QueueSpellByName("Arcane Missiles")
-        return
-    end
-
-    if temporalConvergenceBuff and temporalConvergenceBuff.duration and temporalConvergenceBuff.duration > 2.8 and arcaneRuptureIsReady and not isCastingArcaneRupture then
-        QueueSpellByName("Arcane Rupture")
         return
     end
 
