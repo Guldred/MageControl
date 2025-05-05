@@ -22,6 +22,7 @@ local globalCooldownActive = false
 local globalCooldownStart = 0
 local lastSpellCast = ""
 local isRuptureRepeated = false;
+local expectedCastFinishTime = 0
 
 local GLOBAL_COOLDOWN_IN_SECONDS = 1.5
 
@@ -57,12 +58,15 @@ MageControlFrame:SetScript("OnEvent", function()
     if event == "SPELLCAST_CHANNEL_START" then
         isChanneling = true
         channelFinishTime = GetTime() + ((arg1 - 0)/1000)
+        expectedCastFinishTime = channelFinishTime
     elseif event == "SPELLCAST_CHANNEL_STOP" then
         isChanneling = false
+        expectedCastFinishTime = 0
     end
     if event == "SPELLCAST_START" then
         if arg1 == "Arcane Rupture" then
             isCastingArcaneRupture = true;
+            expectedCastFinishTime = GetTime() + (arg2/1000)
         end
     end 
     if event == "SPELLCAST_STOP" then
@@ -73,11 +77,13 @@ MageControlFrame:SetScript("OnEvent", function()
         if (arg2 == FIREBLAST_ID or arg2 == ARCANE_SURGE_ID or arg2 == ARCANE_EXPLOSION_ID) then
             globalCooldownActive = true;
             globalCooldownStart = GetTime();
+            expectedCastFinishTime = GetTime() + 1.5;
         end
     end
     if (event=="SPELLCAST_FAILED" or event=="SPELLCAST_INTERRUPTED") then
         isChanneling = false
         isCastingArcaneRupture = false
+        expectedCastFinishTime = 0
         if (lastSpellCast == "Arcane Rupture" and not isRuptureRepeated) then
             isRuptureRepeated = true;
             CastArcaneAttack()
@@ -100,26 +106,16 @@ end
 
 
 function CastArcaneAttack()
-    -- Manage global CD
     if (GetTime() - globalCooldownStart > GLOBAL_COOLDOWN_IN_SECONDS) then
         globalCooldownActive = false
     end
-
-    -- TODO: 
-    --FIXED: CASE spell wird abgebrochen, aber man queued missles vorher. !!!!!!!!!!!!!!!!!!!
-    --FIXED: CASE nichts passiert wenn Arcane Rupture fast bereit ist (Range Problem mit Fire Blast?)
-    --CASE: Haste > 20% skip Surge
 
     local buffsWithDurations = GetBuffs()
     local arcaneRuptureIsReady = IsActionSlotCooldownReady(2)
     local arcaneSurgeIsReadyAndActive = IsActionSlotCooldownReady(5)
     local isCurrentlyChannelingSomeSpell = isChanneling
-    --local playerHasLowMana = IsLowMana()
     local isFireblastReady = IsActionSlotCooldownReady(1)
 
-    --print("Fireblast CD is " .. getFireblastCooldown)
-
-    -- Extrahiere die Buffs, die uns interessieren:
     local clearcastingBuff = nil
     local temporalConvergenceBuff = nil
     local arcaneRuptureBuff = nil
@@ -133,13 +129,19 @@ function CastArcaneAttack()
             arcaneRuptureBuff = buff
         end
     end
-    
-
-    -- TODO: Check warum nach Surge manchmal missles kommen statt Rupture
 
     if (isCurrentlyChannelingSomeSpell and not arcaneRuptureBuff and arcaneRuptureIsReady) then
         ChannelStopCastingNextTick()
+        if (arcaneSurgeIsReadyAndActive) then
+            QueueSpellByName("Arcane Surge")
+        end
         QueueSpellByName("Arcane Rupture")
+        return
+    end
+
+    local timeToCastFinish = expectedCastFinishTime - GetTime()
+    if (timeToCastFinish > 0.75) then
+        return
     end
 
     if clearcastingBuff and arcaneRuptureBuff and arcaneRuptureBuff.duration and arcaneRuptureBuff.duration > 2 then
@@ -149,8 +151,6 @@ function CastArcaneAttack()
 
     if arcaneSurgeIsReadyAndActive then
         QueueSpellByName("Arcane Surge")
-        globalCooldownActive = true
-        globalCooldownStart = GetTime()
         return
     end
 
@@ -159,11 +159,6 @@ function CastArcaneAttack()
         return
     end
 
-    --if clearcastingBuff and playerHasLowMana then
-    --    QueueSpellByName("Arcane Missiles")
-    --    return
-    --end
-
     if arcaneRuptureIsReady and not isCastingArcaneRupture then
         QueueSpellByName("Arcane Rupture")
         return
@@ -171,10 +166,9 @@ function CastArcaneAttack()
 
     if (isArcaneRuptureOneGlobalAway(ACTIONBAR_SLOT_ARCANE_RUPTURE) and isFireblastReady and IsSpellInRange(FIREBLAST_ID)) then
         QueueSpellByName("Fire Blast")
-        globalCooldownActive = true
-        globalCooldownStart = GetTime()
         return
     end
+
     QueueSpellByName("Arcane Missiles")
 end
 
@@ -218,7 +212,6 @@ end
 function IsActionSlotCooldownReady(slot)
     local isUsable, notEnoughMana = IsUsableAction(slot)
     if not isUsable then
-        --print("Spell im Slot " .. slot .. " ist nicht benutzbar (grau oder benötigt Proc).")
         return false
     end
 
@@ -232,22 +225,18 @@ function IsActionSlotCooldownReady(slot)
         local remainingGlobalCd = 1.6 - (GetTime() - globalCooldownStart)
         if remainingGlobalCd >= remaining then
             isJustGlobalCooldown = true
-            --print("Just Global CD!")
         end
     end
 
     if remaining > 0 and not isJustGlobalCooldown then
-        --print("Spell im Slot " .. slot .. " ist noch " .. math.floor(remaining) .. " Sekunden auf Cooldown.")
         return false
     else
-        --print("Spell im Slot " .. slot .. " ist bereit.")
         return true
     end
 end
 
 function isArcaneRuptureOneGlobalAway(slot)
     local cooldown = getActionSlotCooldownInMilliseconds(slot)
-    --print("Debug: Cooldown is " .. cooldown)
     return (cooldown < 1.6 and cooldown > 0)
 end
 
