@@ -119,6 +119,7 @@ function CastArcaneAttack()
     local clearcastingBuff = nil
     local temporalConvergenceBuff = nil
     local arcaneRuptureBuff = nil
+    local arcanePowerBuff = nil
 
     for i, buff in ipairs(buffsWithDurations) do
         if buff.name == "Clearcasting" then
@@ -127,12 +128,14 @@ function CastArcaneAttack()
             temporalConvergenceBuff = buff
         elseif buff.name == "Arcane Rupture" then
             arcaneRuptureBuff = buff
+        elseif buff.name == "Arcane Power" then
+            arcanePowerBuff = buff
         end
     end
 
     if (isCurrentlyChannelingSomeSpell and not arcaneRuptureBuff and arcaneRuptureIsReady) then
         ChannelStopCastingNextTick()
-        if (arcaneSurgeIsReadyAndActive) then
+        if (arcaneSurgeIsReadyAndActive and not arcanePowerBuff) then
             QueueSpellByName("Arcane Surge")
         else
             QueueSpellByName("Arcane Rupture")
@@ -145,7 +148,7 @@ function CastArcaneAttack()
         return
     end
 
-    if arcaneSurgeIsReadyAndActive then
+    if (arcaneSurgeIsReadyAndActive and not arcanePowerBuff) then
         QueueSpellByName("Arcane Surge")
         return
     end
@@ -180,7 +183,7 @@ function GetBuffs()
             GameTooltip:Hide()
             
             local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
-            if (buffName == "Clearcasting" or buffName == "Temporal Convergence") then
+            if (buffName == "Clearcasting" or buffName == "Temporal Convergence" or buffName == "Arcane Power") then
                 table.insert(buffs, { name = buffName, duration = duration })
             end
         end
