@@ -42,7 +42,6 @@ local spellNames = {
 
 local ACTIONBAR_SLOT_FIREBLAST = 1
 local ACTIONBAR_SLOT_ARCANE_RUPTURE = 2
-local ACTIONBAR_SLOT_ARCANE_MISSILES = 3
 local ACTIONBAR_SLOT_ARCANE_SURGE = 5
 
 local MageControlFrame = CreateFrame("Frame")
@@ -114,7 +113,7 @@ function CastArcaneAttack()
     local arcaneRuptureIsReady = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_RUPTURE)
     local arcaneSurgeIsReadyAndActive = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_SURGE)
     local isCurrentlyChannelingSomeSpell = isChanneling
-    local isFireblastReady = IsActionSlotCooldownReady(ACTIONBAR_SLOT_FIREBLAST)
+    local isFireblastReadyAndInRange = IsActionSlotCooldownReady(ACTIONBAR_SLOT_FIREBLAST) and (IsSpellInRange(FIREBLAST_ID) == 1)
 
     local clearcastingBuff = nil
     local temporalConvergenceBuff = nil
@@ -163,7 +162,7 @@ function CastArcaneAttack()
         return
     end
 
-    if (isArcaneRuptureOneGlobalAway(ACTIONBAR_SLOT_ARCANE_RUPTURE) and isFireblastReady and IsSpellInRange(FIREBLAST_ID)) then
+    if (isArcaneRuptureOneGlobalAway(ACTIONBAR_SLOT_ARCANE_RUPTURE) and isFireblastReadyAndInRange) then
         QueueSpellByName("Fire Blast")
         return
     end
