@@ -111,10 +111,10 @@ function CastArcaneAttack()
     end
 
     local buffsWithDurations = GetBuffs()
-    local arcaneRuptureIsReady = IsActionSlotCooldownReady(2)
-    local arcaneSurgeIsReadyAndActive = IsActionSlotCooldownReady(5)
+    local arcaneRuptureIsReady = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_RUPTURE)
+    local arcaneSurgeIsReadyAndActive = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_SURGE)
     local isCurrentlyChannelingSomeSpell = isChanneling
-    local isFireblastReady = IsActionSlotCooldownReady(1)
+    local isFireblastReady = IsActionSlotCooldownReady(ACTIONBAR_SLOT_FIREBLAST)
 
     local clearcastingBuff = nil
     local temporalConvergenceBuff = nil
@@ -244,19 +244,4 @@ function getActionSlotCooldownInMilliseconds(slot)
     local currentTime = GetTime()
     local remaining = (start + duration) - currentTime
     return remaining
-end
-
-function IsLowMana()
-    local currentMana = UnitMana("player")
-    local maxMana = UnitManaMax("player")
-    if maxMana <= 0 then
-        return false 
-    end
-
-    local manaRatio = currentMana / maxMana
-    if manaRatio < 0.2 then
-        return true
-    else
-        return false
-    end
 end
