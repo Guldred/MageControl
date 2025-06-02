@@ -1,20 +1,15 @@
--- Optionsmenü für MageControl
 local optionsFrame = nil
 
--- Erstellt das Optionsmenü
 function MageControlOptions_Show()
     if not optionsFrame then
         MageControlOptions_CreateFrame()
     end
 
-    -- Aktuelle Werte laden
     MageControlOptions_LoadValues()
     optionsFrame:Show()
 end
 
--- Erstellt das UI-Frame
 function MageControlOptions_CreateFrame()
-    -- Hauptfenster
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
     optionsFrame:SetHeight(250)
@@ -31,17 +26,14 @@ function MageControlOptions_CreateFrame()
     optionsFrame:SetScript("OnDragStart", function() this:StartMoving() end)
     optionsFrame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
 
-    -- Titel
     local title = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOP", optionsFrame, "TOP", 0, -15)
     title:SetText("MageControl Options")
 
-    -- Close Button
     local closeButton = CreateFrame("Button", nil, optionsFrame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
-    -- Fireblast Slot
     local fireblastLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     fireblastLabel:SetPoint("TOPLEFT", optionsFrame, "TOPLEFT", 20, -50)
     fireblastLabel:SetText("Fireblast Slot:")
@@ -54,7 +46,6 @@ function MageControlOptions_CreateFrame()
     fireblastEditBox:SetNumeric(true)
     fireblastEditBox:SetMaxLetters(3)
 
-    -- Arcane Rupture Slot
     local ruptureLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     ruptureLabel:SetPoint("TOPLEFT", fireblastLabel, "BOTTOMLEFT", 0, -25)
     ruptureLabel:SetText("Arcane Rupture Slot:")
@@ -67,7 +58,6 @@ function MageControlOptions_CreateFrame()
     ruptureEditBox:SetNumeric(true)
     ruptureEditBox:SetMaxLetters(3)
 
-    -- Arcane Surge Slot
     local surgeLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     surgeLabel:SetPoint("TOPLEFT", ruptureLabel, "BOTTOMLEFT", 0, -25)
     surgeLabel:SetText("Arcane Surge Slot:")
@@ -80,7 +70,6 @@ function MageControlOptions_CreateFrame()
     surgeEditBox:SetNumeric(true)
     surgeEditBox:SetMaxLetters(3)
 
-    -- Save Button
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(80)
     saveButton:SetHeight(25)
@@ -88,7 +77,6 @@ function MageControlOptions_CreateFrame()
     saveButton:SetText("Save")
     saveButton:SetScript("OnClick", MageControlOptions_Save)
 
-    -- Reset Button
     local resetButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     resetButton:SetWidth(80)
     resetButton:SetHeight(25)
@@ -96,7 +84,6 @@ function MageControlOptions_CreateFrame()
     resetButton:SetText("Reset")
     resetButton:SetScript("OnClick", MageControlOptions_Reset)
 
-    -- Cancel Button
     local cancelButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     cancelButton:SetWidth(80)
     cancelButton:SetHeight(25)
@@ -107,7 +94,6 @@ function MageControlOptions_CreateFrame()
     optionsFrame:Hide()
 end
 
--- Lädt aktuelle Werte in die Eingabefelder
 function MageControlOptions_LoadValues()
     if not MageControlDB or not MageControlDB.actionBarSlots then
         return
@@ -119,7 +105,6 @@ function MageControlOptions_LoadValues()
     getglobal("MageControlSurgeSlot"):SetText(tostring(slots.ARCANE_SURGE))
 end
 
--- Speichert die Einstellungen
 function MageControlOptions_Save()
     local fireblastSlot = tonumber(getglobal("MageControlFireblastSlot"):GetText())
     local ruptureSlot = tonumber(getglobal("MageControlRuptureSlot"):GetText())
@@ -141,7 +126,6 @@ function MageControlOptions_Save()
         return
     end
 
-    -- Speichern
     MageControlDB.actionBarSlots.FIREBLAST = fireblastSlot
     MageControlDB.actionBarSlots.ARCANE_RUPTURE = ruptureSlot
     MageControlDB.actionBarSlots.ARCANE_SURGE = surgeSlot
@@ -150,7 +134,6 @@ function MageControlOptions_Save()
     optionsFrame:Hide()
 end
 
--- Setzt auf Standardwerte zurück
 function MageControlOptions_Reset()
     getglobal("MageControlFireblastSlot"):SetText("1")
     getglobal("MageControlRuptureSlot"):SetText("2")

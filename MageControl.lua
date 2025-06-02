@@ -1,12 +1,9 @@
 SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
--- Globale Konstanten zusammenfassen
 local MC = {
-    -- Cooldown-Konstanten
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
 
-    -- Timing-Konstanten
     TIMING = {
         CAST_FINISH_THRESHOLD = 0.75,
         GCD_REMAINING_THRESHOLD = 0.75,
@@ -14,7 +11,6 @@ local MC = {
         ARCANE_RUPTURE_MIN_DURATION = 2
     },
 
-    -- Spell-IDs
     SPELL_ID = {
         FIREBLAST = 10199,
         ARCANE_SURGE = 51936,
@@ -23,17 +19,14 @@ local MC = {
         ARCANE_RUPTURE = 51954
     },
 
-    -- Standard Actionbar-Slots (werden durch gespeicherte Werte überschrieben)
     DEFAULT_ACTIONBAR_SLOT = {
         FIREBLAST = 1,
         ARCANE_RUPTURE = 2,
         ARCANE_SURGE = 5
     },
 
-    -- Spell-Namen
     SPELL_NAME = {},
 
-    -- Buff-Namen
     BUFF_NAME = {
         CLEARCASTING = "Clearcasting",
         TEMPORAL_CONVERGENCE = "Temporal Convergence",
@@ -41,21 +34,17 @@ local MC = {
         ARCANE_RUPTURE = "Arcane Rupture"
     },
 
-    -- Debug-Modus
     DEBUG = false
 }
 
--- Spell-Namen aus IDs generieren
 MC.SPELL_NAME[MC.SPELL_ID.FIREBLAST] = "Fireblast"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_SURGE] = "Arcane Surge"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_EXPLOSION] = "Arcane Explosion"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_MISSILES] = "Arcane Missiles"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_RUPTURE] = "Arcane Rupture"
 
--- Gespeicherte Variablen (werden automatisch gespeichert)
 MageControlDB = MageControlDB or {}
 
--- Initialisierung der gespeicherten Einstellungen
 local function initializeSettings()
     if not MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots = {
@@ -66,12 +55,10 @@ local function initializeSettings()
     end
 end
 
--- Zugriff auf aktuelle Actionbar-Slots
 local function getActionBarSlots()
     return MageControlDB.actionBarSlots
 end
 
--- Zustandsvariablen zusammenfassen
 local state = {
     isChanneling = false,
     channelFinishTime = 0,
@@ -83,22 +70,18 @@ local state = {
     expectedCastFinishTime = 0
 }
 
--- Funktionsdeklarationen vorweg
 local checkChannelFinished, CastArcaneAttack
 
--- Debug-Funktionalität
 local function debugPrint(message)
     if MC.DEBUG then
         print("MageControl Debug: " .. message)
     end
 end
 
--- Validierung für Actionbar-Slots
 local function isValidActionSlot(slot)
     return slot and slot > 0 and slot <= 120
 end
 
--- Sichere Spell-Ausführung
 local function safeQueueSpell(spellName)
     if not spellName or spellName == "" then
         print("MageControl: Invalid spell name")
@@ -110,7 +93,6 @@ local function safeQueueSpell(spellName)
     return true
 end
 
--- Hilfsfunktion zum Finden spezifischer Buffs
 local function findBuff(buffs, buffName)
     for i, buff in ipairs(buffs) do
         if buff.name == buffName then
@@ -120,14 +102,12 @@ local function findBuff(buffs, buffName)
     return nil
 end
 
--- Prüft, ob der Channel beendet ist
 checkChannelFinished = function()
     if (state.channelFinishTime < GetTime()) then
         state.isChanneling = false
     end
 end
 
--- Führt Arcane Explosion aus, wenn der GCD fast abgelaufen ist
 local function QueueArcaneExplosion()
     local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - state.globalCooldownStart)
     if(gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD) then
@@ -135,7 +115,6 @@ local function QueueArcaneExplosion()
     end
 end
 
--- Prüft, ob eine Aktionsleiste bereit ist
 local function IsActionSlotCooldownReady(slot)
     if not isValidActionSlot(slot) then
         return false
@@ -150,7 +129,6 @@ local function IsActionSlotCooldownReady(slot)
     local currentTime = GetTime()
     local remaining = (start + duration) - currentTime
 
-    -- Prüfen, ob nur der globale Cooldown aktiv ist
     local isJustGlobalCooldown = false
     if remaining > 0 and state.globalCooldownActive then
         local remainingGlobalCd = MC.TIMING.GCD_BUFFER - (GetTime() - state.globalCooldownStart)
@@ -162,7 +140,6 @@ local function IsActionSlotCooldownReady(slot)
     return remaining <= 0 or isJustGlobalCooldown
 end
 
--- Holt den verbleibenden Cooldown eines Aktionsslots in Sekunden
 local function getActionSlotCooldownInMilliseconds(slot)
     if not isValidActionSlot(slot) then
         return 0
@@ -173,13 +150,11 @@ local function getActionSlotCooldownInMilliseconds(slot)
     return (start + duration) - currentTime
 end
 
--- Prüft, ob Arcane Rupture in ca. einem Global Cooldown verfügbar ist
 local function isArcaneRuptureOneGlobalAway(slot)
     local cooldown = getActionSlotCooldownInMilliseconds(slot)
     return (cooldown < MC.TIMING.GCD_BUFFER and cooldown > 0)
 end
 
--- Optimierte Buff-Suche
 local function GetBuffs()
     local buffs = {}
     local relevantBuffs = {
@@ -188,7 +163,6 @@ local function GetBuffs()
         [MC.BUFF_NAME.ARCANE_POWER] = true
     }
 
-    -- Hilfreiche Buffs
     for i = 0, 31 do
         local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
         if buffIndex >= 0 then
@@ -204,7 +178,6 @@ local function GetBuffs()
         end
     end
 
-    -- Schädliche Buffs (nur Arcane Rupture)
     for i = 0, 31 do
         local buffIndex = GetPlayerBuff(i, "HARMFUL")
         if buffIndex >= 0 then
@@ -223,7 +196,6 @@ local function GetBuffs()
     return buffs
 end
 
--- Prüft Spell-Verfügbarkeit
 local function getSpellAvailability()
     local slots = getActionBarSlots()
     return {
@@ -234,7 +206,6 @@ local function getSpellAvailability()
     }
 end
 
--- Prüft aktuelle Buffs
 local function getCurrentBuffs()
     local buffs = GetBuffs()
     return {
@@ -245,13 +216,11 @@ local function getCurrentBuffs()
     }
 end
 
--- Prüft, ob noch gecastet wird oder der Cast bald fertig ist
 local function shouldWaitForCast()
     local timeToCastFinish = state.expectedCastFinishTime - GetTime()
     return timeToCastFinish > MC.TIMING.CAST_FINISH_THRESHOLD
 end
 
--- Entscheidet über Channel-Unterbrechung
 local function handleChannelInterruption(spells, buffs)
     if (state.isChanneling and not buffs.arcaneRupture and spells.arcaneRuptureReady) then
         ChannelStopCastingNextTick()
@@ -265,9 +234,7 @@ local function handleChannelInterruption(spells, buffs)
     return false
 end
 
--- Führt die optimale Zaubersequenz aus
 CastArcaneAttack = function()
-    -- Global Cooldown Status aktualisieren
     if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
         state.globalCooldownActive = false
     end
@@ -278,37 +245,31 @@ CastArcaneAttack = function()
 
     debugPrint("Evaluating spell priority")
 
-    -- Channel-Unterbrechung prüfen
     if handleChannelInterruption(spells, buffs) then
         return
     end
 
-    -- Warten, wenn Cast noch läuft
     if shouldWaitForCast() then
         debugPrint("Waiting for cast to finish")
         return
     end
 
-    -- Arcane Surge casten (höchste Priorität)
     if (spells.arcaneSurgeReady and not buffs.arcanePower) then
         safeQueueSpell("Arcane Surge")
         return
     end
 
-    -- Arcane Missiles mit Clearcasting und Arcane Rupture Buff
     if buffs.clearcasting and buffs.arcaneRupture and
             buffs.arcaneRupture.duration and buffs.arcaneRupture.duration > MC.TIMING.ARCANE_RUPTURE_MIN_DURATION then
         safeQueueSpell("Arcane Missiles")
         return
     end
 
-    -- Arcane Rupture casten
     if spells.arcaneRuptureReady and not state.isCastingArcaneRupture then
         safeQueueSpell("Arcane Rupture")
         return
     end
 
-    -- Filler-Spells wenn Arcane Rupture bald verfügbar
     if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE) and spells.fireblastReady) then
         if (spells.arcaneSurgeReady) then
             safeQueueSpell("Arcane Surge")
@@ -319,11 +280,9 @@ CastArcaneAttack = function()
         end
     end
 
-    -- Standard-Filler: Arcane Missiles
     safeQueueSpell("Arcane Missiles")
 end
 
--- Optionsmenü anzeigen
 local function showOptionsMenu()
     if MageControlOptionsFrame and MageControlOptionsFrame:IsVisible() then
         MageControlOptionsFrame:Hide()
@@ -332,7 +291,6 @@ local function showOptionsMenu()
     end
 end
 
--- Slot-Konfiguration per Befehl
 local function setActionBarSlot(spellType, slot)
     local slotNum = tonumber(slot)
     if not slotNum or not isValidActionSlot(slotNum) then
@@ -349,7 +307,6 @@ local function setActionBarSlot(spellType, slot)
     end
 end
 
--- Aktuelle Konfiguration anzeigen
 local function showCurrentConfig()
     local slots = getActionBarSlots()
     print("MageControl - Current Configuration:")
@@ -358,7 +315,6 @@ local function showCurrentConfig()
     print("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
 end
 
--- Erweiterte Slash-Befehle
 SlashCmdList["MAGECONTROL"] = function(msg)
     local args = {}
     for word in string.gfind(msg, "%S+") do
@@ -401,7 +357,6 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     end
 end
 
--- Event-Handler erstellen und registrieren
 local MageControlFrame = CreateFrame("Frame")
 MageControlFrame:RegisterEvent("SPELLCAST_CHANNEL_START")
 MageControlFrame:RegisterEvent("SPELLCAST_CHANNEL_STOP")
@@ -412,7 +367,6 @@ MageControlFrame:RegisterEvent("SPELLCAST_FAILED")
 MageControlFrame:RegisterEvent("SPELLCAST_INTERRUPTED")
 MageControlFrame:RegisterEvent("ADDON_LOADED")
 
--- Event-Handler-Funktion
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
