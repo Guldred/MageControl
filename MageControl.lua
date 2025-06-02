@@ -110,19 +110,19 @@ function CastArcaneAttack()
     end
 
     local buffsWithDurations = GetBuffs()
-    local arcaneRuptureIsReady = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_RUPTURE)
-    local arcaneSurgeIsReadyAndActive = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_SURGE)
+    local isArcaneRuptureReady = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_RUPTURE)
+    local isArcaneSurgeReadyAndActive = IsActionSlotCooldownReady(ACTIONBAR_SLOT_ARCANE_SURGE)
     local isCurrentlyChannelingSomeSpell = isChanneling
     local isFireblastReadyAndInRange = IsActionSlotCooldownReady(ACTIONBAR_SLOT_FIREBLAST) and (IsSpellInRange(FIREBLAST_ID) == 1)
 
-    local clearcastingBuff = nil
+    local clearCastingBuff = nil
     local temporalConvergenceBuff = nil
     local arcaneRuptureBuff = nil
     local arcanePowerBuff = nil
 
     for i, buff in ipairs(buffsWithDurations) do
         if buff.name == "Clearcasting" then
-            clearcastingBuff = buff
+            clearCastingBuff = buff
         elseif buff.name == "Temporal Convergence" then
             temporalConvergenceBuff = buff
         elseif buff.name == "Arcane Rupture" then
@@ -132,9 +132,9 @@ function CastArcaneAttack()
         end
     end
 
-    if (isCurrentlyChannelingSomeSpell and not arcaneRuptureBuff and arcaneRuptureIsReady) then
+    if (isCurrentlyChannelingSomeSpell and not arcaneRuptureBuff and isArcaneRuptureReady) then
         ChannelStopCastingNextTick()
-        if (arcaneSurgeIsReadyAndActive and not arcanePowerBuff) then
+        if (isArcaneSurgeReadyAndActive and not arcanePowerBuff) then
             QueueSpellByName("Arcane Surge")
         else
             QueueSpellByName("Arcane Rupture")
@@ -147,24 +147,29 @@ function CastArcaneAttack()
         return
     end
 
-    if (arcaneSurgeIsReadyAndActive and not arcanePowerBuff) then
+    if (isArcaneSurgeReadyAndActive and not arcanePowerBuff) then
         QueueSpellByName("Arcane Surge")
         return
     end
 
-    if clearcastingBuff and arcaneRuptureBuff and arcaneRuptureBuff.duration and arcaneRuptureBuff.duration > 2 then
+    if clearCastingBuff and arcaneRuptureBuff and arcaneRuptureBuff.duration and arcaneRuptureBuff.duration > 2 then
         QueueSpellByName("Arcane Missiles")
         return
     end
 
-    if arcaneRuptureIsReady and not isCastingArcaneRupture then
+    if isArcaneRuptureReady and not isCastingArcaneRupture then
         QueueSpellByName("Arcane Rupture")
         return
     end
 
     if (isArcaneRuptureOneGlobalAway(ACTIONBAR_SLOT_ARCANE_RUPTURE) and isFireblastReadyAndInRange) then
-        QueueSpellByName("Fire Blast")
-        return
+        if (isArcaneSurgeReadyAndActive) then
+            QueueSpellByName("Arcane Surge")
+            return
+        elseif (isFireblastReadyAndInRange) then
+            QueueSpellByName("Fire Blast")
+            return
+        end
     end
 
     QueueSpellByName("Arcane Missiles")
