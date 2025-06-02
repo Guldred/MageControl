@@ -5,7 +5,7 @@ SLASH_MAGECONTROL2 = "/mc"
 local MC = {
     -- Cooldown-Konstanten
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
-    
+
     -- Timing-Konstanten
     TIMING = {
         CAST_FINISH_THRESHOLD = 0.75,
@@ -13,7 +13,7 @@ local MC = {
         GCD_BUFFER = 1.6,
         ARCANE_RUPTURE_MIN_DURATION = 2
     },
-    
+
     -- Spell-IDs
     SPELL_ID = {
         FIREBLAST = 10199,
@@ -22,25 +22,25 @@ local MC = {
         ARCANE_MISSILES = 25345,
         ARCANE_RUPTURE = 51954
     },
-    
-    -- Actionbar-Slots
-    ACTIONBAR_SLOT = {
+
+    -- Standard Actionbar-Slots (werden durch gespeicherte Werte überschrieben)
+    DEFAULT_ACTIONBAR_SLOT = {
         FIREBLAST = 1,
         ARCANE_RUPTURE = 2,
         ARCANE_SURGE = 5
     },
-    
+
     -- Spell-Namen
     SPELL_NAME = {},
-    
+
     -- Buff-Namen
     BUFF_NAME = {
         CLEARCASTING = "Clearcasting",
-        TEMPORAL_CONVERGENCE = "Temporal Convergence", 
+        TEMPORAL_CONVERGENCE = "Temporal Convergence",
         ARCANE_POWER = "Arcane Power",
         ARCANE_RUPTURE = "Arcane Rupture"
     },
-    
+
     -- Debug-Modus
     DEBUG = false
 }
@@ -51,6 +51,25 @@ MC.SPELL_NAME[MC.SPELL_ID.ARCANE_SURGE] = "Arcane Surge"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_EXPLOSION] = "Arcane Explosion"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_MISSILES] = "Arcane Missiles"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_RUPTURE] = "Arcane Rupture"
+
+-- Gespeicherte Variablen (werden automatisch gespeichert)
+MageControlDB = MageControlDB or {}
+
+-- Initialisierung der gespeicherten Einstellungen
+local function initializeSettings()
+    if not MageControlDB.actionBarSlots then
+        MageControlDB.actionBarSlots = {
+            FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
+            ARCANE_RUPTURE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_RUPTURE,
+            ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE
+        }
+    end
+end
+
+-- Zugriff auf aktuelle Actionbar-Slots
+local function getActionBarSlots()
+    return MageControlDB.actionBarSlots
+end
 
 -- Zustandsvariablen zusammenfassen
 local state = {
@@ -85,7 +104,7 @@ local function safeQueueSpell(spellName)
         print("MageControl: Invalid spell name")
         return false
     end
-    
+
     debugPrint("Queueing spell: " .. spellName)
     QueueSpellByName(spellName)
     return true
@@ -121,7 +140,7 @@ local function IsActionSlotCooldownReady(slot)
     if not isValidActionSlot(slot) then
         return false
     end
-    
+
     local isUsable, notEnoughMana = IsUsableAction(slot)
     if not isUsable then
         return false
@@ -130,7 +149,7 @@ local function IsActionSlotCooldownReady(slot)
     local start, duration, enabled = GetActionCooldown(slot)
     local currentTime = GetTime()
     local remaining = (start + duration) - currentTime
-    
+
     -- Prüfen, ob nur der globale Cooldown aktiv ist
     local isJustGlobalCooldown = false
     if remaining > 0 and state.globalCooldownActive then
@@ -148,7 +167,7 @@ local function getActionSlotCooldownInMilliseconds(slot)
     if not isValidActionSlot(slot) then
         return 0
     end
-    
+
     local start, duration, enabled = GetActionCooldown(slot)
     local currentTime = GetTime()
     return (start + duration) - currentTime
@@ -168,16 +187,16 @@ local function GetBuffs()
         [MC.BUFF_NAME.TEMPORAL_CONVERGENCE] = true,
         [MC.BUFF_NAME.ARCANE_POWER] = true
     }
-    
+
     -- Hilfreiche Buffs
-    for i = 0, 31 do 
+    for i = 0, 31 do
         local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
         if buffIndex >= 0 then
             GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
             GameTooltip:SetPlayerBuff(buffIndex)
             local buffName = GameTooltipTextLeft1:GetText() or "Unbekannt"
             GameTooltip:Hide()
-            
+
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
                 table.insert(buffs, { name = buffName, duration = duration })
@@ -186,31 +205,32 @@ local function GetBuffs()
     end
 
     -- Schädliche Buffs (nur Arcane Rupture)
-    for i = 0, 31 do 
+    for i = 0, 31 do
         local buffIndex = GetPlayerBuff(i, "HARMFUL")
         if buffIndex >= 0 then
             GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
             GameTooltip:SetPlayerBuff(buffIndex)
             local buffName = GameTooltipTextLeft1:GetText() or ""
             GameTooltip:Hide()
-            
+
             if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
                 table.insert(buffs, { name = buffName, duration = duration })
             end
         end
     end
-    
+
     return buffs
 end
 
 -- Prüft Spell-Verfügbarkeit
 local function getSpellAvailability()
+    local slots = getActionBarSlots()
     return {
-        arcaneRuptureReady = IsActionSlotCooldownReady(MC.ACTIONBAR_SLOT.ARCANE_RUPTURE),
-        arcaneSurgeReady = IsActionSlotCooldownReady(MC.ACTIONBAR_SLOT.ARCANE_SURGE),
-        fireblastReady = IsActionSlotCooldownReady(MC.ACTIONBAR_SLOT.FIREBLAST) and 
-                        (IsSpellInRange(MC.SPELL_ID.FIREBLAST) == 1)
+        arcaneRuptureReady = IsActionSlotCooldownReady(slots.ARCANE_RUPTURE),
+        arcaneSurgeReady = IsActionSlotCooldownReady(slots.ARCANE_SURGE),
+        fireblastReady = IsActionSlotCooldownReady(slots.FIREBLAST) and
+                (IsSpellInRange(MC.SPELL_ID.FIREBLAST) == 1)
     }
 end
 
@@ -254,6 +274,7 @@ CastArcaneAttack = function()
 
     local spells = getSpellAvailability()
     local buffs = getCurrentBuffs()
+    local slots = getActionBarSlots()
 
     debugPrint("Evaluating spell priority")
 
@@ -275,8 +296,8 @@ CastArcaneAttack = function()
     end
 
     -- Arcane Missiles mit Clearcasting und Arcane Rupture Buff
-    if buffs.clearcasting and buffs.arcaneRupture and 
-       buffs.arcaneRupture.duration and buffs.arcaneRupture.duration > MC.TIMING.ARCANE_RUPTURE_MIN_DURATION then
+    if buffs.clearcasting and buffs.arcaneRupture and
+            buffs.arcaneRupture.duration and buffs.arcaneRupture.duration > MC.TIMING.ARCANE_RUPTURE_MIN_DURATION then
         safeQueueSpell("Arcane Missiles")
         return
     end
@@ -288,7 +309,7 @@ CastArcaneAttack = function()
     end
 
     -- Filler-Spells wenn Arcane Rupture bald verfügbar
-    if (isArcaneRuptureOneGlobalAway(MC.ACTIONBAR_SLOT.ARCANE_RUPTURE) and spells.fireblastReady) then
+    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE) and spells.fireblastReady) then
         if (spells.arcaneSurgeReady) then
             safeQueueSpell("Arcane Surge")
             return
@@ -302,9 +323,49 @@ CastArcaneAttack = function()
     safeQueueSpell("Arcane Missiles")
 end
 
--- Slash-Befehle
+-- Optionsmenü anzeigen
+local function showOptionsMenu()
+    if MageControlOptionsFrame and MageControlOptionsFrame:IsVisible() then
+        MageControlOptionsFrame:Hide()
+    else
+        MageControlOptions_Show()
+    end
+end
+
+-- Slot-Konfiguration per Befehl
+local function setActionBarSlot(spellType, slot)
+    local slotNum = tonumber(slot)
+    if not slotNum or not isValidActionSlot(slotNum) then
+        print("MageControl: Invalid slot number. Must be between 1 and 120.")
+        return
+    end
+
+    spellType = string.upper(spellType)
+    if MageControlDB.actionBarSlots[spellType] then
+        MageControlDB.actionBarSlots[spellType] = slotNum
+        print("MageControl: " .. spellType .. " slot set to " .. slotNum)
+    else
+        print("MageControl: Unknown spell type. Use: FIREBLAST, ARCANE_RUPTURE, or ARCANE_SURGE")
+    end
+end
+
+-- Aktuelle Konfiguration anzeigen
+local function showCurrentConfig()
+    local slots = getActionBarSlots()
+    print("MageControl - Current Configuration:")
+    print("  Fireblast: Slot " .. slots.FIREBLAST)
+    print("  Arcane Rupture: Slot " .. slots.ARCANE_RUPTURE)
+    print("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
+end
+
+-- Erweiterte Slash-Befehle
 SlashCmdList["MAGECONTROL"] = function(msg)
-    local command = string.lower(msg)
+    local args = {}
+    for word in string.gfind(msg, "%S+") do
+        table.insert(args, string.lower(word))
+    end
+
+    local command = args[1] or ""
 
     if command == "explosion" then
         QueueArcaneExplosion()
@@ -315,8 +376,28 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     elseif command == "debug" then
         MC.DEBUG = not MC.DEBUG
         print("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
+    elseif command == "options" or command == "config" then
+        showOptionsMenu()
+    elseif command == "set" and args[2] and args[3] then
+        setActionBarSlot(args[2], args[3])
+    elseif command == "show" then
+        showCurrentConfig()
+    elseif command == "reset" then
+        MageControlDB.actionBarSlots = {
+            FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
+            ARCANE_RUPTURE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_RUPTURE,
+            ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE
+        }
+        print("MageControl: Configuration reset to defaults")
     else
-        print("MageControl: Unknown command. Available commands: arcane, explosion, debug")
+        print("MageControl Commands:")
+        print("  /mc arcane - Cast arcane attack sequence")
+        print("  /mc explosion - Queue arcane explosion")
+        print("  /mc options - Show options menu")
+        print("  /mc set <spell> <slot> - Set actionbar slot")
+        print("  /mc show - Show current configuration")
+        print("  /mc reset - Reset to default slots")
+        print("  /mc debug - Toggle debug mode")
     end
 end
 
@@ -329,51 +410,56 @@ MageControlFrame:RegisterEvent("SPELLCAST_STOP")
 MageControlFrame:RegisterEvent("SPELL_CAST_EVENT")
 MageControlFrame:RegisterEvent("SPELLCAST_FAILED")
 MageControlFrame:RegisterEvent("SPELLCAST_INTERRUPTED")
+MageControlFrame:RegisterEvent("ADDON_LOADED")
 
 -- Event-Handler-Funktion
 MageControlFrame:SetScript("OnEvent", function()
-    if event == "SPELLCAST_CHANNEL_START" then
+    if event == "ADDON_LOADED" and arg1 == "MageControl" then
+        initializeSettings()
+        print("MageControl loaded. Type /mc for commands.")
+
+    elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
         state.channelFinishTime = GetTime() + ((arg1 - 0)/1000)
         state.expectedCastFinishTime = state.channelFinishTime
         debugPrint("Channel started, finish time: " .. state.channelFinishTime)
-    
+
     elseif event == "SPELLCAST_CHANNEL_STOP" then
         state.isChanneling = false
         state.expectedCastFinishTime = 0
         debugPrint("Channel stopped")
-    
+
     elseif event == "SPELLCAST_START" then
         if arg1 == "Arcane Rupture" then
             state.isCastingArcaneRupture = true
             state.expectedCastFinishTime = GetTime() + (arg2/1000)
             debugPrint("Started casting Arcane Rupture")
         end
-    
+
     elseif event == "SPELLCAST_STOP" then
         state.isCastingArcaneRupture = false
         debugPrint("Spell cast stopped")
-    
+
     elseif event == "SPELL_CAST_EVENT" then
         state.lastSpellCast = MC.SPELL_NAME[arg2] or "Unknown Spell"
         debugPrint("Spell cast: " .. state.lastSpellCast)
-        
-        if (arg2 == MC.SPELL_ID.FIREBLAST or 
-            arg2 == MC.SPELL_ID.ARCANE_SURGE or 
-            arg2 == MC.SPELL_ID.ARCANE_EXPLOSION) then
-            
+
+        if (arg2 == MC.SPELL_ID.FIREBLAST or
+                arg2 == MC.SPELL_ID.ARCANE_SURGE or
+                arg2 == MC.SPELL_ID.ARCANE_EXPLOSION) then
+
             state.globalCooldownActive = true
             state.globalCooldownStart = GetTime()
             state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
             debugPrint("Global cooldown activated")
         end
-    
+
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
         state.isChanneling = false
         state.isCastingArcaneRupture = false
         state.expectedCastFinishTime = 0
         debugPrint("Spell failed/interrupted: " .. (state.lastSpellCast or "unknown"))
-        
+
         if (state.lastSpellCast == "Arcane Rupture" and not state.isRuptureRepeated) then
             state.isRuptureRepeated = true
             debugPrint("Retrying Arcane Rupture")
