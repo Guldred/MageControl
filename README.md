@@ -25,7 +25,7 @@ An optimized World of Warcraft addon specifically designed for Arcane Mages play
 
 **Required**:
 
-* [`nampower`](#): Ensures efficient spell queuing, significantly reducing dead-time between spells by leveraging its Queue Spell functionality. This dependency must be loaded for proper addon operation.
+* [`nampower`](https://github.com/pepopo978/nampower): Ensures efficient spell queuing, significantly reducing dead-time between spells by leveraging its Queue Spell functionality. This dependency must be loaded for proper addon operation.
 
 ---
 
