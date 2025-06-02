@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: MageControl
-## Notes: Ermöglicht das Wirken von Mage Zaubern.
+## Notes: Optimize Arcane Damage on a single button
 ## Author: Guldred
-## Version: 1.1
+## Version: 1.2
 ## SavedVariables: MageControlDB
 
 MageControl.lua
