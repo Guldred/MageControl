@@ -3,14 +3,14 @@ SLASH_MAGECONTROL2 = "/mc"
 
 local MC = {
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
-
+    
     TIMING = {
         CAST_FINISH_THRESHOLD = 0.75,
         GCD_REMAINING_THRESHOLD = 0.75,
         GCD_BUFFER = 1.6,
         ARCANE_RUPTURE_MIN_DURATION = 2
     },
-
+    
     SPELL_ID = {
         FIREBLAST = 10199,
         ARCANE_SURGE = 51936,
@@ -18,28 +18,43 @@ local MC = {
         ARCANE_MISSILES = 25345,
         ARCANE_RUPTURE = 51954
     },
-
+    
     DEFAULT_ACTIONBAR_SLOT = {
         FIREBLAST = 1,
         ARCANE_RUPTURE = 2,
         ARCANE_SURGE = 5
     },
-
+    
     SPELL_NAME = {},
-
+    
     BUFF_NAME = {
         CLEARCASTING = "Clearcasting",
-        TEMPORAL_CONVERGENCE = "Temporal Convergence",
+        TEMPORAL_CONVERGENCE = "Temporal Convergence", 
         ARCANE_POWER = "Arcane Power",
         ARCANE_RUPTURE = "Arcane Rupture"
     },
-
+    
     ARCANE_POWER = {
         MANA_DRAIN_PER_SECOND = 1,
         DEATH_THRESHOLD = 10,
-        SAFETY_BUFFER = 2
+        SAFETY_BUFFER = 3,
+        PROC_COST_PERCENT = 2
     },
-
+    
+    SPELL_COSTS = {
+        ["Arcane Missiles"] = 230,
+        ["Arcane Surge"] = 195,
+        ["Arcane Rupture"] = 315,
+        ["Fire Blast"] = 140,
+        ["Fireblast"] = 140,
+        ["Arcane Explosion"] = 180
+    },
+    
+    SPELL_MODIFIERS = {
+        ARCANE_MISSILES_RUPTURE_MULTIPLIER = 1.25,
+        PROC_DAMAGE_COST_PERCENT = 2
+    },
+    
     DEBUG = false
 }
 
@@ -93,32 +108,25 @@ local function getCurrentManaPercent()
     return (UnitMana("player") / UnitManaMax("player")) * 100
 end
 
-local function getSpellManaCost(spellName)
-    local manaCost = GetSpellCost and GetSpellCost(spellName)
-    if manaCost and manaCost > 0 then
-        return manaCost
+local function getModifiedSpellManaCost(spellName, buffStates)
+    if buffStates and buffStates.clearcasting then
+        debugPrint("Clearcasting active - " .. spellName .. " costs 0 mana")
+        return 0
     end
-
-    GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-    GameTooltip:SetSpell(spellName, 1)
-
-    for i = 1, GameTooltip:NumLines() do
-        local line = getglobal("GameTooltipTextLeft" .. i):GetText()
-        if line then
-            local cost = string.match(line, "(%d+) Mana")
-            if cost then
-                GameTooltip:Hide()
-                return tonumber(cost)
-            end
-        end
+    
+    local baseCost = MC.SPELL_COSTS[spellName] or 0
+    
+    if spellName == "Arcane Missiles" and buffStates and buffStates.arcaneRupture then
+        local modifiedCost = baseCost * MC.SPELL_MODIFIERS.ARCANE_MISSILES_RUPTURE_MULTIPLIER
+        debugPrint(string.format("Arcane Rupture active - Arcane Missiles cost: %.0f -> %.0f", baseCost, modifiedCost))
+        return modifiedCost
     end
-
-    GameTooltip:Hide()
-    return 0
+    
+    return baseCost
 end
 
-local function getSpellCostPercent(spellName)
-    local manaCost = getSpellManaCost(spellName)
+local function getSpellCostPercent(spellName, buffStates)
+    local manaCost = getModifiedSpellManaCost(spellName, buffStates)
     if manaCost and manaCost > 0 then
         return (manaCost / UnitManaMax("player")) * 100
     end
@@ -141,15 +149,15 @@ local function GetBuffs()
         [MC.BUFF_NAME.TEMPORAL_CONVERGENCE] = true,
         [MC.BUFF_NAME.ARCANE_POWER] = true
     }
-
-    for i = 0, 31 do
+    
+    for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
         if buffIndex >= 0 then
             GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
             GameTooltip:SetPlayerBuff(buffIndex)
             local buffName = GameTooltipTextLeft1:GetText() or "Unbekannt"
             GameTooltip:Hide()
-
+            
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
                 table.insert(buffs, { name = buffName, duration = duration })
@@ -157,21 +165,21 @@ local function GetBuffs()
         end
     end
 
-    for i = 0, 31 do
+    for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HARMFUL")
         if buffIndex >= 0 then
             GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
             GameTooltip:SetPlayerBuff(buffIndex)
             local buffName = GameTooltipTextLeft1:GetText() or ""
             GameTooltip:Hide()
-
+            
             if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
                 table.insert(buffs, { name = buffName, duration = duration })
             end
         end
     end
-
+    
     return buffs
 end
 
@@ -180,43 +188,48 @@ local function getArcanePowerTimeLeft(buffs)
     return arcanePower and arcanePower.duration or 0
 end
 
-local function isSafeToCast(spellName, buffs)
+local function isSafeToCast(spellName, buffs, buffStates)
     local arcanePowerTimeLeft = getArcanePowerTimeLeft(buffs)
-
+    
     if arcanePowerTimeLeft <= 0 then
         return true
     end
-
+    
     local currentManaPercent = getCurrentManaPercent()
-    local spellCostPercent = getSpellCostPercent(spellName)
+    local spellCostPercent = getSpellCostPercent(spellName, buffStates)
     local arcanePowerDrainPercent = arcanePowerTimeLeft * MC.ARCANE_POWER.MANA_DRAIN_PER_SECOND
-
-    local projectedManaPercent = currentManaPercent - spellCostPercent - arcanePowerDrainPercent
-
-    debugPrint(string.format("Safety Check - Current: %.1f%%, Spell Cost: %.1f%%, AP Drain: %.1f%%, Projected: %.1f%%",
-            currentManaPercent, spellCostPercent, arcanePowerDrainPercent, projectedManaPercent))
-
+    
+    local procCostPercent = 0
+    if string.find(spellName, "Arcane") then
+        procCostPercent = MC.ARCANE_POWER.PROC_COST_PERCENT
+    end
+    
+    local projectedManaPercent = currentManaPercent - spellCostPercent - arcanePowerDrainPercent - procCostPercent
+    
+    debugPrint(string.format("Safety Check - Current: %.1f%%, Spell: %.1f%%, AP Drain: %.1f%%, Proc: %.1f%%, Projected: %.1f%%", 
+        currentManaPercent, spellCostPercent, arcanePowerDrainPercent, procCostPercent, projectedManaPercent))
+    
     local safetyThreshold = MC.ARCANE_POWER.DEATH_THRESHOLD + MC.ARCANE_POWER.SAFETY_BUFFER
-
+    
     if projectedManaPercent < safetyThreshold then
-        print(string.format("|cffff0000MageControl WARNING: %s would drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r",
-                spellName, projectedManaPercent))
+        print(string.format("|cffff0000MageControl WARNING: %s would drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r", 
+            spellName, projectedManaPercent))
         return false
     end
-
+    
     return true
 end
 
-local function safeQueueSpell(spellName, buffs)
+local function safeQueueSpell(spellName, buffs, buffStates)
     if not spellName or spellName == "" then
         print("MageControl: Invalid spell name")
         return false
     end
-
-    if not isSafeToCast(spellName, buffs) then
+    
+    if not isSafeToCast(spellName, buffs, buffStates) then
         return false
     end
-
+    
     debugPrint("Queueing spell: " .. spellName)
     QueueSpellByName(spellName)
     return true
@@ -232,7 +245,8 @@ local function QueueArcaneExplosion()
     local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - state.globalCooldownStart)
     if(gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD) then
         local buffs = GetBuffs()
-        safeQueueSpell("Arcane Explosion", buffs)
+        local buffStates = getCurrentBuffs(buffs)
+        safeQueueSpell("Arcane Explosion", buffs, buffStates)
     end
 end
 
@@ -240,7 +254,7 @@ local function IsActionSlotCooldownReady(slot)
     if not isValidActionSlot(slot) then
         return false
     end
-
+    
     local isUsable, notEnoughMana = IsUsableAction(slot)
     if not isUsable then
         return false
@@ -249,7 +263,7 @@ local function IsActionSlotCooldownReady(slot)
     local start, duration, enabled = GetActionCooldown(slot)
     local currentTime = GetTime()
     local remaining = (start + duration) - currentTime
-
+    
     local isJustGlobalCooldown = false
     if remaining > 0 and state.globalCooldownActive then
         local remainingGlobalCd = MC.TIMING.GCD_BUFFER - (GetTime() - state.globalCooldownStart)
@@ -265,7 +279,7 @@ local function getActionSlotCooldownInMilliseconds(slot)
     if not isValidActionSlot(slot) then
         return 0
     end
-
+    
     local start, duration, enabled = GetActionCooldown(slot)
     local currentTime = GetTime()
     return (start + duration) - currentTime
@@ -281,8 +295,8 @@ local function getSpellAvailability()
     return {
         arcaneRuptureReady = IsActionSlotCooldownReady(slots.ARCANE_RUPTURE),
         arcaneSurgeReady = IsActionSlotCooldownReady(slots.ARCANE_SURGE),
-        fireblastReady = IsActionSlotCooldownReady(slots.FIREBLAST) and
-                (IsSpellInRange(MC.SPELL_ID.FIREBLAST) == 1)
+        fireblastReady = IsActionSlotCooldownReady(slots.FIREBLAST) and 
+                        (IsSpellInRange(MC.SPELL_ID.FIREBLAST) == 1)
     }
 end
 
@@ -307,7 +321,7 @@ end
 local function handleChannelInterruption(spells, buffStates, buffs)
     if (state.isChanneling and not buffStates.arcaneRupture and spells.arcaneRuptureReady) then
         ChannelStopCastingNextTick()
-        safeQueueSpell("Arcane Rupture", buffs)
+        safeQueueSpell("Arcane Rupture", buffs, buffStates)
         return true
     end
     return false
@@ -335,36 +349,36 @@ CastArcaneAttack = function()
     end
 
     if (spells.arcaneSurgeReady and not buffStates.arcanePower and not isHighHasteActive()) then
-        safeQueueSpell("Arcane Surge", buffs)
+        safeQueueSpell("Arcane Surge", buffs, buffStates)
         return
     end
 
     if (buffStates.clearcasting and buffStates.arcaneRupture) then
-        safeQueueSpell("Arcane Missiles", buffs)
+        safeQueueSpell("Arcane Missiles", buffs, buffStates)
         return
     end
 
     if (spells.arcaneRuptureReady and not buffStates.arcaneRupture and not state.isCastingArcaneRupture) then
-        safeQueueSpell("Arcane Rupture", buffs)
+        safeQueueSpell("Arcane Rupture", buffs, buffStates)
         return
     end
 
     if (buffStates.arcaneRupture) then
-        safeQueueSpell("Arcane Missiles", buffs)
+        safeQueueSpell("Arcane Missiles", buffs, buffStates)
         return
     end
 
     if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
         if (spells.arcaneSurgeReady and not buffStates.arcanePower and not isHighHasteActive()) then
-            safeQueueSpell("Arcane Surge", buffs)
+            safeQueueSpell("Arcane Surge", buffs, buffStates)
             return
         elseif (spells.fireblastReady) then
-            safeQueueSpell("Fire Blast", buffs)
+            safeQueueSpell("Fire Blast", buffs, buffStates)
             return
         end
     end
 
-    safeQueueSpell("Arcane Missiles", buffs)
+    safeQueueSpell("Arcane Missiles", buffs, buffStates)
 end
 
 local function emergencyArcanePowerCancel(buffs)
@@ -382,7 +396,7 @@ local function checkManaWarning(buffs)
     if arcanePowerTimeLeft > 0 then
         local currentMana = getCurrentManaPercent()
         local projectedMana = currentMana - (arcanePowerTimeLeft * MC.ARCANE_POWER.MANA_DRAIN_PER_SECOND)
-
+        
         if projectedMana < 15 and projectedMana > 10 then
             print("|cffffff00MageControl: LOW MANA WARNING - " .. math.floor(projectedMana) .. "% projected!|r")
         end
@@ -403,7 +417,7 @@ local function setActionBarSlot(spellType, slot)
         print("MageControl: Invalid slot number. Must be between 1 and 120.")
         return
     end
-
+    
     spellType = string.upper(spellType)
     if MageControlDB.actionBarSlots[spellType] then
         MageControlDB.actionBarSlots[spellType] = slotNum
@@ -426,7 +440,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     for word in string.gfind(msg, "%S+") do
         table.insert(args, string.lower(word))
     end
-
+    
     local command = args[1] or ""
 
     if command == "explosion" then
@@ -480,49 +494,49 @@ MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
         print("MageControl loaded. Type /mc for commands.")
-
+        
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
         state.channelFinishTime = GetTime() + ((arg1 - 0)/1000)
         state.expectedCastFinishTime = state.channelFinishTime
         debugPrint("Channel started, finish time: " .. state.channelFinishTime)
-
+    
     elseif event == "SPELLCAST_CHANNEL_STOP" then
         state.isChanneling = false
         state.expectedCastFinishTime = 0
         debugPrint("Channel stopped")
-
+    
     elseif event == "SPELLCAST_START" then
         if arg1 == "Arcane Rupture" then
             state.isCastingArcaneRupture = true
             state.expectedCastFinishTime = GetTime() + (arg2/1000)
             debugPrint("Started casting Arcane Rupture")
         end
-
+    
     elseif event == "SPELLCAST_STOP" then
         state.isCastingArcaneRupture = false
         debugPrint("Spell cast stopped")
-
+    
     elseif event == "SPELL_CAST_EVENT" then
         state.lastSpellCast = MC.SPELL_NAME[arg2] or "Unknown Spell"
         debugPrint("Spell cast: " .. state.lastSpellCast)
-
-        if (arg2 == MC.SPELL_ID.FIREBLAST or
-                arg2 == MC.SPELL_ID.ARCANE_SURGE or
-                arg2 == MC.SPELL_ID.ARCANE_EXPLOSION) then
-
+        
+        if (arg2 == MC.SPELL_ID.FIREBLAST or 
+            arg2 == MC.SPELL_ID.ARCANE_SURGE or 
+            arg2 == MC.SPELL_ID.ARCANE_EXPLOSION) then
+            
             state.globalCooldownActive = true
             state.globalCooldownStart = GetTime()
             state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
             debugPrint("Global cooldown activated")
         end
-
+    
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
         state.isChanneling = false
         state.isCastingArcaneRupture = false
         state.expectedCastFinishTime = 0
         debugPrint("Spell failed/interrupted: " .. (state.lastSpellCast or "unknown"))
-
+        
         if (state.lastSpellCast == "Arcane Rupture" and not state.isRuptureRepeated) then
             state.isRuptureRepeated = true
             debugPrint("Retrying Arcane Rupture")
