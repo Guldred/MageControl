@@ -133,15 +133,6 @@ local function getSpellCostPercent(spellName, buffStates)
     return 0
 end
 
-local function findBuff(buffs, buffName)
-    for i, buff in ipairs(buffs) do
-        if buff.name == buffName then
-            return buff
-        end
-    end
-    return nil
-end
-
 local function GetBuffs()
     local buffs = {}
     local relevantBuffs = {
@@ -183,6 +174,15 @@ local function GetBuffs()
     return buffs
 end
 
+local function findBuff(buffs, buffName)
+    for i, buff in ipairs(buffs) do
+        if buff.name == buffName then
+            return buff
+        end
+    end
+    return nil
+end
+
 local function getArcanePowerTimeLeft(buffs)
     local arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
     return arcanePower and arcanePower.duration or 0
@@ -212,7 +212,7 @@ local function isSafeToCast(spellName, buffs, buffStates)
     local safetyThreshold = MC.ARCANE_POWER.DEATH_THRESHOLD + MC.ARCANE_POWER.SAFETY_BUFFER
     
     if projectedManaPercent < safetyThreshold then
-        print(string.format("|cffff0000MageControl WARNING: %s would drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r", 
+        print(string.format("|cffff0000MageControl WARNING: %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r",
             spellName, projectedManaPercent))
         return false
     end
@@ -239,6 +239,15 @@ checkChannelFinished = function()
     if (state.channelFinishTime < GetTime()) then
         state.isChanneling = false
     end
+end
+
+local function getCurrentBuffs(buffs)
+    return {
+        clearcasting = findBuff(buffs, MC.BUFF_NAME.CLEARCASTING),
+        temporalConvergence = findBuff(buffs, MC.BUFF_NAME.TEMPORAL_CONVERGENCE),
+        arcaneRupture = findBuff(buffs, MC.BUFF_NAME.ARCANE_RUPTURE),
+        arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
+    }
 end
 
 local function QueueArcaneExplosion()
@@ -297,15 +306,6 @@ local function getSpellAvailability()
         arcaneSurgeReady = IsActionSlotCooldownReady(slots.ARCANE_SURGE),
         fireblastReady = IsActionSlotCooldownReady(slots.FIREBLAST) and 
                         (IsSpellInRange(MC.SPELL_ID.FIREBLAST) == 1)
-    }
-end
-
-local function getCurrentBuffs(buffs)
-    return {
-        clearcasting = findBuff(buffs, MC.BUFF_NAME.CLEARCASTING),
-        temporalConvergence = findBuff(buffs, MC.BUFF_NAME.TEMPORAL_CONVERGENCE),
-        arcaneRupture = findBuff(buffs, MC.BUFF_NAME.ARCANE_RUPTURE),
-        arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
     }
 end
 
