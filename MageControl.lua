@@ -37,17 +37,17 @@ local MC = {
     ARCANE_POWER = {
         MANA_DRAIN_PER_SECOND = 1,
         DEATH_THRESHOLD = 10,
-        SAFETY_BUFFER = 3,
+        SAFETY_BUFFER = 5,
         PROC_COST_PERCENT = 2
     },
     
     SPELL_COSTS = {
-        ["Arcane Missiles"] = 230,
-        ["Arcane Surge"] = 195,
-        ["Arcane Rupture"] = 315,
-        ["Fire Blast"] = 140,
-        ["Fireblast"] = 140,
-        ["Arcane Explosion"] = 180
+        ["Arcane Missiles"] = 655,
+        ["Arcane Surge"] = 170,
+        ["Arcane Rupture"] = 390,
+        ["Fire Blast"] = 340,
+        ["Fireblast"] = 340,
+        ["Arcane Explosion"] = 390
     },
     
     SPELL_MODIFIERS = {
@@ -204,7 +204,7 @@ local function isSafeToCast(spellName, buffs, buffStates)
         procCostPercent = MC.ARCANE_POWER.PROC_COST_PERCENT
     end
     
-    local projectedManaPercent = currentManaPercent - spellCostPercent - arcanePowerDrainPercent - procCostPercent
+    local projectedManaPercent = currentManaPercent - spellCostPercent - procCostPercent
     
     debugPrint(string.format("Safety Check - Current: %.1f%%, Spell: %.1f%%, AP Drain: %.1f%%, Proc: %.1f%%, Projected: %.1f%%", 
         currentManaPercent, spellCostPercent, arcanePowerDrainPercent, procCostPercent, projectedManaPercent))
