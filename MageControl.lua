@@ -20,7 +20,10 @@ local MC = {
         ARCANE_SURGE = 51936,
         ARCANE_EXPLOSION = 10202,
         ARCANE_MISSILES = 25345,
-        ARCANE_RUPTURE = 51954
+        ARCANE_RUPTURE = 51954,
+        FROSTBOLT_1 = 116,
+        FROSTBOLT = 25304,
+        FIREBALL = 25306
     },
     
     DEFAULT_ACTIONBAR_SLOT = {
@@ -67,6 +70,9 @@ MC.SPELL_NAME[MC.SPELL_ID.ARCANE_SURGE] = "Arcane Surge"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_EXPLOSION] = "Arcane Explosion"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_MISSILES] = "Arcane Missiles"
 MC.SPELL_NAME[MC.SPELL_ID.ARCANE_RUPTURE] = "Arcane Rupture"
+MC.SPELL_NAME[MC.SPELL_ID.FROSTBOLT_1] = "Frostbolt (Rank 1)"
+MC.SPELL_NAME[MC.SPELL_ID.FROSTBOLT] = "Frostbolt"
+MC.SPELL_NAME[MC.SPELL_ID.FIREBALL] = "Fireball"
 
 MageControlDB = MageControlDB or {}
 
@@ -518,16 +524,10 @@ MageControlFrame:SetScript("OnEvent", function()
     elseif event == "SPELL_CAST_EVENT" then
         state.lastSpellCast = MC.SPELL_NAME[arg2] or "Unknown Spell"
         debugPrint("Spell cast: " .. state.lastSpellCast)
-        
-        if (arg2 == MC.SPELL_ID.FIREBLAST or 
-            arg2 == MC.SPELL_ID.ARCANE_SURGE or 
-            arg2 == MC.SPELL_ID.ARCANE_EXPLOSION) then
-            
-            state.globalCooldownActive = true
-            state.globalCooldownStart = GetTime()
-            state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
-            debugPrint("Global cooldown activated")
-        end
+        state.globalCooldownActive = true
+        state.globalCooldownStart = GetTime()
+        state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
+        debugPrint("Global cooldown activated")
     
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
         state.isChanneling = false
