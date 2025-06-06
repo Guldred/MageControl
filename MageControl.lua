@@ -61,7 +61,12 @@ local MC = {
         ARCANE_MISSILES_RUPTURE_MULTIPLIER = 1.25,
         PROC_DAMAGE_COST_PERCENT = 2
     },
-    
+
+    HASTE = {
+        BASE_TELEPORT_CAST_TIME = 10.0,
+        CURRENT_HASTE_PERCENT = 0,
+    },
+
     DEBUG = false
 }
 
@@ -395,6 +400,50 @@ CastArcaneAttack = function()
     safeQueueSpell("Arcane Missiles", buffs, buffStates)
 end
 
+local function calculateHastePercent()
+    local spellName = "Teleport: Stormwind"
+    local spellId = 3561 -- Spell ID für Teleport: Stormwind
+
+    if not IsSpellKnown(spellId) then
+        debugPrint("Teleport: Stormwind has not been learned")
+        return 0
+    end
+
+    GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+    GameTooltip:SetSpell(spellId, 1)
+
+    local castTimeText = nil
+    for i = 1, GameTooltip:NumLines() do
+        local line = getglobal("GameTooltipTextLeft"..i)
+        if line and line:GetText() then
+            local text = line:GetText()
+            local castTime = string.match(text, "(%d+%.?%d*) sec cast")
+            if castTime then
+                castTimeText = tonumber(castTime)
+                break
+            end
+        end
+    end
+
+    GameTooltip:Hide()
+
+    if castTimeText then
+        local actualCastTime = castTimeText
+        local hastePercent = ((MC.HASTE.BASE_TELEPORT_CAST_TIME - actualCastTime) / MC.HASTE.BASE_TELEPORT_CAST_TIME) * 100
+
+        MC.HASTE.CURRENT_HASTE_PERCENT = math.max(0, hastePercent)
+
+        debugPrint(string.format("Haste calculated: %.1f%% (Base: %.1fs, Current: %.1fs)",
+                MC.HASTE.CURRENT_HASTE_PERCENT, MC.HASTE.BASE_TELEPORT_CAST_TIME, actualCastTime))
+
+        return MC.HASTE.CURRENT_HASTE_PERCENT
+    else
+        debugPrint("Could not extract cast time from Tooltip")
+        return 10
+    end
+end
+
+
 local function checkManaWarning(buffs)
     local arcanePowerTimeLeft = getArcanePowerTimeLeft(buffs)
     if arcanePowerTimeLeft > 0 then
@@ -455,6 +504,9 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         state.isRuptureRepeated = false
         checkChannelFinished()
         CastArcaneAttack()
+    elseif command == "haste" then
+        local haste = calculateHastePercent()
+        print("Current Haste: " .. haste)
     elseif command == "debug" then
         MC.DEBUG = not MC.DEBUG
         print("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
