@@ -321,7 +321,11 @@ end
 local function handleChannelInterruption(spells, buffStates, buffs)
     if (state.isChanneling and not buffStates.arcaneRupture and spells.arcaneRuptureReady) then
         ChannelStopCastingNextTick()
-        safeQueueSpell("Arcane Rupture", buffs, buffStates)
+        if (buffStates.arcaneSurgeReady) then
+            safeQueueSpell("Arcane Surge", buffs, buffStates)
+        else
+            safeQueueSpell("Arcane Rupture", buffs, buffStates)
+        end
         return true
     end
     return false
@@ -381,16 +385,6 @@ CastArcaneAttack = function()
     safeQueueSpell("Arcane Missiles", buffs, buffStates)
 end
 
-local function emergencyArcanePowerCancel(buffs)
-    local currentMana = getCurrentManaPercent()
-    if currentMana <= 12 and getArcanePowerTimeLeft(buffs) > 0 then
-        print("|cffff0000EMERGENCY: Cancelling Arcane Power to prevent death!|r")
-        CancelPlayerBuff("Arcane Power")
-        return true
-    end
-    return false
-end
-
 local function checkManaWarning(buffs)
     local arcanePowerTimeLeft = getArcanePowerTimeLeft(buffs)
     if arcanePowerTimeLeft > 0 then
@@ -447,7 +441,6 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         QueueArcaneExplosion()
     elseif command == "arcane" then
         local buffs = GetBuffs()
-        emergencyArcanePowerCancel(buffs)
         checkManaWarning(buffs)
         state.isRuptureRepeated = false
         checkChannelFinished()
