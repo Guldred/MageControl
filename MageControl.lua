@@ -1,10 +1,6 @@
 SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
---TODO:
--- Create a Haste check, find out how long Arcane missiles will be cast and calculate by arcane rupture buff if it is worth doing it.
--- Might Use "Teleport: Stormwind" as base calculation since it does have 10 Second base cast time
-
 local MC = {
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
     
@@ -64,6 +60,7 @@ local MC = {
 
     HASTE = {
         BASE_TELEPORT_CAST_TIME = 10.0,
+        TELEPORT_SPELLBOOK_ID = 0,
         CURRENT_HASTE_PERCENT = 0,
     },
 
@@ -330,7 +327,8 @@ local function shouldWaitForCast()
 end
 
 local function isHighHasteActive()
-    return false
+    local isAboveThirtyHaste = calculateHastePercent() > 30
+    return isAboveThirtyHaste
 end
 
 local function handleChannelInterruption(spells, buffStates, buffs)
@@ -367,7 +365,7 @@ CastArcaneAttack = function()
         return
     end
 
-    if (spells.arcaneSurgeReady and not buffStates.arcanePower and not isHighHasteActive()) then
+    if (spells.arcaneSurgeReady and not isHighHasteActive()) then
         safeQueueSpell("Arcane Surge", buffs, buffStates)
         return
     end
@@ -388,7 +386,7 @@ CastArcaneAttack = function()
     end
 
     if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
-        if (spells.arcaneSurgeReady and not buffStates.arcanePower and not isHighHasteActive()) then
+        if (spells.arcaneSurgeReady and not isHighHasteActive()) then
             safeQueueSpell("Arcane Surge", buffs, buffStates)
             return
         elseif (spells.fireblastReady) then
@@ -400,27 +398,35 @@ CastArcaneAttack = function()
     safeQueueSpell("Arcane Missiles", buffs, buffStates)
 end
 
-local function calculateHastePercent()
-    local spellName = "Teleport: Stormwind"
-    local spellId = 3561 -- Spell ID für Teleport: Stormwind
-
-    if not IsSpellKnown(spellId) then
-        debugPrint("Teleport: Stormwind has not been learned")
-        return 0
+local function getSpellbookSpellIdForName(spellName)
+    local bookType = BOOKTYPE_SPELL
+    local targetId = 0
+    for spellBookId = 1, MAX_SPELLS do
+        local name = GetSpellName(spellBookId, bookType)
+        if not name then break end
+        if name == spellName then
+            targetId = spellBookId
+            break
+        end
     end
+    return targetId
+end
 
+local function calculateHastePercent()
     GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-    GameTooltip:SetSpell(spellId, 1)
+    GameTooltip:SetSpell(MC.HASTE.TELEPORT_SPELLBOOK_ID, "spell")
 
     local castTimeText = nil
     for i = 1, GameTooltip:NumLines() do
         local line = getglobal("GameTooltipTextLeft"..i)
-        if line and line:GetText() then
+        if line then
             local text = line:GetText()
-            local castTime = string.match(text, "(%d+%.?%d*) sec cast")
-            if castTime then
-                castTimeText = tonumber(castTime)
-                break
+            if text then
+                local castTime = strmatch(text, "(%d+%.?%d*) sec cast")
+                if castTime then
+                    castTimeText = tonumber(castTime)
+                    break
+                end
             end
         end
     end
@@ -477,6 +483,15 @@ local function setActionBarSlot(spellType, slot)
         print("MageControl: " .. spellType .. " slot set to " .. slotNum)
     else
         print("MageControl: Unknown spell type. Use: FIREBLAST, ARCANE_RUPTURE, or ARCANE_SURGE")
+    end
+end
+
+local function getFactionBasedPortSpell()
+    local faction, localizedFaction = UnitFactionGroup("player")
+    if (faction == "Alliance") then
+        return "Teleport: Stormwind"
+    else
+        return "Teleport: Orgrimmar"
     end
 end
 
@@ -548,7 +563,7 @@ MageControlFrame:RegisterEvent("ADDON_LOADED")
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        print("MageControl loaded. Type /mc for commands.")
+        MC.HASTE.TELEPORT_SPELLBOOK_ID = getSpellbookSpellIdForName(getFactionBasedPortSpell())
         
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
@@ -575,7 +590,7 @@ MageControlFrame:SetScript("OnEvent", function()
     
     elseif event == "SPELL_CAST_EVENT" then
         state.lastSpellCast = MC.SPELL_NAME[arg2] or "Unknown Spell"
-        debugPrint("Spell cast: " .. state.lastSpellCast)
+        debugPrint("Spell cast: " .. state.lastSpellCast .. " with ID: " .. arg2)
         state.globalCooldownActive = true
         state.globalCooldownStart = GetTime()
         state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
