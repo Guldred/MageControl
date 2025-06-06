@@ -326,92 +326,6 @@ local function shouldWaitForCast()
     return timeToCastFinish > MC.TIMING.CAST_FINISH_THRESHOLD
 end
 
-local function isHighHasteActive()
-    local isAboveThirtyHaste = calculateHastePercent() > 30
-    return isAboveThirtyHaste
-end
-
-local function handleChannelInterruption(spells, buffStates, buffs)
-    if (state.isChanneling and not buffStates.arcaneRupture and spells.arcaneRuptureReady) then
-        ChannelStopCastingNextTick()
-        if (buffStates.arcaneSurgeReady) then
-            safeQueueSpell("Arcane Surge", buffs, buffStates)
-        else
-            safeQueueSpell("Arcane Rupture", buffs, buffStates)
-        end
-        return true
-    end
-    return false
-end
-
-CastArcaneAttack = function()
-    if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
-        state.globalCooldownActive = false
-    end
-
-    local buffs = GetBuffs()
-    local spells = getSpellAvailability()
-    local buffStates = getCurrentBuffs(buffs)
-    local slots = getActionBarSlots()
-
-    debugPrint("Evaluating spell priority")
-
-    if handleChannelInterruption(spells, buffStates, buffs) then
-        return
-    end
-
-    if shouldWaitForCast() then
-        debugPrint("Waiting for cast to finish")
-        return
-    end
-
-    if (spells.arcaneSurgeReady and not isHighHasteActive()) then
-        safeQueueSpell("Arcane Surge", buffs, buffStates)
-        return
-    end
-
-    if (buffStates.clearcasting and buffStates.arcaneRupture) then
-        safeQueueSpell("Arcane Missiles", buffs, buffStates)
-        return
-    end
-
-    if (spells.arcaneRuptureReady and not buffStates.arcaneRupture and not state.isCastingArcaneRupture) then
-        safeQueueSpell("Arcane Rupture", buffs, buffStates)
-        return
-    end
-
-    if (buffStates.arcaneRupture) then
-        safeQueueSpell("Arcane Missiles", buffs, buffStates)
-        return
-    end
-
-    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
-        if (spells.arcaneSurgeReady and not isHighHasteActive()) then
-            safeQueueSpell("Arcane Surge", buffs, buffStates)
-            return
-        elseif (spells.fireblastReady) then
-            safeQueueSpell("Fire Blast", buffs, buffStates)
-            return
-        end
-    end
-
-    safeQueueSpell("Arcane Missiles", buffs, buffStates)
-end
-
-local function getSpellbookSpellIdForName(spellName)
-    local bookType = BOOKTYPE_SPELL
-    local targetId = 0
-    for spellBookId = 1, MAX_SPELLS do
-        local name = GetSpellName(spellBookId, bookType)
-        if not name then break end
-        if name == spellName then
-            targetId = spellBookId
-            break
-        end
-    end
-    return targetId
-end
-
 local function calculateHastePercent()
     GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
     GameTooltip:SetSpell(MC.HASTE.TELEPORT_SPELLBOOK_ID, "spell")
@@ -449,6 +363,110 @@ local function calculateHastePercent()
     end
 end
 
+local function isHighHasteActive()
+    local isAboveThirtyHaste = calculateHastePercent() > 30
+    return isAboveThirtyHaste
+end
+
+local function handleChannelInterruption(spells, buffStates, buffs)
+    if (state.isChanneling and not buffStates.arcaneRupture and spells.arcaneRuptureReady) then
+        ChannelStopCastingNextTick()
+        if (buffStates.arcaneSurgeReady) then
+            safeQueueSpell("Arcane Surge", buffs, buffStates)
+        else
+            safeQueueSpell("Arcane Rupture", buffs, buffStates)
+        end
+        return true
+    end
+    return false
+end
+
+local function isMissilesWorthCasting(buffStates)
+    local ruptureBuff = buffStates.arcaneRupture
+
+    if not ruptureBuff then
+        return false
+    end
+
+    local remainingDuration = ruptureBuff.duration
+    local hastePercent = calculateHastePercent() / 100
+    local channelTime = 6 / (1 + hastePercent)
+    local requiredTime = channelTime * 0.6
+
+    debugPrint("Required time for Arcane Missiles: %.1f%% vs %.1f%% remaining duration",
+                        requiredTime, remainingDuration)
+
+    return remainingDuration >= requiredTime
+end
+
+CastArcaneAttack = function()
+    if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
+        state.globalCooldownActive = false
+    end
+
+    local buffs = GetBuffs()
+    local spells = getSpellAvailability()
+    local buffStates = getCurrentBuffs(buffs)
+    local slots = getActionBarSlots()
+    local missilesWorthCasting = isMissilesWorthCasting(buffStates)
+
+    debugPrint("Evaluating spell priority")
+
+    if handleChannelInterruption(spells, buffStates, buffs) then
+        return
+    end
+
+    if shouldWaitForCast() then
+        debugPrint("Waiting for cast to finish")
+        return
+    end
+
+    if (spells.arcaneSurgeReady and not isHighHasteActive()) then
+        safeQueueSpell("Arcane Surge", buffs, buffStates)
+        return
+    end
+
+    if (buffStates.clearcasting and missilesWorthCasting) then
+        safeQueueSpell("Arcane Missiles", buffs, buffStates)
+        return
+    end
+
+    if (spells.arcaneRuptureReady and not missilesWorthCasting and not state.isCastingArcaneRupture) then
+        safeQueueSpell("Arcane Rupture", buffs, buffStates)
+        return
+    end
+
+    if (missilesWorthCasting) then
+        safeQueueSpell("Arcane Missiles", buffs, buffStates)
+        return
+    end
+
+    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
+        if (spells.arcaneSurgeReady and not isHighHasteActive()) then
+            safeQueueSpell("Arcane Surge", buffs, buffStates)
+            return
+        elseif (spells.fireblastReady) then
+            safeQueueSpell("Fire Blast", buffs, buffStates)
+            return
+        end
+    end
+
+    safeQueueSpell("Arcane Missiles", buffs, buffStates)
+end
+
+local function getSpellbookSpellIdForName(spellName)
+    local bookType = BOOKTYPE_SPELL
+    local targetId = 0
+    for spellBookId = 1, MAX_SPELLS do
+        local name = GetSpellName(spellBookId, bookType)
+        if not name then break end
+        if name == spellName then
+            targetId = spellBookId
+            break
+        end
+    end
+    return targetId
+end
 
 local function checkManaWarning(buffs)
     local arcanePowerTimeLeft = getArcanePowerTimeLeft(buffs)
