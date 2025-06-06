@@ -2,7 +2,7 @@ SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
 --TODO:
--- Make sure Rupture gets queued first if something else is cast currently (like frost bolt or character is moving)
+-- Make sure Rupture gets queued first if something else is cast currently (like frost bolt or character is moving).
 -- Create a Haste check, find out how long Arcane missiles will be cast and calculate by arcane rupture buff if it is worth doing it.
 
 local MC = {
