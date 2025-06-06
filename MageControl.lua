@@ -371,7 +371,7 @@ end
 local function handleChannelInterruption(spells, buffStates, buffs)
     if (state.isChanneling and not buffStates.arcaneRupture and spells.arcaneRuptureReady) then
         ChannelStopCastingNextTick()
-        if (buffStates.arcaneSurgeReady) then
+        if (spells.arcaneSurgeReady) then
             safeQueueSpell("Arcane Surge", buffs, buffStates)
         else
             safeQueueSpell("Arcane Rupture", buffs, buffStates)
@@ -393,8 +393,8 @@ local function isMissilesWorthCasting(buffStates)
     local channelTime = 6 / (1 + hastePercent)
     local requiredTime = channelTime * 0.6
 
-    debugPrint("Required time for Arcane Missiles: %.1f%% vs %.1f%% remaining duration",
-                        requiredTime, remainingDuration)
+    debugPrint(string.format("Required time for Arcane Missiles: %.1fs vs %.1fs remaining duration",
+                        requiredTime, remainingDuration))
 
     return remainingDuration >= requiredTime
 end
@@ -445,40 +445,46 @@ CastArcaneAttack = function()
     end
 
     if shouldWaitForCast() then
-        debugPrint("Waiting for cast to finish")
+        debugPrint("Ignored input since current cast is more than .75s away from finishing")
         return
     end
 
     if (spells.arcaneSurgeReady and not isHighHasteActive()) then
+        debugPrint("Trying to cast Arcane Surge")
         safeQueueSpell("Arcane Surge", buffs, buffStates)
         return
     end
 
     if (buffStates.clearcasting and missilesWorthCasting) then
+        debugPrint("Clearcasting active and Arcane Missiles worth casting")
         safeQueueSpell("Arcane Missiles", buffs, buffStates)
         return
     end
 
     if (spells.arcaneRuptureReady and not missilesWorthCasting and not state.isCastingArcaneRupture) then
+        debugPrint("Arcane Rupture ready and not casting")
         safeQueueSpell("Arcane Rupture", buffs, buffStates)
         return
     end
 
     if (missilesWorthCasting) then
+        debugPrint("Arcane Missiles worth casting")
         safeQueueSpell("Arcane Missiles", buffs, buffStates)
         return
     end
 
     if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
         if (spells.arcaneSurgeReady and not isHighHasteActive()) then
+            debugPrint("Arcane Rupture is one GCD away, casting Arcane Surge")
             safeQueueSpell("Arcane Surge", buffs, buffStates)
             return
         elseif (spells.fireblastReady) then
+            debugPrint("Arcane Rupture is one GCD away, casting Fire Blast")
             safeQueueSpell("Fire Blast", buffs, buffStates)
             return
         end
     end
-
+    debugPrint("Defaulting to Arcane Missiles")
     safeQueueSpell("Arcane Missiles", buffs, buffStates)
 end
 
