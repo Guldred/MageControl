@@ -508,6 +508,7 @@ MageControlFrame:SetScript("OnEvent", function()
     
     elseif event == "SPELLCAST_STOP" then
         state.isCastingArcaneRupture = false
+        state.expectedCastFinishTime = GetTime()
         debugPrint("Spell cast stopped")
     
     elseif event == "SPELL_CAST_EVENT" then
