@@ -1,9 +1,7 @@
 SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
---TODO:
--- Make sure Rupture gets queued first if something else is cast currently (like frost bolt or character is moving).
--- Create a Haste check, find out how long Arcane missiles will be cast and calculate by arcane rupture buff if it is worth doing it.
+-- TODO: Make MC.HASTE.HASTE_THRESHOLD configurable in Options
 
 local MC = {
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
@@ -61,7 +59,14 @@ local MC = {
         ARCANE_MISSILES_RUPTURE_MULTIPLIER = 1.25,
         PROC_DAMAGE_COST_PERCENT = 2
     },
-    
+
+    HASTE = {
+        BASE_TELEPORT_CAST_TIME = 10.0,
+        TELEPORT_SPELLBOOK_ID = 0,
+        CURRENT_HASTE_PERCENT = 0,
+        HASTE_THRESHOLD = 30 -- Arcane Surge gets skipped when haste reaches this value
+    },
+
     DEBUG = false
 }
 
@@ -324,14 +329,52 @@ local function shouldWaitForCast()
     return timeToCastFinish > MC.TIMING.CAST_FINISH_THRESHOLD
 end
 
+local function calculateHastePercent()
+    GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+    GameTooltip:SetSpell(MC.HASTE.TELEPORT_SPELLBOOK_ID, "spell")
+
+    local castTimeText = nil
+    for i = 1, GameTooltip:NumLines() do
+        local line = getglobal("GameTooltipTextLeft"..i)
+        if line then
+            local text = line:GetText()
+            if text then
+                local castTime = strmatch(text, "(%d+%.?%d*) sec cast")
+                if castTime then
+                    castTimeText = tonumber(castTime)
+                    break
+                end
+            end
+        end
+    end
+
+    GameTooltip:Hide()
+
+    if castTimeText then
+        local actualCastTime = castTimeText
+        local hastePercent = ((MC.HASTE.BASE_TELEPORT_CAST_TIME - actualCastTime) / MC.HASTE.BASE_TELEPORT_CAST_TIME) * 100
+
+        MC.HASTE.CURRENT_HASTE_PERCENT = math.max(0, hastePercent)
+
+        debugPrint(string.format("Haste calculated: %.1f%% (Base: %.1fs, Current: %.1fs)",
+                MC.HASTE.CURRENT_HASTE_PERCENT, MC.HASTE.BASE_TELEPORT_CAST_TIME, actualCastTime))
+
+        return MC.HASTE.CURRENT_HASTE_PERCENT
+    else
+        debugPrint("Could not extract cast time from Tooltip")
+        return 10
+    end
+end
+
 local function isHighHasteActive()
-    return false
+    local isAboveHasteThreshold = calculateHastePercent() > MC.HASTE_THRESHOLD
+    return isAboveHasteThreshold
 end
 
 local function handleChannelInterruption(spells, buffStates, buffs)
     if (state.isChanneling and not buffStates.arcaneRupture and spells.arcaneRuptureReady) then
         ChannelStopCastingNextTick()
-        if (buffStates.arcaneSurgeReady) then
+        if (spells.arcaneSurgeReady) then
             safeQueueSpell("Arcane Surge", buffs, buffStates)
         else
             safeQueueSpell("Arcane Rupture", buffs, buffStates)
@@ -341,15 +384,62 @@ local function handleChannelInterruption(spells, buffStates, buffs)
     return false
 end
 
+local function isMissilesWorthCasting(buffStates)
+    local ruptureBuff = buffStates.arcaneRupture
+
+    if not ruptureBuff then
+        return false
+    end
+
+    local remainingDuration = ruptureBuff.duration
+    local hastePercent = calculateHastePercent() / 100
+    local channelTime = 6 / (1 + hastePercent)
+    local requiredTime = channelTime * 0.6
+
+    debugPrint(string.format("Required time for Arcane Missiles: %.1fs vs %.1fs remaining duration",
+                        requiredTime, remainingDuration))
+
+    return remainingDuration >= requiredTime
+end
+
+local function getFactionBasedPortSpell()
+    local faction, localizedFaction = UnitFactionGroup("player")
+    if (faction == "Alliance") then
+        return "Teleport: Stormwind"
+    else
+        return "Teleport: Orgrimmar"
+    end
+end
+
+local function getSpellbookSpellIdForName(spellName)
+    local bookType = BOOKTYPE_SPELL
+    local targetId = 0
+    for spellBookId = 1, MAX_SPELLS do
+        local name = GetSpellName(spellBookId, bookType)
+        if not name then break end
+        if name == spellName then
+            targetId = spellBookId
+            break
+        end
+    end
+    return targetId
+end
+
 CastArcaneAttack = function()
     if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
         state.globalCooldownActive = false
+    end
+
+    if (MC.HASTE.TELEPORT_SPELLBOOK_ID == 0) then
+        MC.HASTE.TELEPORT_SPELLBOOK_ID = getSpellbookSpellIdForName(getFactionBasedPortSpell())
+        debugPrint("MageControl set teleport spell ID: " .. MC.HASTE.TELEPORT_SPELLBOOK_ID)
     end
 
     local buffs = GetBuffs()
     local spells = getSpellAvailability()
     local buffStates = getCurrentBuffs(buffs)
     local slots = getActionBarSlots()
+    local missilesWorthCasting = isMissilesWorthCasting(buffStates)
 
     debugPrint("Evaluating spell priority")
 
@@ -358,40 +448,46 @@ CastArcaneAttack = function()
     end
 
     if shouldWaitForCast() then
-        debugPrint("Waiting for cast to finish")
+        debugPrint("Ignored input since current cast is more than .75s away from finishing")
         return
     end
 
-    if (spells.arcaneSurgeReady and not buffStates.arcanePower and not isHighHasteActive()) then
+    if (spells.arcaneSurgeReady and not isHighHasteActive()) then
+        debugPrint("Trying to cast Arcane Surge")
         safeQueueSpell("Arcane Surge", buffs, buffStates)
         return
     end
 
-    if (buffStates.clearcasting and buffStates.arcaneRupture) then
+    if (buffStates.clearcasting and missilesWorthCasting) then
+        debugPrint("Clearcasting active and Arcane Missiles worth casting")
         safeQueueSpell("Arcane Missiles", buffs, buffStates)
         return
     end
 
-    if (spells.arcaneRuptureReady and not buffStates.arcaneRupture and not state.isCastingArcaneRupture) then
+    if (spells.arcaneRuptureReady and not missilesWorthCasting and not state.isCastingArcaneRupture) then
+        debugPrint("Arcane Rupture ready and not casting")
         safeQueueSpell("Arcane Rupture", buffs, buffStates)
         return
     end
 
-    if (buffStates.arcaneRupture) then
+    if (missilesWorthCasting) then
+        debugPrint("Arcane Missiles worth casting")
         safeQueueSpell("Arcane Missiles", buffs, buffStates)
         return
     end
 
     if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
-        if (spells.arcaneSurgeReady and not buffStates.arcanePower and not isHighHasteActive()) then
+        if (spells.arcaneSurgeReady and not isHighHasteActive()) then
+            debugPrint("Arcane Rupture is one GCD away, casting Arcane Surge")
             safeQueueSpell("Arcane Surge", buffs, buffStates)
             return
         elseif (spells.fireblastReady) then
+            debugPrint("Arcane Rupture is one GCD away, casting Fire Blast")
             safeQueueSpell("Fire Blast", buffs, buffStates)
             return
         end
     end
-
+    debugPrint("Defaulting to Arcane Missiles")
     safeQueueSpell("Arcane Missiles", buffs, buffStates)
 end
 
@@ -455,6 +551,9 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         state.isRuptureRepeated = false
         checkChannelFinished()
         CastArcaneAttack()
+    elseif command == "haste" then
+        local haste = calculateHastePercent()
+        print("Current Haste: " .. haste)
     elseif command == "debug" then
         MC.DEBUG = not MC.DEBUG
         print("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
@@ -496,7 +595,7 @@ MageControlFrame:RegisterEvent("ADDON_LOADED")
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        print("MageControl loaded. Type /mc for commands.")
+        print("MageControl loaded.")
         
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
@@ -523,7 +622,7 @@ MageControlFrame:SetScript("OnEvent", function()
     
     elseif event == "SPELL_CAST_EVENT" then
         state.lastSpellCast = MC.SPELL_NAME[arg2] or "Unknown Spell"
-        debugPrint("Spell cast: " .. state.lastSpellCast)
+        debugPrint("Spell cast: " .. state.lastSpellCast .. " with ID: " .. arg2)
         state.globalCooldownActive = true
         state.globalCooldownStart = GetTime()
         state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
