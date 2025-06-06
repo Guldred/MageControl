@@ -62,6 +62,7 @@ local MC = {
         BASE_TELEPORT_CAST_TIME = 10.0,
         TELEPORT_SPELLBOOK_ID = 0,
         CURRENT_HASTE_PERCENT = 0,
+        HASTE_THRESHOLD = 30 -- Arcane Surge gets skipped when haste reaches this value
     },
 
     DEBUG = false
@@ -364,8 +365,8 @@ local function calculateHastePercent()
 end
 
 local function isHighHasteActive()
-    local isAboveThirtyHaste = calculateHastePercent() > 30
-    return isAboveThirtyHaste
+    local isAboveHasteThreshold = calculateHastePercent() > MC.HASTE_THRESHOLD
+    return isAboveHasteThreshold
 end
 
 local function handleChannelInterruption(spells, buffStates, buffs)
@@ -429,7 +430,7 @@ CastArcaneAttack = function()
 
     if (MC.HASTE.TELEPORT_SPELLBOOK_ID == 0) then
         MC.HASTE.TELEPORT_SPELLBOOK_ID = getSpellbookSpellIdForName(getFactionBasedPortSpell())
-        print("MageControl set teleport spell ID: " .. MC.HASTE.TELEPORT_SPELLBOOK_ID)
+        debugPrint("MageControl set teleport spell ID: " .. MC.HASTE.TELEPORT_SPELLBOOK_ID)
     end
 
     local buffs = GetBuffs()
