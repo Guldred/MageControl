@@ -399,9 +399,37 @@ local function isMissilesWorthCasting(buffStates)
     return remainingDuration >= requiredTime
 end
 
+local function getFactionBasedPortSpell()
+    local faction, localizedFaction = UnitFactionGroup("player")
+    if (faction == "Alliance") then
+        return "Teleport: Stormwind"
+    else
+        return "Teleport: Orgrimmar"
+    end
+end
+
+local function getSpellbookSpellIdForName(spellName)
+    local bookType = BOOKTYPE_SPELL
+    local targetId = 0
+    for spellBookId = 1, MAX_SPELLS do
+        local name = GetSpellName(spellBookId, bookType)
+        if not name then break end
+        if name == spellName then
+            targetId = spellBookId
+            break
+        end
+    end
+    return targetId
+end
+
 CastArcaneAttack = function()
     if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
         state.globalCooldownActive = false
+    end
+
+    if (MC.HASTE.TELEPORT_SPELLBOOK_ID == 0) then
+        MC.HASTE.TELEPORT_SPELLBOOK_ID = getSpellbookSpellIdForName(getFactionBasedPortSpell())
+        print("MageControl set teleport spell ID: " .. MC.HASTE.TELEPORT_SPELLBOOK_ID)
     end
 
     local buffs = GetBuffs()
@@ -454,20 +482,6 @@ CastArcaneAttack = function()
     safeQueueSpell("Arcane Missiles", buffs, buffStates)
 end
 
-local function getSpellbookSpellIdForName(spellName)
-    local bookType = BOOKTYPE_SPELL
-    local targetId = 0
-    for spellBookId = 1, MAX_SPELLS do
-        local name = GetSpellName(spellBookId, bookType)
-        if not name then break end
-        if name == spellName then
-            targetId = spellBookId
-            break
-        end
-    end
-    return targetId
-end
-
 local function checkManaWarning(buffs)
     local arcanePowerTimeLeft = getArcanePowerTimeLeft(buffs)
     if arcanePowerTimeLeft > 0 then
@@ -501,15 +515,6 @@ local function setActionBarSlot(spellType, slot)
         print("MageControl: " .. spellType .. " slot set to " .. slotNum)
     else
         print("MageControl: Unknown spell type. Use: FIREBLAST, ARCANE_RUPTURE, or ARCANE_SURGE")
-    end
-end
-
-local function getFactionBasedPortSpell()
-    local faction, localizedFaction = UnitFactionGroup("player")
-    if (faction == "Alliance") then
-        return "Teleport: Stormwind"
-    else
-        return "Teleport: Orgrimmar"
     end
 end
 
@@ -581,7 +586,7 @@ MageControlFrame:RegisterEvent("ADDON_LOADED")
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        MC.HASTE.TELEPORT_SPELLBOOK_ID = getSpellbookSpellIdForName(getFactionBasedPortSpell())
+        print("MageControl loaded.")
         
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
