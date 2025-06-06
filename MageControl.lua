@@ -3,6 +3,7 @@ SLASH_MAGECONTROL2 = "/mc"
 
 --TODO:
 -- Create a Haste check, find out how long Arcane missiles will be cast and calculate by arcane rupture buff if it is worth doing it.
+-- Might Use "Teleport: Stormwind" as base calculation since it does have 10 Second base cast time
 
 local MC = {
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
