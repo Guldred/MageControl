@@ -64,7 +64,7 @@ local MC = {
         BASE_TELEPORT_CAST_TIME = 10.0,
         TELEPORT_SPELLBOOK_ID = 0,
         CURRENT_HASTE_PERCENT = 0,
-        HASTE_THRESHOLD = 30 -- Arcane Surge gets skipped when haste reaches this value
+        HASTE_THRESHOLD = 30
     },
 
     DEBUG = false
@@ -87,6 +87,9 @@ local function initializeSettings()
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
             ARCANE_RUPTURE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_RUPTURE,
             ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE
+        }
+        MageControlDB.haste = {
+            HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
     end
 end
@@ -367,7 +370,7 @@ local function calculateHastePercent()
 end
 
 local function isHighHasteActive()
-    local isAboveHasteThreshold = calculateHastePercent() > MC.HASTE_THRESHOLD
+    local isAboveHasteThreshold = calculateHastePercent() > MageControlDB.haste.HASTE_THRESHOLD
     return isAboveHasteThreshold
 end
 
@@ -567,7 +570,10 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
             ARCANE_RUPTURE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_RUPTURE,
-            ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE
+            ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE,
+        }
+        MageControlDB.haste = {
+            HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
         print("MageControl: Configuration reset to defaults")
     else
