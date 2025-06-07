@@ -70,6 +70,18 @@ function MageControlOptions_CreateFrame()
     surgeEditBox:SetNumeric(true)
     surgeEditBox:SetMaxLetters(3)
 
+    local hasteThresholdLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    hasteThresholdLabel:SetPoint("TOPLEFT", surgeLabel, "BOTTOMLEFT", 0, -25)
+    hasteThresholdLabel:SetText("Haste Threshold:")
+
+    local hasteThresholdEditBox = CreateFrame("EditBox", "MageControlHasteThreshold", optionsFrame, "InputBoxTemplate")
+    hasteThresholdEditBox:SetWidth(50)
+    hasteThresholdEditBox:SetHeight(20)
+    hasteThresholdEditBox:SetPoint("LEFT", hasteThresholdLabel, "RIGHT", 10, 0)
+    hasteThresholdEditBox:SetAutoFocus(false)
+    hasteThresholdEditBox:SetNumeric(true)
+    hasteThresholdEditBox:SetMaxLetters(2)
+
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(80)
     saveButton:SetHeight(25)
@@ -103,14 +115,15 @@ function MageControlOptions_LoadValues()
     getglobal("MageControlFireblastSlot"):SetText(tostring(slots.FIREBLAST))
     getglobal("MageControlRuptureSlot"):SetText(tostring(slots.ARCANE_RUPTURE))
     getglobal("MageControlSurgeSlot"):SetText(tostring(slots.ARCANE_SURGE))
+    getglobal("MageControlHasteThreshold"):SetText(tostring(MageControlDB.haste.HASTE_THRESHOLD or 30))
 end
 
 function MageControlOptions_Save()
     local fireblastSlot = tonumber(getglobal("MageControlFireblastSlot"):GetText())
     local ruptureSlot = tonumber(getglobal("MageControlRuptureSlot"):GetText())
     local surgeSlot = tonumber(getglobal("MageControlSurgeSlot"):GetText())
+    local hasteThreshold = tonumber(getglobal("MageControlHasteThreshold"):GetText())
 
-    -- Validierung
     if not fireblastSlot or fireblastSlot < 1 or fireblastSlot > 120 then
         message("Invalid Fireblast slot. Must be between 1 and 120.")
         return
@@ -126,9 +139,15 @@ function MageControlOptions_Save()
         return
     end
 
+    if not hasteThreshold or hasteThreshold < 0 then
+        message("Invalid Haste Threshold. Must be a positive number.")
+        return
+    end
+
     MageControlDB.actionBarSlots.FIREBLAST = fireblastSlot
     MageControlDB.actionBarSlots.ARCANE_RUPTURE = ruptureSlot
     MageControlDB.actionBarSlots.ARCANE_SURGE = surgeSlot
+    MageControlDB.haste.HASTE_THRESHOLD = hasteThreshold
 
     print("MageControl: Settings saved!")
     optionsFrame:Hide()
@@ -138,4 +157,5 @@ function MageControlOptions_Reset()
     getglobal("MageControlFireblastSlot"):SetText("1")
     getglobal("MageControlRuptureSlot"):SetText("2")
     getglobal("MageControlSurgeSlot"):SetText("5")
+    getglobal("MageControlHasteThreshold"):SetText("30")
 end
