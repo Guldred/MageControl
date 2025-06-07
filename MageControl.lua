@@ -1,8 +1,6 @@
 SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
--- TODO: Make MC.HASTE.HASTE_THRESHOLD configurable in Options
-
 local MC = {
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
     
