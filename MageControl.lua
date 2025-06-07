@@ -480,7 +480,7 @@ CastArcaneAttack = function()
     end
 
     if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
-        if (spells.arcaneSurgeReady and not isHighHasteActive()) then
+        if (spells.arcaneSurgeReady) then
             debugPrint("Arcane Rupture is one GCD away, casting Arcane Surge")
             safeQueueSpell("Arcane Surge", buffs, buffStates)
             return
