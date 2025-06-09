@@ -126,7 +126,6 @@ end
 
 local function getModifiedSpellManaCost(spellName, buffStates)
     if buffStates and buffStates.clearcasting then
-        debugPrint("Clearcasting active - " .. spellName .. " costs 0 mana")
         return 0
     end
     
@@ -134,7 +133,6 @@ local function getModifiedSpellManaCost(spellName, buffStates)
     
     if spellName == "Arcane Missiles" and buffStates and buffStates.arcaneRupture then
         local modifiedCost = baseCost * MC.SPELL_MODIFIERS.ARCANE_MISSILES_RUPTURE_MULTIPLIER
-        debugPrint(string.format("Arcane Rupture active - Arcane Missiles cost: %.0f -> %.0f", baseCost, modifiedCost))
         return modifiedCost
     end
     
@@ -221,10 +219,7 @@ local function isSafeToCast(spellName, buffs, buffStates)
     end
     
     local projectedManaPercent = currentManaPercent - spellCostPercent - procCostPercent
-    
-    debugPrint(string.format("Safety Check - Current: %.1f%%, Spell: %.1f%%, AP Drain: %.1f%%, Proc: %.1f%%, Projected: %.1f%%", 
-        currentManaPercent, spellCostPercent, arcanePowerDrainPercent, procCostPercent, projectedManaPercent))
-    
+
     local safetyThreshold = MC.ARCANE_POWER.DEATH_THRESHOLD + MC.ARCANE_POWER.SAFETY_BUFFER
     
     if projectedManaPercent < safetyThreshold then
@@ -243,6 +238,7 @@ local function safeQueueSpell(spellName, buffs, buffStates)
     end
     
     if not isSafeToCast(spellName, buffs, buffStates) then
+        debugPrint("Not safe to cast: " .. spellName)
         return false
     end
     
@@ -357,12 +353,8 @@ local function calculateHastePercent()
 
         MC.HASTE.CURRENT_HASTE_PERCENT = math.max(0, hastePercent)
 
-        debugPrint(string.format("Haste calculated: %.1f%% (Base: %.1fs, Current: %.1fs)",
-                MC.HASTE.CURRENT_HASTE_PERCENT, MC.HASTE.BASE_TELEPORT_CAST_TIME, actualCastTime))
-
         return MC.HASTE.CURRENT_HASTE_PERCENT
     else
-        debugPrint("Could not extract cast time from Tooltip")
         return 10
     end
 end
@@ -396,9 +388,6 @@ local function isMissilesWorthCasting(buffStates)
     local hastePercent = calculateHastePercent() / 100
     local channelTime = 6 / (1 + hastePercent)
     local requiredTime = channelTime * 0.6
-
-    debugPrint(string.format("Required time for Arcane Missiles: %.1fs vs %.1fs remaining duration",
-                        requiredTime, remainingDuration))
 
     return remainingDuration >= requiredTime
 end
@@ -504,6 +493,15 @@ local function checkManaWarning(buffs)
     end
 end
 
+local function stopChannelAndCastSurge()
+    local spells = getSpellAvailability()
+
+    if (spells.arcaneSurgeReady) then
+      ChannelStopCastingNextTick()
+    QueueSpellByName("Arcane Surge")
+    end
+end
+
 local function showOptionsMenu()
     if MageControlOptionsFrame and MageControlOptionsFrame:IsVisible() then
         MageControlOptionsFrame:Hide()
@@ -552,6 +550,8 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         state.isRuptureRepeated = false
         checkChannelFinished()
         CastArcaneAttack()
+    elseif command == "surge" then
+        stopChannelAndCastSurge()
     elseif command == "haste" then
         local haste = calculateHastePercent()
         print("Current Haste: " .. haste)
@@ -605,24 +605,20 @@ MageControlFrame:SetScript("OnEvent", function()
         state.isChanneling = true
         state.channelFinishTime = GetTime() + ((arg1 - 0)/1000)
         state.expectedCastFinishTime = state.channelFinishTime
-        debugPrint("Channel started, finish time: " .. state.channelFinishTime)
     
     elseif event == "SPELLCAST_CHANNEL_STOP" then
         state.isChanneling = false
         state.expectedCastFinishTime = 0
-        debugPrint("Channel stopped")
     
     elseif event == "SPELLCAST_START" then
         if arg1 == "Arcane Rupture" then
             state.isCastingArcaneRupture = true
             state.expectedCastFinishTime = GetTime() + (arg2/1000)
-            debugPrint("Started casting Arcane Rupture")
         end
     
     elseif event == "SPELLCAST_STOP" then
         state.isCastingArcaneRupture = false
         state.expectedCastFinishTime = GetTime()
-        debugPrint("Spell cast stopped")
     
     elseif event == "SPELL_CAST_EVENT" then
         state.lastSpellCast = MC.SPELL_NAME[arg2] or "Unknown Spell"
@@ -630,17 +626,14 @@ MageControlFrame:SetScript("OnEvent", function()
         state.globalCooldownActive = true
         state.globalCooldownStart = GetTime()
         state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
-        debugPrint("Global cooldown activated")
     
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
         state.isChanneling = false
         state.isCastingArcaneRupture = false
         state.expectedCastFinishTime = 0
-        debugPrint("Spell failed/interrupted: " .. (state.lastSpellCast or "unknown"))
         
         if (state.lastSpellCast == "Arcane Rupture" and not state.isRuptureRepeated) then
             state.isRuptureRepeated = true
-            debugPrint("Retrying Arcane Rupture")
             CastArcaneAttack()
         end
     end
