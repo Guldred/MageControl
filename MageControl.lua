@@ -497,8 +497,8 @@ local function stopChannelAndCastSurge()
     local spells = getSpellAvailability()
 
     if (spells.arcaneSurgeReady) then
-      ChannelStopCastingNextTick()
-    QueueSpellByName("Arcane Surge")
+        ChannelStopCastingNextTick()
+        QueueSpellByName("Arcane Surge")
     end
 end
 
