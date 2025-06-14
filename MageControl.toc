@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: MageControl
-## Notes: Optimize Arcane Damage on a single button
+## Notes: Optimize Arcane Damage
 ## Author: Guldred
-## Version: 1.5.2
+## Version: 1.5.3
 ## SavedVariables: MageControlDB
 
 MageControl.lua

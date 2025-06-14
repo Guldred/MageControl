@@ -340,8 +340,9 @@ local function calculateHastePercent()
         if line then
             local text = line:GetText()
             if text then
-                local castTime = strmatch(text, "(%d+%.?%d*) sec cast")
+                local _, _, castTime = string.find(text, "(%d+%.?%d*) sec cast")
                 if castTime then
+                    debugPrint("Haste cast time found: " .. (castTime or "nil"))
                     castTimeText = tonumber(castTime)
                     break
                 end

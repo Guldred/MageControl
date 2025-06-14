@@ -9,10 +9,6 @@ function MageControlOptions_Show()
     optionsFrame:Show()
 end
 
-local function printMessage(text)
-    DEFAULT_CHAT_FRAME:AddMessage(text, 1.0, 1.0, 0.0)
-end
-
 function MageControlOptions_CreateFrame()
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
@@ -153,7 +149,7 @@ function MageControlOptions_Save()
     MageControlDB.actionBarSlots.ARCANE_SURGE = surgeSlot
     MageControlDB.haste.HASTE_THRESHOLD = hasteThreshold
 
-    printMessage("MageControl: Settings saved!")
+    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
     optionsFrame:Hide()
 end
 
