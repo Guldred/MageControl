@@ -96,7 +96,7 @@ local function getActionBarSlots()
     return MageControlDB.actionBarSlots
 end
 
-local function print(text)
+local function printMessage(text)
     DEFAULT_CHAT_FRAME:AddMessage(text, 1.0, 1.0, 0.0)
 end
 
@@ -116,7 +116,7 @@ local checkChannelFinished, CastArcaneAttack
 
 local function debugPrint(message)
     if MC.DEBUG then
-        print("MageControl Debug: " .. message)
+        printMessage("MageControl Debug: " .. message)
     end
 end
 
@@ -227,7 +227,7 @@ local function isSafeToCast(spellName, buffs, buffStates)
     local safetyThreshold = MC.ARCANE_POWER.DEATH_THRESHOLD + MC.ARCANE_POWER.SAFETY_BUFFER
     
     if projectedManaPercent < safetyThreshold then
-        print(string.format("|cffff0000MageControl WARNING: %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r",
+        printMessage(string.format("|cffff0000MageControl WARNING: %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r",
             spellName, projectedManaPercent))
         return false
     end
@@ -237,7 +237,7 @@ end
 
 local function safeQueueSpell(spellName, buffs, buffStates)
     if not spellName or spellName == "" then
-        print("MageControl: Invalid spell name")
+        printMessage("MageControl: Invalid spell name")
         return false
     end
     
@@ -492,7 +492,7 @@ local function checkManaWarning(buffs)
         local projectedMana = currentMana - (arcanePowerTimeLeft * MC.ARCANE_POWER.MANA_DRAIN_PER_SECOND)
         
         if projectedMana < 15 and projectedMana > 10 then
-            print("|cffffff00MageControl: LOW MANA WARNING - " .. math.floor(projectedMana) .. "% projected!|r")
+            printMessage("|cffffff00MageControl: LOW MANA WARNING - " .. math.floor(projectedMana) .. "% projected!|r")
         end
     end
 end
@@ -517,25 +517,25 @@ end
 local function setActionBarSlot(spellType, slot)
     local slotNum = tonumber(slot)
     if not slotNum or not isValidActionSlot(slotNum) then
-        print("MageControl: Invalid slot number. Must be between 1 and 120.")
+        printMessage("MageControl: Invalid slot number. Must be between 1 and 120.")
         return
     end
     
     spellType = string.upper(spellType)
     if MageControlDB.actionBarSlots[spellType] then
         MageControlDB.actionBarSlots[spellType] = slotNum
-        print("MageControl: " .. spellType .. " slot set to " .. slotNum)
+        printMessage("MageControl: " .. spellType .. " slot set to " .. slotNum)
     else
-        print("MageControl: Unknown spell type. Use: FIREBLAST, ARCANE_RUPTURE, or ARCANE_SURGE")
+        printMessage("MageControl: Unknown spell type. Use: FIREBLAST, ARCANE_RUPTURE, or ARCANE_SURGE")
     end
 end
 
 local function showCurrentConfig()
     local slots = getActionBarSlots()
-    print("MageControl - Current Configuration:")
-    print("  Fireblast: Slot " .. slots.FIREBLAST)
-    print("  Arcane Rupture: Slot " .. slots.ARCANE_RUPTURE)
-    print("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
+    printMessage("MageControl - Current Configuration:")
+    printMessage("  Fireblast: Slot " .. slots.FIREBLAST)
+    printMessage("  Arcane Rupture: Slot " .. slots.ARCANE_RUPTURE)
+    printMessage("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
 end
 
 SlashCmdList["MAGECONTROL"] = function(msg)
@@ -558,10 +558,10 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         stopChannelAndCastSurge()
     elseif command == "haste" then
         local haste = calculateHastePercent()
-        print("Current Haste: " .. haste)
+        printMessage("Current Haste: " .. haste)
     elseif command == "debug" then
         MC.DEBUG = not MC.DEBUG
-        print("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
+        printMessage("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
     elseif command == "options" or command == "config" then
         showOptionsMenu()
     elseif command == "set" and args[2] and args[3] then
@@ -577,16 +577,16 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         MageControlDB.haste = {
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
-        print("MageControl: Configuration reset to defaults")
+        printMessage("MageControl: Configuration reset to defaults")
     else
-        print("MageControl Commands:")
-        print("  /mc arcane - Cast arcane attack sequence")
-        print("  /mc explosion - Queue arcane explosion")
-        print("  /mc options - Show options menu")
-        print("  /mc set <spell> <slot> - Set actionbar slot")
-        print("  /mc show - Show current configuration")
-        print("  /mc reset - Reset to default slots")
-        print("  /mc debug - Toggle debug mode")
+        printMessage("MageControl Commands:")
+        printMessage("  /mc arcane - Cast arcane attack sequence")
+        printMessage("  /mc explosion - Queue arcane explosion")
+        printMessage("  /mc options - Show options menu")
+        printMessage("  /mc set <spell> <slot> - Set actionbar slot")
+        printMessage("  /mc show - Show current configuration")
+        printMessage("  /mc reset - Reset to default slots")
+        printMessage("  /mc debug - Toggle debug mode")
     end
 end
 
@@ -603,7 +603,7 @@ MageControlFrame:RegisterEvent("ADDON_LOADED")
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        print("MageControl loaded.")
+        printMessage("MageControl loaded.")
         
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
