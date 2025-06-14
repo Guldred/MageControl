@@ -10,6 +10,8 @@ function MageControlOptions_Show()
 end
 
 function MageControlOptions_CreateFrame()
+    if optionsFrame then return end -- Prevent duplicate creation
+
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
     optionsFrame:SetHeight(250)
@@ -25,6 +27,9 @@ function MageControlOptions_CreateFrame()
     optionsFrame:RegisterForDrag("LeftButton")
     optionsFrame:SetScript("OnDragStart", function() this:StartMoving() end)
     optionsFrame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+
+    -- [ESC] to close
+    tinsert(UISpecialFrames, "MageControlOptionsFrame")
 
     local title = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOP", optionsFrame, "TOP", 0, -15)
@@ -46,6 +51,17 @@ function MageControlOptions_CreateFrame()
     fireblastEditBox:SetNumeric(true)
     fireblastEditBox:SetMaxLetters(3)
 
+    fireblastEditBox:SetScript("OnTextChanged", function()
+        local value = tonumber(this:GetText())
+        if value and (value < 1 or value > 120) then
+            this:SetTextColor(1, 0, 0)
+        else
+            this:SetTextColor(1, 1, 1)
+        end
+    end)
+
+    fireblastEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
+
     local ruptureLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     ruptureLabel:SetPoint("TOPLEFT", fireblastLabel, "BOTTOMLEFT", 0, -25)
     ruptureLabel:SetText("Arcane Rupture Slot:")
@@ -57,6 +73,16 @@ function MageControlOptions_CreateFrame()
     ruptureEditBox:SetAutoFocus(false)
     ruptureEditBox:SetNumeric(true)
     ruptureEditBox:SetMaxLetters(3)
+    ruptureEditBox:SetScript("OnTextChanged", function()
+        local value = tonumber(this:GetText())
+        if value and (value < 1 or value > 120) then
+            this:SetTextColor(1, 0, 0)
+        else
+            this:SetTextColor(1, 1, 1)
+        end
+    end)
+
+    ruptureEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
 
     local surgeLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     surgeLabel:SetPoint("TOPLEFT", ruptureLabel, "BOTTOMLEFT", 0, -25)
@@ -69,6 +95,15 @@ function MageControlOptions_CreateFrame()
     surgeEditBox:SetAutoFocus(false)
     surgeEditBox:SetNumeric(true)
     surgeEditBox:SetMaxLetters(3)
+    surgeEditBox:SetScript("OnTextChanged", function()
+        local value = tonumber(this:GetText())
+        if value and (value < 1 or value > 120) then
+            this:SetTextColor(1, 0, 0)
+        else
+            this:SetTextColor(1, 1, 1)
+        end
+    end)
+    surgeEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
 
     local hasteThresholdLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     hasteThresholdLabel:SetPoint("TOPLEFT", surgeLabel, "BOTTOMLEFT", 0, -25)
@@ -81,6 +116,15 @@ function MageControlOptions_CreateFrame()
     hasteThresholdEditBox:SetAutoFocus(false)
     hasteThresholdEditBox:SetNumeric(true)
     hasteThresholdEditBox:SetMaxLetters(2)
+    hasteThresholdEditBox:SetScript("OnTextChanged", function()
+        local value = tonumber(this:GetText())
+        if value and value < 0 then
+            this:SetTextColor(1, 0, 0)
+        else
+            this:SetTextColor(1, 1, 1)
+        end
+    end)
+    hasteThresholdEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
 
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(80)
@@ -94,7 +138,10 @@ function MageControlOptions_CreateFrame()
     resetButton:SetHeight(25)
     resetButton:SetPoint("BOTTOM", optionsFrame, "BOTTOM", 0, 20)
     resetButton:SetText("Reset")
-    resetButton:SetScript("OnClick", MageControlOptions_Reset)
+    resetButton:SetScript("OnClick", function()
+        MageControlOptions_Reset()
+        MageControlOptions_Save()
+    end)
 
     local cancelButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     cancelButton:SetWidth(80)
@@ -110,19 +157,30 @@ function MageControlOptions_LoadValues()
     if not MageControlDB or not MageControlDB.actionBarSlots then
         return
     end
+    if not MageControlDB.haste then
+        MageControlDB.haste = { HASTE_THRESHOLD = 30 }
+    end
 
     local slots = MageControlDB.actionBarSlots
-    getglobal("MageControlFireblastSlot"):SetText(tostring(slots.FIREBLAST))
-    getglobal("MageControlRuptureSlot"):SetText(tostring(slots.ARCANE_RUPTURE))
-    getglobal("MageControlSurgeSlot"):SetText(tostring(slots.ARCANE_SURGE))
-    getglobal("MageControlHasteThreshold"):SetText(tostring(MageControlDB.haste.HASTE_THRESHOLD or 30))
+    local fBox = getglobal("MageControlFireblastSlot")
+    local rBox = getglobal("MageControlRuptureSlot")
+    local sBox = getglobal("MageControlSurgeSlot")
+    local hBox = getglobal("MageControlHasteThreshold")
+    if fBox then fBox:SetText(tostring(slots.FIREBLAST or 1)) end
+    if rBox then rBox:SetText(tostring(slots.ARCANE_RUPTURE or 2)) end
+    if sBox then sBox:SetText(tostring(slots.ARCANE_SURGE or 5)) end
+    if hBox then hBox:SetText(tostring(MageControlDB.haste.HASTE_THRESHOLD or 30)) end
 end
 
 function MageControlOptions_Save()
-    local fireblastSlot = tonumber(getglobal("MageControlFireblastSlot"):GetText())
-    local ruptureSlot = tonumber(getglobal("MageControlRuptureSlot"):GetText())
-    local surgeSlot = tonumber(getglobal("MageControlSurgeSlot"):GetText())
-    local hasteThreshold = tonumber(getglobal("MageControlHasteThreshold"):GetText())
+    local fBox = getglobal("MageControlFireblastSlot")
+    local rBox = getglobal("MageControlRuptureSlot")
+    local sBox = getglobal("MageControlSurgeSlot")
+    local hBox = getglobal("MageControlHasteThreshold")
+    local fireblastSlot = tonumber(fBox and fBox:GetText() or "1") or 1
+    local ruptureSlot = tonumber(rBox and rBox:GetText() or "2") or 2
+    local surgeSlot = tonumber(sBox and sBox:GetText() or "5") or 5
+    local hasteThreshold = tonumber(hBox and hBox:GetText() or "30") or 30
 
     if not fireblastSlot or fireblastSlot < 1 or fireblastSlot > 120 then
         message("Invalid Fireblast slot. Must be between 1 and 120.")
@@ -144,18 +202,34 @@ function MageControlOptions_Save()
         return
     end
 
-    MageControlDB.actionBarSlots.FIREBLAST = fireblastSlot
-    MageControlDB.actionBarSlots.ARCANE_RUPTURE = ruptureSlot
-    MageControlDB.actionBarSlots.ARCANE_SURGE = surgeSlot
-    MageControlDB.haste.HASTE_THRESHOLD = hasteThreshold
+    if not MageControlDB.actionBarSlots then MageControlDB.actionBarSlots = {} end
+    if not MageControlDB.haste then MageControlDB.haste = {} end
+
+    MageControlDB.actionBarSlots.FIREBLAST = math.floor(fireblastSlot)
+    MageControlDB.actionBarSlots.ARCANE_RUPTURE = math.floor(ruptureSlot)
+    MageControlDB.actionBarSlots.ARCANE_SURGE = math.floor(surgeSlot)
+    MageControlDB.haste.HASTE_THRESHOLD = math.floor(hasteThreshold)
 
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
-    optionsFrame:Hide()
+    if optionsFrame then optionsFrame:Hide() end
 end
 
 function MageControlOptions_Reset()
-    getglobal("MageControlFireblastSlot"):SetText("1")
-    getglobal("MageControlRuptureSlot"):SetText("2")
-    getglobal("MageControlSurgeSlot"):SetText("5")
-    getglobal("MageControlHasteThreshold"):SetText("30")
+    if MageControlDB and MageControlDB.actionBarSlots then
+        MageControlDB.actionBarSlots.FIREBLAST = 1
+        MageControlDB.actionBarSlots.ARCANE_RUPTURE = 2
+        MageControlDB.actionBarSlots.ARCANE_SURGE = 5
+    end
+    if MageControlDB and MageControlDB.haste then
+        MageControlDB.haste.HASTE_THRESHOLD = 30
+    end
+
+    local fBox = getglobal("MageControlFireblastSlot")
+    local rBox = getglobal("MageControlRuptureSlot")
+    local sBox = getglobal("MageControlSurgeSlot")
+    local hBox = getglobal("MageControlHasteThreshold")
+    if fBox then fBox:SetText("1") end
+    if rBox then rBox:SetText("2") end
+    if sBox then sBox:SetText("5") end
+    if hBox then hBox:SetText("30") end
 end
