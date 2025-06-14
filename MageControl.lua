@@ -96,6 +96,10 @@ local function getActionBarSlots()
     return MageControlDB.actionBarSlots
 end
 
+local function print(text)
+    DEFAULT_CHAT_FRAME:AddMessage(text, 1.0, 1.0, 0.0)
+end
+
 local state = {
     isChanneling = false,
     channelFinishTime = 0,
