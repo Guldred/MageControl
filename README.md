@@ -1,48 +1,54 @@
 # Arcane Mage Helper
 
-An optimized World of Warcraft addon specifically designed for Arcane Mages playing on the Turtle WoW private server. This addon enhances your single-target damage output by efficiently managing spell rotations and reducing downtime.
+_A high-performance World of Warcraft addon for Arcane Mages on Turtle WoW._
+
+> **This addon enhances your single-target damage output by efficiently managing spell rotations and reducing downtime.**
 
 ---
 
-## Features
+## ✨ Features
 
-* **Single Target Rotation Optimization**: Execute the perfect Arcane rotation to maximize your DPS.
-* **Arcane Explosion Queueing**: Efficiently manage your Arcane Explosion casts, ensuring minimal downtime.
-
----
-
-## Commands
-
-| Command         | Description                                                                                                                   |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `/mc options`   | Opens settings to configure your spell positions on the action bar (essential for tracking spell cooldowns and availability). |
-| `/mc arcane`    | Initiates the optimized single-target Arcane spell rotation.                                                                  |
-| `/mc explosion` | Initiates Arcane Explosion queuing for efficient AoE casting.                                                                 |
+- **Optimal Arcane DPS Rotation** — Single-target spell sequence to maximize throughput.
+- **Instant Arcane Explosion Queuing** — Fast AoE casting with minimal downtime.
+- **User-Friendly UI Options** — Configure your spell action bar slots with a native options panel.
 
 ---
 
-## Dependencies
+## ⚡ Commands
 
-**Required**:
-
-* [`nampower`](https://github.com/pepopo978/nampower): Ensures efficient spell queuing, significantly reducing dead-time between spells by leveraging its Queue Spell functionality. This dependency must be loaded for proper addon operation.
+| Command         | Description                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| `/mc options`   | Opens settings to configure action bar spell slots.                                             |
+| `/mc arcane`    | Starts the optimized single-target Arcane rotation.                                             |
+| `/mc explosion` | Queues Arcane Explosion for instant AoE.                                                        |
 
 ---
 
-## Installation
+## 🔗 Dependency
+
+This addon **requires** [`nampower`](https://github.com/pepopo978/nampower).
+
+_Nampower is needed for instant spell queuing and zero-lag rotations.  
+Please ensure it is installed before use._
+
+---
+
+## 📦 Installation
 
 1. Download the addon folder and place it into your World of Warcraft interface addons directory:
-
-   ```
-   /Interface/AddOns/
-   ```
-2. Ensure `nampower` is installed and active.
-3. Restart WoW or reload your UI to activate the addon.
+    ```
+    Interface/AddOns/
+    ```
+2. Install [`nampower`](https://github.com/pepopo978/nampower).
+3. Restart WoW or use `/reloadui`.
 
 ---
 
-## Support & Feedback
+## 🆘 Support
 
-For any issues, feature requests, or general feedback, please open an issue in the repository or contact the developer directly.
+- **Bugs & Requests:**  
+  Open an [issue](../../issues) on GitHub for bug reports or feature suggestions.
 
-Happy casting!
+---
+
+> _Happy casting, and may your Clearcasting procs never run dry!_
