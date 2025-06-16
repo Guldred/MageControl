@@ -66,6 +66,9 @@ local MC = {
         HASTE_THRESHOLD = 30
     },
 
+    CURRENT_BUFFS = {
+    },
+
     DEBUG = false
 }
 
@@ -184,7 +187,13 @@ local function GetBuffs()
 
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
-                table.insert(buffs, { name = buffName, duration = duration })
+                table.insert(buffs, {
+                    name = buffName,
+                    timeFinished = GetTime() + duration,
+                    duration = function(self)
+                        return self.timeFinished - GetTime()
+                    end
+                })
             end
         end
     end
@@ -199,7 +208,13 @@ local function GetBuffs()
 
             if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
-                table.insert(buffs, { name = buffName, duration = duration })
+                table.insert(buffs, {
+                    name = buffName,
+                    timeFinished = GetTime() + duration,
+                    duration = function(self)
+                        return self.timeFinished - GetTime()
+                    end
+                })
             end
         end
     end
@@ -220,7 +235,7 @@ end
 
 local function getArcanePowerTimeLeft(buffs)
     local arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
-    return arcanePower and arcanePower.duration or 0
+    return arcanePower and arcanePower:duration() or 0
 end
 
 local function isSafeToCast(spellName, buffs, buffStates)
@@ -292,7 +307,7 @@ end
 local function QueueArcaneExplosion()
     local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - state.globalCooldownStart)
     if(gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD) then
-        local buffs = GetBuffs()
+        local buffs = MC.CURRENT_BUFFS
         local buffStates = getCurrentBuffs(buffs)
         safeQueueSpell("Arcane Explosion", buffs, buffStates)
     end
@@ -411,7 +426,8 @@ local function isMissilesWorthCasting(buffStates)
         return false
     end
 
-    local remainingDuration = ruptureBuff.duration
+    local remainingDuration = ruptureBuff:duration()
+    printMessage("Arcane Rupture remaining duration: " .. remainingDuration)
     local hastePercent = calculateHastePercent() / 100
     local channelTime = 6 / (1 + hastePercent)
     local requiredTime = channelTime * 0.6
@@ -452,7 +468,7 @@ CastArcaneAttack = function()
         debugPrint("MageControl set teleport spell ID: " .. MC.HASTE.TELEPORT_SPELLBOOK_ID)
     end
 
-    local buffs = GetBuffs()
+    local buffs = MC.CURRENT_BUFFS
     local spells = getSpellAvailability()
     local buffStates = getCurrentBuffs(buffs)
     local slots = getActionBarSlots()
@@ -580,7 +596,7 @@ local function HasAmplifyMagic()
 end
 
 local function arcaneRotation()
-    local buffs = GetBuffs()
+    local buffs = MC.CURRENT_BUFFS
     checkManaWarning(buffs)
     state.isRuptureRepeated = false
     checkChannelFinished()
@@ -682,6 +698,7 @@ MageControlFrame:RegisterEvent("SPELL_CAST_EVENT")
 MageControlFrame:RegisterEvent("SPELLCAST_FAILED")
 MageControlFrame:RegisterEvent("SPELLCAST_INTERRUPTED")
 MageControlFrame:RegisterEvent("ADDON_LOADED")
+MageControlFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
@@ -724,5 +741,7 @@ MageControlFrame:SetScript("OnEvent", function()
             state.isRuptureRepeated = true
             CastArcaneAttack()
         end
+    elseif event == "PLAYER_AURAS_CHANGED" then
+        MC.CURRENT_BUFFS = GetBuffs()
     end
 end)
