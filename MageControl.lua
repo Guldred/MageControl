@@ -179,7 +179,7 @@ local function GetBuffs()
         if buffIndex >= 0 then
             GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
             GameTooltip:SetPlayerBuff(buffIndex)
-            local buffName = GameTooltipTextLeft1:GetText() or "Unbekannt"
+            local buffName = GameTooltipTextLeft1:GetText() or "Unknown"
             GameTooltip:Hide()
 
             if relevantBuffs[buffName] then
@@ -579,28 +579,6 @@ local function HasAmplifyMagic()
     return false
 end
 
-local function AmpMagicOnTargetIfPossible()
-    if not UnitExists("target") then
-        printMessage("Du hast gerade kein Ziel.")
-        return
-    end
-
-    local hasAmp = HasAmplifyMagic()
-
-    local lvl = UnitLevel("target")
-    if lvl == -1 then
-        debugPrint("Boss Level")
-    elseif lvl <= 62 then
-        debugPrint("Target-Level 62 or below. Level is: ".. lvl)
-        if hasAmp then
-            debugPrint("Amplify Magic is already applied on target.")
-        else
-            debugPrint("Casting Amplify Magic on target.")
-            QueueSpellByName("Amplify Magic")
-        end
-    end
-end
-
 local function arcaneRotation()
     local buffs = GetBuffs()
     checkManaWarning(buffs)
@@ -673,8 +651,6 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         arcaneIncantagos()
     elseif command == "trinket" then
         activateTrinketAndAP()
-    elseif command == "amp" then
-        AmpMagicOnTargetIfPossible()
     elseif command == "reset" then
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
