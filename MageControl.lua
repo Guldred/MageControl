@@ -19,7 +19,8 @@ local MC = {
         ARCANE_RUPTURE = 51954,
         FROSTBOLT_1 = 116,
         FROSTBOLT = 25304,
-        FIREBALL = 25306
+        FIREBALL = 25306,
+        AMP_MAGIC_DEBUFF = 8455
     },
 
     DEFAULT_ACTIONBAR_SLOT = {
@@ -178,7 +179,7 @@ local function GetBuffs()
         if buffIndex >= 0 then
             GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
             GameTooltip:SetPlayerBuff(buffIndex)
-            local buffName = GameTooltipTextLeft1:GetText() or "Unbekannt"
+            local buffName = GameTooltipTextLeft1:GetText() or "Unknown"
             GameTooltip:Hide()
 
             if relevantBuffs[buffName] then
@@ -561,6 +562,65 @@ local function showCurrentConfig()
     printMessage("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
 end
 
+local function HasAmplifyMagic()
+    if not UnitExists("target") then return false end
+
+    for i = 1, 30 do
+        local name, _, _, id = UnitDebuff("target", i)
+        if not id then
+            break
+        end
+        debugPrint("Checking debuff: " .. name .. " " .. id)
+        if id == MC.SPELL_ID.AMP_MAGIC_DEBUFF then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function arcaneRotation()
+    local buffs = GetBuffs()
+    checkManaWarning(buffs)
+    state.isRuptureRepeated = false
+    checkChannelFinished()
+    CastArcaneAttack()
+end
+
+local function arcaneIncantagos()
+    local targetName = UnitName("target")
+    if not targetName or targetName == "" then
+        return
+    end
+
+    local targetSpellMap = {
+        ["Heroic Training Dummy"] = "Fireball",
+        ["Expert Training Dummy"] = "Frostbolt",
+        ["Red Affinity"] = "Fireball",
+        ["Blue Affinity"] = "Frostbolt"
+    }
+
+    local spellToQueue = targetSpellMap[targetName]
+    if spellToQueue then
+        QueueSpellByName(spellToQueue)
+    else
+        arcaneRotation()
+    end
+end
+
+local function activateTrinketAndAP()
+    local start, duration, enabled = GetInventoryItemCooldown("player", 14)
+    if enabled == 0 then
+        debugPrint("Trinket has no activation!")
+    elseif duration == 0 then
+        debugPrint("Activating Trinket")
+        UseInventoryItem(14)
+    else
+        debugPrint("Activating Arcane Power")
+        QueueSpellByName("Arcane Power")
+    end
+end
+
 SlashCmdList["MAGECONTROL"] = function(msg)
     local args = {}
     for word in string.gfind(msg, "%S+") do
@@ -572,11 +632,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     if command == "explosion" then
         QueueArcaneExplosion()
     elseif command == "arcane" then
-        local buffs = GetBuffs()
-        checkManaWarning(buffs)
-        state.isRuptureRepeated = false
-        checkChannelFinished()
-        CastArcaneAttack()
+        arcaneRotation()
     elseif command == "surge" then
         stopChannelAndCastSurge()
     elseif command == "haste" then
@@ -591,6 +647,10 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         setActionBarSlot(args[2], args[3])
     elseif command == "show" then
         showCurrentConfig()
+    elseif command == "arcaneinc" then
+        arcaneIncantagos()
+    elseif command == "trinket" then
+        activateTrinketAndAP()
     elseif command == "reset" then
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
