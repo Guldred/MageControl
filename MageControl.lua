@@ -427,7 +427,6 @@ local function isMissilesWorthCasting(buffStates)
     end
 
     local remainingDuration = ruptureBuff:duration()
-    printMessage("Arcane Rupture remaining duration: " .. remainingDuration)
     local hastePercent = calculateHastePercent() / 100
     local channelTime = 6 / (1 + hastePercent)
     local requiredTime = channelTime * 0.6
