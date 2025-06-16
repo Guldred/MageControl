@@ -38,6 +38,19 @@ local MC = {
         ARCANE_RUPTURE = "Arcane Rupture"
     },
 
+    BUFF_ICON_PATH = {
+        ["Interface\\Icons\\Spell_Shadow_ManaBurn"] = "CLEARCASTING",
+        ["Interface\\Icons\\Spell_Nature_StormReach"] = "TEMPORAL_CONVERGENCE",
+        ["Interface\\Icons\\Spell_Nature_Lightning"] = "ARCANE_POWER",
+        ["Interface\\Icons\\Spell_Arcane_Blast"] = "ARCANE_RUPTURE"
+    },
+
+    BUFF_ID_TO_SPELL_NAME = {
+        [12536] = "Clearcasting",
+        [51961] = "Temporal Convergence",
+        [12042] = "Arcane Power",
+    },
+
     ARCANE_POWER = {
         MANA_DRAIN_PER_SECOND = 1,
         DEATH_THRESHOLD = 10,
@@ -207,6 +220,74 @@ local function GetBuffs()
     state.buffsCache = buffs
     state.buffsCacheTime = now
     return buffs
+end
+
+local function GetPlayerBuffs()
+    --[[    CancelPlayerBuff(buffIndex)   - Removes a specific buff from the player.
+            CancelTrackingBuff()   - Cancels your current tracking buff (Find Minerals etc.)
+            GetPlayerBuff(buffId, buffFilter)   - Retrieves info about a certain effect (beneficial, harmful or passive)
+            GetPlayerBuffApplications(buffIndex)   - Retrieves the number of applications of a debuff or buff.
+            GetPlayerBuffDispelType(buffIndex)   - Get the debuff type for a player debuff ("Magic", "Curse", "Disease", or "Poison")
+            GetPlayerBuffTexture(buffIndex)   - Retrieves the texture identifier for a certain buff
+            GetPlayerBuffTimeLeft(buffIndex)   - Retrieves how long a buff will last before expiring
+            GetWeaponEnchantInfo()   - Return information about main and offhand weapon enchantments.
+            UnitBuff("unit", index[, showCastable])   - Retrieves info about a buff of a certain unit.
+            UnitDebuff("unit", index[, showDispellable])   - Retrieves info about a debuff of a certain unit.
+    ]]
+
+    local buffs = {}
+    for i = 1, 32 do
+        local name, rank, id, count, debuffType, duration, expirationTime, casterUnit = UnitBuff("player", i)
+        if not id then
+            break
+        end
+        if name then
+            local duration = GetPlayerBuffTimeLeft(i, "HELPFUL|PASSIVE")
+            printMessage( "Name: " .. (name or "nil") .. ", ID: " .. (id or "nil") .. ", Duration: " .. (duration or "Nix drin"))
+        end
+    end
+
+    --Buffs
+    --[[for i = 1, 30 do
+        local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
+        if buffIndex > 0 then
+            local name = UnitBuff("player", buffIndex)
+            printMessage("Buff index: " .. buffIndex)
+            if MC.BUFF_ICON_PATH[name] then
+                local foundName = MC.BUFF_ICON_PATH[name]
+                local duration = GetPlayerBuffTimeLeft(i, "HELPFUL|PASSIVE")
+                printMessage("Relevant Buff Found: " .. MC.BUFF_NAME[foundName] .. " with duration: " .. (duration or "Nix drin"))
+            end
+        end
+    end]]
+
+    -- Debuffs
+    -- Track:
+    -- -MC.BUFF_NAME.ARCANE_RUPTURE
+    for i = 1, 24 do
+        local name = UnitDebuff("player", i)
+        if not name then
+            break
+        end
+        local spellName = MC.BUFF_ICON_PATH[name]
+        local duration = GetPlayerBuffTimeLeft(i, "HARMFUL")
+        printMessage("Debuff name: " .. (spellName or "nil") .. ", Duration: " .. (duration or "Nix drin"))
+    end
+
+    for i = 1, 30 do
+        local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
+        if buffIndex > 0 then
+            local name = UnitBuff("player", buffIndex)
+            printMessage("Buff index: " .. buffIndex)
+            if MC.BUFF_ICON_PATH[name] then
+                local foundName = MC.BUFF_ICON_PATH[name]
+                local duration = GetPlayerBuffTimeLeft(i, "HELPFUL|PASSIVE")
+                printMessage("Relevant Buff Found: " .. MC.BUFF_NAME[foundName] .. " with duration: " .. (duration or "Nix drin"))
+            end
+        end
+    end
+
+
 end
 
 local function findBuff(buffs, buffName)
@@ -651,6 +732,8 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         arcaneIncantagos()
     elseif command == "trinket" then
         activateTrinketAndAP()
+    elseif command == "showbuffs" then
+        GetPlayerBuffs()
     elseif command == "reset" then
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
@@ -725,4 +808,7 @@ MageControlFrame:SetScript("OnEvent", function()
             CastArcaneAttack()
         end
     end
+
+
+
 end)
