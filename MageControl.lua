@@ -172,7 +172,7 @@ local function getSpellCostPercent(spellName, buffStates)
 end
 
 -- Buff parsing: Caching for 0.1s, updated only if needed
-local function GetBuffs()
+local function getBuffs()
     local now = GetTime()
     if state.buffsCache and (now - state.buffsCacheTime < 0.1) then
         debugPrint("Returning Cached buffs!")
@@ -308,7 +308,7 @@ local function getCurrentBuffs(buffs)
     }
 end
 
-local function QueueArcaneExplosion()
+local function queueArcaneExplosion()
     local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - state.globalCooldownStart)
     if(gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD) then
         local buffs = MC.CURRENT_BUFFS
@@ -463,7 +463,7 @@ local function getSpellbookSpellIdForName(spellName)
     return targetId
 end
 
-CastArcaneAttack = function()
+executeArcaneRotation = function()
     if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
         state.globalCooldownActive = false
     end
@@ -583,7 +583,7 @@ local function showCurrentConfig()
     printMessage("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
 end
 
-local function HasAmplifyMagic()
+local function hasAmplifyMagic()
     if not UnitExists("target") then return false end
 
     for i = 1, 30 do
@@ -605,7 +605,7 @@ local function arcaneRotation()
     checkManaWarning(buffs)
     state.isRuptureRepeated = false
     checkChannelFinished()
-    CastArcaneAttack()
+    executeArcaneRotation()
 end
 
 local function arcaneIncantagos()
@@ -651,7 +651,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     local command = args[1] or ""
 
     if command == "explosion" then
-        QueueArcaneExplosion()
+        queueArcaneExplosion()
     elseif command == "arcane" then
         arcaneRotation()
     elseif command == "surge" then
@@ -746,10 +746,10 @@ MageControlFrame:SetScript("OnEvent", function()
         if (state.lastSpellCast == "Arcane Rupture" and not state.isRuptureRepeated) then
             state.isRuptureRepeated = true
             debugPrint("Arcane Rupture failed, repeating cast")
-            CastArcaneAttack()
+            executeArcaneRotation()
         end
     elseif event == "PLAYER_AURAS_CHANGED" then
         --TODO: Check if this is fired if a buff already exists but gets refreshed before running out
-        MC.CURRENT_BUFFS = GetBuffs()
+        MC.CURRENT_BUFFS = getBuffs()
     end
 end)
