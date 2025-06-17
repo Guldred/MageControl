@@ -597,6 +597,33 @@ local function arcaneIncantagos()
     end
 end
 
+local function checkDependencies()
+    local output = "Checking SuperWoW... "
+
+    -- Nil-sicher für SUPERWOW_VERSION
+    if SUPERWOW_VERSION then
+        output = output .. "found Version " .. tostring(SUPERWOW_VERSION)
+    else
+        output = output .. "not found"
+    end
+
+    output = output .. ". Checking Nampower... "
+
+    if GetNampowerVersion and GetNampowerVersion() then
+        local major, minor, patch = GetNampowerVersion()
+
+        if major and minor and patch then
+            output = output .. "found Version " .. tostring(major) .. "." .. tostring(minor) .. "." .. tostring(patch)
+        else
+            output = output .. "found (version info incomplete)"
+        end
+    else
+        output = output .. "not found"
+    end
+
+    return output
+end
+
 local function activateTrinketAndAP()
     local start, duration, enabled = GetInventoryItemCooldown("player", 14)
     if enabled == 0 then
@@ -676,7 +703,7 @@ MageControlFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        printMessage("MageControl loaded.")
+        printMessage("MageControl loaded. " .. checkDependencies())
 
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
