@@ -73,9 +73,6 @@ local MC = {
     },
 
     HASTE = {
-        BASE_TELEPORT_CAST_TIME = 10.0,
-        TELEPORT_SPELLBOOK_ID = 0,
-        CURRENT_HASTE_PERCENT = 0,
         HASTE_THRESHOLD = 30,
         BASE_VALUE = 10
     },
@@ -439,37 +436,9 @@ local function isMissilesWorthCasting(buffStates)
     return remainingDuration >= requiredTime
 end
 
-local function getFactionBasedPortSpell()
-    local faction, localizedFaction = UnitFactionGroup("player")
-    if (faction == "Alliance") then
-        return "Teleport: Stormwind"
-    else
-        return "Teleport: Orgrimmar"
-    end
-end
-
-local function getSpellbookSpellIdForName(spellName)
-    local bookType = BOOKTYPE_SPELL
-    local targetId = 0
-    for spellBookId = 1, MAX_SPELLS do
-        local name = GetSpellName(spellBookId, bookType)
-        if not name then break end
-        if name == spellName then
-            targetId = spellBookId
-            break
-        end
-    end
-    return targetId
-end
-
 executeArcaneRotation = function()
     if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
         state.globalCooldownActive = false
-    end
-
-    if (MC.HASTE.TELEPORT_SPELLBOOK_ID == 0) then
-        MC.HASTE.TELEPORT_SPELLBOOK_ID = getSpellbookSpellIdForName(getFactionBasedPortSpell())
-        debugPrint("MageControl set teleport spell ID: " .. MC.HASTE.TELEPORT_SPELLBOOK_ID)
     end
 
     local buffs = MC.CURRENT_BUFFS
