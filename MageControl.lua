@@ -735,6 +735,7 @@ MageControlFrame:SetScript("OnEvent", function()
         state.globalCooldownActive = true
         state.globalCooldownStart = GetTime()
         state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
+        --TODO: Check if this can cause a loop of retry
         state.isRuptureRepeated = false -- always reset after any cast
 
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
