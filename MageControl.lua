@@ -185,6 +185,9 @@ local function GetBuffs()
             local buffName = GameTooltipTextLeft1:GetText() or "Unknown"
             GameTooltip:Hide()
 
+            local name, id = UnitBuff("player", i)
+            printMessage("buffName: " .. buffName .. " - Spell ID: " .. id)
+
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
                 table.insert(buffs, {
