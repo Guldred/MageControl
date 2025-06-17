@@ -123,7 +123,7 @@ local state = {
     globalCooldownActive = false,
     globalCooldownStart = 0,
     lastSpellCast = "",
-    isRuptureRepeated = false,
+    lastRuptureRepeatTime = 0,
     expectedCastFinishTime = 0,
     -- Buff caching
     buffsCache = nil,
@@ -296,9 +296,6 @@ local function safeQueueSpell(spellName, buffs, buffStates)
         debugPrint("Not safe to cast: " .. spellName)
         return false
     end
-
-    -- Always reset isRuptureRepeated when a new spell gets queued
-    state.isRuptureRepeated = false
 
     debugPrint("Queueing spell: " .. spellName)
     QueueSpellByName(spellName)
@@ -571,7 +568,6 @@ end
 local function arcaneRotation()
     MC.CURRENT_BUFFS = getBuffs()
     checkManaWarning(MC.CURRENT_BUFFS)
-    state.isRuptureRepeated = false
     checkChannelFinished()
     executeArcaneRotation()
 end
@@ -730,16 +726,15 @@ MageControlFrame:SetScript("OnEvent", function()
         state.globalCooldownActive = true
         state.globalCooldownStart = GetTime()
         state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
-        --TODO: Check if this can cause a loop of retry
-        state.isRuptureRepeated = false -- always reset after any cast
 
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
         state.isChanneling = false
         state.isCastingArcaneRupture = false
         state.expectedCastFinishTime = 0
 
-        if (state.lastSpellCast == "Arcane Rupture" and not state.isRuptureRepeated) then
-            state.isRuptureRepeated = true
+        local earliestAllowedTimeToRepeatSpell = state.lastRuptureRepeatTime + 1
+        if (state.lastSpellCast == "Arcane Rupture" and (earliestAllowedTimeToRepeatSpell <= GetTime())) then
+            state.lastRuptureRepeatTime = GetTime()
             debugPrint("Arcane Rupture failed, repeating cast")
             executeArcaneRotation()
         end
