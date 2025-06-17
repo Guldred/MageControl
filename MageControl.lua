@@ -569,8 +569,8 @@ local function hasAmplifyMagic()
 end
 
 local function arcaneRotation()
-    local buffs = MC.CURRENT_BUFFS
-    checkManaWarning(buffs)
+    MC.CURRENT_BUFFS = getBuffs()
+    checkManaWarning(MC.CURRENT_BUFFS)
     state.isRuptureRepeated = false
     checkChannelFinished()
     executeArcaneRotation()
@@ -744,7 +744,7 @@ MageControlFrame:SetScript("OnEvent", function()
             executeArcaneRotation()
         end
     elseif event == "PLAYER_AURAS_CHANGED" then
-        --TODO: Check if this is fired if a buff already exists but gets refreshed before running out
+        debugPrint("Player auras changed, updating buffs")
         MC.CURRENT_BUFFS = getBuffs()
     end
 end)
