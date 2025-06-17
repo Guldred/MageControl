@@ -175,6 +175,7 @@ end
 local function GetBuffs()
     local now = GetTime()
     if state.buffsCache and (now - state.buffsCacheTime < 0.1) then
+        debugPrint("Returning Cached buffs!")
         return state.buffsCache
     end
     local buffs = {}
