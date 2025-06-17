@@ -747,6 +747,7 @@ MageControlFrame:SetScript("OnEvent", function()
             CastArcaneAttack()
         end
     elseif event == "PLAYER_AURAS_CHANGED" then
+        --TODO: Check if this is fired if a buff already exists but gets refreshed before running out
         MC.CURRENT_BUFFS = GetBuffs()
     end
 end)
