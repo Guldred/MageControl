@@ -371,6 +371,7 @@ local function shouldWaitForCast()
 end
 
 local function calculateHastePercent()
+    --TODO: Let's not use GameTooltips anymore. Replace by buff tracking and haste estimation
     GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
     GameTooltip:SetSpell(MC.HASTE.TELEPORT_SPELLBOOK_ID, "spell")
 
