@@ -35,14 +35,20 @@ local MC = {
         CLEARCASTING = "Clearcasting",
         TEMPORAL_CONVERGENCE = "Temporal Convergence", 
         ARCANE_POWER = "Arcane Power",
-        ARCANE_RUPTURE = "Arcane Rupture"
+        ARCANE_RUPTURE = "Arcane Rupture",
+        MIND_QUCKENING = "Mind Quickening",
+        ENLIGHTENED_STATE = "Enlightened State",
+        SULFURON_BLAZE = "Sulfuron Blaze"
     },
 
     BUFF_ID_TO_NAME = {
         [12536] = "Clearcasting",
         [51961] = "Temporal Convergence",
         [12042] = "Arcane Power",
-        [52502] = "Arcane Rupture"
+        [52502] = "Arcane Rupture",
+        [23723] = "Mind Quickening",
+        [51270] = "Enlightened State",
+        [42027] = "Sulfuron Blaze"
     },
 
     ARCANE_POWER = {
@@ -70,7 +76,8 @@ local MC = {
         BASE_TELEPORT_CAST_TIME = 10.0,
         TELEPORT_SPELLBOOK_ID = 0,
         CURRENT_HASTE_PERCENT = 0,
-        HASTE_THRESHOLD = 30
+        HASTE_THRESHOLD = 30,
+        BASE_VALUE = 10
     },
 
     CURRENT_BUFFS = {
@@ -98,6 +105,7 @@ local function initializeSettings()
             ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE
         }
         MageControlDB.haste = {
+            BASE_VALUE = MC.HASTE.BASE_VALUE,
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
     end
@@ -182,7 +190,10 @@ local function getBuffs()
     local relevantBuffs = {
         [MC.BUFF_NAME.CLEARCASTING] = true,
         [MC.BUFF_NAME.TEMPORAL_CONVERGENCE] = true,
-        [MC.BUFF_NAME.ARCANE_POWER] = true
+        [MC.BUFF_NAME.ARCANE_POWER] = true,
+        [MC.BUFF_NAME.MIND_QUCKENING] = true,
+        [MC.BUFF_NAME.ENLIGHTENED_STATE] = true,
+        [MC.BUFF_NAME.SULFURON_BLAZE] = true
     }
 
     for i = 0, 31 do 
@@ -190,6 +201,8 @@ local function getBuffs()
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HELPFUL|PASSIVE")
             local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+
+            debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId))
 
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
@@ -209,6 +222,8 @@ local function getBuffs()
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HARMFUL")
             local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+
+            debugPrint("Checking debuff: " .. buffName .. " with ID: " .. tostring(buffId))
 
             if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
@@ -371,43 +386,27 @@ local function shouldWaitForCast()
     return timeToCastFinish > MC.TIMING.CAST_FINISH_THRESHOLD
 end
 
-local function calculateHastePercent()
-    --TODO: Let's not use GameTooltips anymore. Replace by buff tracking and haste estimation
-    GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-    GameTooltip:SetSpell(MC.HASTE.TELEPORT_SPELLBOOK_ID, "spell")
+local function getCurrentHasteValue()
+    local hastePercent = MageControlDB.haste.BASE_VALUE
 
-    local castTimeText = nil
-    for i = 1, GameTooltip:NumLines() do
-        local line = getglobal("GameTooltipTextLeft"..i)
-        if line then
-            local text = line:GetText()
-            if text then
-                local _, _, castTime = string.find(text, "(%d+%.?%d*) sec cast")
-                if castTime then
-                    debugPrint("Haste cast time found: " .. (castTime or "nil"))
-                    castTimeText = tonumber(castTime)
-                    break
-                end
-            end
+    local hasteBuffs = {
+        [MC.BUFF_NAME.ARCANE_POWER] = 30,
+        [MC.BUFF_NAME.MIND_QUCKENING] = 33,
+        [MC.BUFF_NAME.ENLIGHTENED_STATE] = 20,
+        [MC.BUFF_NAME.SULFURON_BLAZE] = 5
+    }
+
+    for buffName, buffHaste in pairs(hasteBuffs) do
+        if findBuff(MC.CURRENT_BUFFS, buffName) ~= nil then
+            hastePercent = hastePercent + buffHaste
         end
     end
 
-    GameTooltip:Hide()
-
-    if castTimeText then
-        local actualCastTime = castTimeText
-        local hastePercent = ((MC.HASTE.BASE_TELEPORT_CAST_TIME - actualCastTime) / MC.HASTE.BASE_TELEPORT_CAST_TIME) * 100
-
-        MC.HASTE.CURRENT_HASTE_PERCENT = math.max(0, hastePercent)
-
-        return MC.HASTE.CURRENT_HASTE_PERCENT
-    else
-        return 10
-    end
+    return hastePercent
 end
 
 local function isHighHasteActive()
-    local isAboveHasteThreshold = calculateHastePercent() > MageControlDB.haste.HASTE_THRESHOLD
+    local isAboveHasteThreshold = getCurrentHasteValue() > MageControlDB.haste.HASTE_THRESHOLD
     return isAboveHasteThreshold
 end
 
@@ -433,7 +432,7 @@ local function isMissilesWorthCasting(buffStates)
 
     local remainingDuration = ruptureBuff:duration()
     debugPrint("Arcane Rupture remaining duration by calculation: " .. remainingDuration)
-    local hastePercent = calculateHastePercent() / 100
+    local hastePercent = getCurrentHasteValue() / 100
     local channelTime = 6 / (1 + hastePercent)
     local requiredTime = channelTime * 0.6
 
@@ -657,8 +656,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     elseif command == "surge" then
         stopChannelAndCastSurge()
     elseif command == "haste" then
-        local haste = calculateHastePercent()
-        printMessage("Current Haste: " .. haste)
+        printMessage("Current haste: " .. tostring(getCurrentHasteValue()))
     elseif command == "debug" then
         MC.DEBUG = not MC.DEBUG
         printMessage("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
@@ -679,6 +677,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
             ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE,
         }
         MageControlDB.haste = {
+            BASE_VALUE = MC.HASTE.BASE_VALUE,
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
         printMessage("MageControl: Configuration reset to defaults")
