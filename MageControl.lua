@@ -38,6 +38,13 @@ local MC = {
         ARCANE_RUPTURE = "Arcane Rupture"
     },
 
+    BUFF_ID_TO_NAME = {
+        [12536] = "Clearcasting",
+        [51961] = "Temporal Convergence",
+        [12042] = "Arcane Power",
+        [52502] = "Arcane Rupture"
+    },
+
     ARCANE_POWER = {
         MANA_DRAIN_PER_SECOND = 1,
         DEATH_THRESHOLD = 10,
@@ -180,13 +187,8 @@ local function GetBuffs()
     for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
         if buffIndex >= 0 then
-            GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-            GameTooltip:SetPlayerBuff(buffIndex)
-            local buffName = GameTooltipTextLeft1:GetText() or "Unknown"
-            GameTooltip:Hide()
-
-            local name, id = UnitBuff("player", i)
-            printMessage("buffName: " .. buffName .. " - Spell ID: " .. id)
+            local buffId = GetPlayerBuffID(buffIndex, "HELPFUL|PASSIVE")
+            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
 
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
@@ -204,10 +206,8 @@ local function GetBuffs()
     for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HARMFUL")
         if buffIndex >= 0 then
-            GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-            GameTooltip:SetPlayerBuff(buffIndex)
-            local buffName = GameTooltipTextLeft1:GetText() or ""
-            GameTooltip:Hide()
+            local buffId = GetPlayerBuffID(buffIndex, "HARMFUL")
+            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
 
             if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
@@ -430,6 +430,7 @@ local function isMissilesWorthCasting(buffStates)
     end
 
     local remainingDuration = ruptureBuff:duration()
+    debugPrint("Arcane Rupture remaining duration by calculation: " .. remainingDuration)
     local hastePercent = calculateHastePercent() / 100
     local channelTime = 6 / (1 + hastePercent)
     local requiredTime = channelTime * 0.6
@@ -741,6 +742,7 @@ MageControlFrame:SetScript("OnEvent", function()
 
         if (state.lastSpellCast == "Arcane Rupture" and not state.isRuptureRepeated) then
             state.isRuptureRepeated = true
+            debugPrint("Arcane Rupture failed, repeating cast")
             CastArcaneAttack()
         end
     elseif event == "PLAYER_AURAS_CHANGED" then
