@@ -14,7 +14,7 @@ function MageControlOptions_CreateFrame()
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
-    optionsFrame:SetHeight(250)
+    optionsFrame:SetHeight(300)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     optionsFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -105,8 +105,29 @@ function MageControlOptions_CreateFrame()
     end)
     surgeEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
 
+    local hasteBaseValueLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    hasteBaseValueLabel:SetPoint("TOPLEFT", surgeLabel, "BOTTOMLEFT", 0, -25)
+    hasteBaseValueLabel:SetText("Haste Base Value:")
+
+    local hasteBaseValueEditBox = CreateFrame("EditBox", "MageControlHasteBaseValue", optionsFrame, "InputBoxTemplate")
+    hasteBaseValueEditBox:SetWidth(50)
+    hasteBaseValueEditBox:SetHeight(20)
+    hasteBaseValueEditBox:SetPoint("LEFT", hasteBaseValueLabel, "RIGHT", 10, 0)
+    hasteBaseValueEditBox:SetAutoFocus(false)
+    hasteBaseValueEditBox:SetNumeric(true)
+    hasteBaseValueEditBox:SetMaxLetters(2)
+    hasteBaseValueEditBox:SetScript("OnTextChanged", function()
+        local value = tonumber(this:GetText())
+        if value and value < 0 then
+            this:SetTextColor(1, 0, 0)
+        else
+            this:SetTextColor(1, 1, 1)
+        end
+    end)
+    hasteBaseValueEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
+
     local hasteThresholdLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    hasteThresholdLabel:SetPoint("TOPLEFT", surgeLabel, "BOTTOMLEFT", 0, -25)
+    hasteThresholdLabel:SetPoint("TOPLEFT", hasteBaseValueLabel, "BOTTOMLEFT", 0, -25)
     hasteThresholdLabel:SetText("Haste Threshold:")
 
     local hasteThresholdEditBox = CreateFrame("EditBox", "MageControlHasteThreshold", optionsFrame, "InputBoxTemplate")
@@ -158,17 +179,19 @@ function MageControlOptions_LoadValues()
         return
     end
     if not MageControlDB.haste then
-        MageControlDB.haste = { HASTE_THRESHOLD = 30 }
+        MageControlDB.haste = { HASTE_THRESHOLD = 30, BASE_VALUE = 10 }
     end
 
     local slots = MageControlDB.actionBarSlots
     local fBox = getglobal("MageControlFireblastSlot")
     local rBox = getglobal("MageControlRuptureSlot")
     local sBox = getglobal("MageControlSurgeSlot")
+    local bBox = getglobal("MageControlHasteBaseValue")
     local hBox = getglobal("MageControlHasteThreshold")
     if fBox then fBox:SetText(tostring(slots.FIREBLAST or 1)) end
     if rBox then rBox:SetText(tostring(slots.ARCANE_RUPTURE or 2)) end
     if sBox then sBox:SetText(tostring(slots.ARCANE_SURGE or 5)) end
+    if bBox then bBox:SetText(tostring(MageControlDB.haste.BASE_VALUE or 10)) end
     if hBox then hBox:SetText(tostring(MageControlDB.haste.HASTE_THRESHOLD or 30)) end
 end
 
@@ -176,10 +199,12 @@ function MageControlOptions_Save()
     local fBox = getglobal("MageControlFireblastSlot")
     local rBox = getglobal("MageControlRuptureSlot")
     local sBox = getglobal("MageControlSurgeSlot")
+    local bBox = getglobal("MageControlHasteBaseValue")
     local hBox = getglobal("MageControlHasteThreshold")
     local fireblastSlot = tonumber(fBox and fBox:GetText() or "1") or 1
     local ruptureSlot = tonumber(rBox and rBox:GetText() or "2") or 2
     local surgeSlot = tonumber(sBox and sBox:GetText() or "5") or 5
+    local hasteBaseValue = tonumber(bBox and bBox:GetText() or "10") or 10
     local hasteThreshold = tonumber(hBox and hBox:GetText() or "30") or 30
 
     if not fireblastSlot or fireblastSlot < 1 or fireblastSlot > 120 then
@@ -197,6 +222,11 @@ function MageControlOptions_Save()
         return
     end
 
+    if not hasteBaseValue or hasteBaseValue < 0 then
+        message("Invalid Haste Base Value. Must be a non-negative number.")
+        return
+    end
+
     if not hasteThreshold or hasteThreshold < 0 then
         message("Invalid Haste Threshold. Must be a positive number.")
         return
@@ -208,6 +238,7 @@ function MageControlOptions_Save()
     MageControlDB.actionBarSlots.FIREBLAST = math.floor(fireblastSlot)
     MageControlDB.actionBarSlots.ARCANE_RUPTURE = math.floor(ruptureSlot)
     MageControlDB.actionBarSlots.ARCANE_SURGE = math.floor(surgeSlot)
+    MageControlDB.haste.BASE_VALUE = math.floor(hasteBaseValue)
     MageControlDB.haste.HASTE_THRESHOLD = math.floor(hasteThreshold)
 
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
@@ -221,15 +252,18 @@ function MageControlOptions_Reset()
         MageControlDB.actionBarSlots.ARCANE_SURGE = 5
     end
     if MageControlDB and MageControlDB.haste then
+        MageControlDB.haste.BASE_VALUE = 10
         MageControlDB.haste.HASTE_THRESHOLD = 30
     end
 
     local fBox = getglobal("MageControlFireblastSlot")
     local rBox = getglobal("MageControlRuptureSlot")
     local sBox = getglobal("MageControlSurgeSlot")
+    local bBox = getglobal("MageControlHasteBaseValue")
     local hBox = getglobal("MageControlHasteThreshold")
     if fBox then fBox:SetText("1") end
     if rBox then rBox:SetText("2") end
     if sBox then sBox:SetText("5") end
+    if bBox then bBox:SetText("10") end
     if hBox then hBox:SetText("30") end
 end

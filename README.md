@@ -26,10 +26,11 @@ _A high-performance World of Warcraft addon for Arcane Mages on Turtle WoW._
 
 ## 🔗 Dependency
 
-This addon **requires** [`nampower`](https://github.com/pepopo978/nampower).
+This addon **requires** [`nampower`](https://github.com/pepopo978/nampower) and [`superwow`](https://github.com/balakethelock/SuperWoW).
 
 _Nampower is needed for instant spell queuing and zero-lag rotations.  
-Please ensure it is installed before use._
+SuperWoW is needed for efficient buff fetching without the use of GameTooltips.
+Please ensure both are installed before use._
 
 ---
 
@@ -40,7 +41,8 @@ Please ensure it is installed before use._
     Interface/AddOns/
     ```
 2. Install [`nampower`](https://github.com/pepopo978/nampower).
-3. Restart WoW or use `/reloadui`.
+3. Install [`superwow`](https://github.com/balakethelock/SuperWoW).
+4. Restart WoW or use `/reloadui`.
 
 ---
 

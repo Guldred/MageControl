@@ -35,7 +35,20 @@ local MC = {
         CLEARCASTING = "Clearcasting",
         TEMPORAL_CONVERGENCE = "Temporal Convergence", 
         ARCANE_POWER = "Arcane Power",
-        ARCANE_RUPTURE = "Arcane Rupture"
+        ARCANE_RUPTURE = "Arcane Rupture",
+        MIND_QUCKENING = "Mind Quickening",
+        ENLIGHTENED_STATE = "Enlightened State",
+        SULFURON_BLAZE = "Sulfuron Blaze"
+    },
+
+    BUFF_ID_TO_NAME = {
+        [12536] = "Clearcasting",
+        [51961] = "Temporal Convergence",
+        [12042] = "Arcane Power",
+        [52502] = "Arcane Rupture",
+        [23723] = "Mind Quickening",
+        [51270] = "Enlightened State",
+        [42027] = "Sulfuron Blaze"
     },
 
     ARCANE_POWER = {
@@ -60,10 +73,11 @@ local MC = {
     },
 
     HASTE = {
-        BASE_TELEPORT_CAST_TIME = 10.0,
-        TELEPORT_SPELLBOOK_ID = 0,
-        CURRENT_HASTE_PERCENT = 0,
-        HASTE_THRESHOLD = 30
+        HASTE_THRESHOLD = 30,
+        BASE_VALUE = 10
+    },
+
+    CURRENT_BUFFS = {
     },
 
     DEBUG = false
@@ -88,6 +102,7 @@ local function initializeSettings()
             ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE
         }
         MageControlDB.haste = {
+            BASE_VALUE = MC.HASTE.BASE_VALUE,
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
     end
@@ -162,29 +177,39 @@ local function getSpellCostPercent(spellName, buffStates)
 end
 
 -- Buff parsing: Caching for 0.1s, updated only if needed
-local function GetBuffs()
+local function getBuffs()
     local now = GetTime()
     if state.buffsCache and (now - state.buffsCacheTime < 0.1) then
+        debugPrint("Returning Cached buffs!")
         return state.buffsCache
     end
     local buffs = {}
     local relevantBuffs = {
         [MC.BUFF_NAME.CLEARCASTING] = true,
         [MC.BUFF_NAME.TEMPORAL_CONVERGENCE] = true,
-        [MC.BUFF_NAME.ARCANE_POWER] = true
+        [MC.BUFF_NAME.ARCANE_POWER] = true,
+        [MC.BUFF_NAME.MIND_QUCKENING] = true,
+        [MC.BUFF_NAME.ENLIGHTENED_STATE] = true,
+        [MC.BUFF_NAME.SULFURON_BLAZE] = true
     }
 
     for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
         if buffIndex >= 0 then
-            GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-            GameTooltip:SetPlayerBuff(buffIndex)
-            local buffName = GameTooltipTextLeft1:GetText() or "Unknown"
-            GameTooltip:Hide()
+            local buffId = GetPlayerBuffID(buffIndex, "HELPFUL|PASSIVE")
+            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+
+            debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId))
 
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
-                table.insert(buffs, { name = buffName, duration = duration })
+                table.insert(buffs, {
+                    name = buffName,
+                    timeFinished = GetTime() + duration,
+                    duration = function(self)
+                        return self.timeFinished - GetTime()
+                    end
+                })
             end
         end
     end
@@ -192,14 +217,20 @@ local function GetBuffs()
     for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HARMFUL")
         if buffIndex >= 0 then
-            GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-            GameTooltip:SetPlayerBuff(buffIndex)
-            local buffName = GameTooltipTextLeft1:GetText() or ""
-            GameTooltip:Hide()
+            local buffId = GetPlayerBuffID(buffIndex, "HARMFUL")
+            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+
+            debugPrint("Checking debuff: " .. buffName .. " with ID: " .. tostring(buffId))
 
             if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
-                table.insert(buffs, { name = buffName, duration = duration })
+                table.insert(buffs, {
+                    name = buffName,
+                    timeFinished = GetTime() + duration,
+                    duration = function(self)
+                        return self.timeFinished - GetTime()
+                    end
+                })
             end
         end
     end
@@ -220,7 +251,7 @@ end
 
 local function getArcanePowerTimeLeft(buffs)
     local arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
-    return arcanePower and arcanePower.duration or 0
+    return arcanePower and arcanePower:duration() or 0
 end
 
 local function isSafeToCast(spellName, buffs, buffStates)
@@ -289,10 +320,10 @@ local function getCurrentBuffs(buffs)
     }
 end
 
-local function QueueArcaneExplosion()
+local function queueArcaneExplosion()
     local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - state.globalCooldownStart)
     if(gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD) then
-        local buffs = GetBuffs()
+        local buffs = MC.CURRENT_BUFFS
         local buffStates = getCurrentBuffs(buffs)
         safeQueueSpell("Arcane Explosion", buffs, buffStates)
     end
@@ -352,42 +383,27 @@ local function shouldWaitForCast()
     return timeToCastFinish > MC.TIMING.CAST_FINISH_THRESHOLD
 end
 
-local function calculateHastePercent()
-    GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-    GameTooltip:SetSpell(MC.HASTE.TELEPORT_SPELLBOOK_ID, "spell")
+local function getCurrentHasteValue()
+    local hastePercent = MageControlDB.haste.BASE_VALUE
 
-    local castTimeText = nil
-    for i = 1, GameTooltip:NumLines() do
-        local line = getglobal("GameTooltipTextLeft"..i)
-        if line then
-            local text = line:GetText()
-            if text then
-                local _, _, castTime = string.find(text, "(%d+%.?%d*) sec cast")
-                if castTime then
-                    debugPrint("Haste cast time found: " .. (castTime or "nil"))
-                    castTimeText = tonumber(castTime)
-                    break
-                end
-            end
+    local hasteBuffs = {
+        [MC.BUFF_NAME.ARCANE_POWER] = 30,
+        [MC.BUFF_NAME.MIND_QUCKENING] = 33,
+        [MC.BUFF_NAME.ENLIGHTENED_STATE] = 20,
+        [MC.BUFF_NAME.SULFURON_BLAZE] = 5
+    }
+
+    for buffName, buffHaste in pairs(hasteBuffs) do
+        if findBuff(MC.CURRENT_BUFFS, buffName) ~= nil then
+            hastePercent = hastePercent + buffHaste
         end
     end
 
-    GameTooltip:Hide()
-
-    if castTimeText then
-        local actualCastTime = castTimeText
-        local hastePercent = ((MC.HASTE.BASE_TELEPORT_CAST_TIME - actualCastTime) / MC.HASTE.BASE_TELEPORT_CAST_TIME) * 100
-
-        MC.HASTE.CURRENT_HASTE_PERCENT = math.max(0, hastePercent)
-
-        return MC.HASTE.CURRENT_HASTE_PERCENT
-    else
-        return 10
-    end
+    return hastePercent
 end
 
 local function isHighHasteActive()
-    local isAboveHasteThreshold = calculateHastePercent() > MageControlDB.haste.HASTE_THRESHOLD
+    local isAboveHasteThreshold = getCurrentHasteValue() > MageControlDB.haste.HASTE_THRESHOLD
     return isAboveHasteThreshold
 end
 
@@ -411,48 +427,21 @@ local function isMissilesWorthCasting(buffStates)
         return false
     end
 
-    local remainingDuration = ruptureBuff.duration
-    local hastePercent = calculateHastePercent() / 100
+    local remainingDuration = ruptureBuff:duration()
+    debugPrint("Arcane Rupture remaining duration by calculation: " .. remainingDuration)
+    local hastePercent = getCurrentHasteValue() / 100
     local channelTime = 6 / (1 + hastePercent)
     local requiredTime = channelTime * 0.6
 
     return remainingDuration >= requiredTime
 end
 
-local function getFactionBasedPortSpell()
-    local faction, localizedFaction = UnitFactionGroup("player")
-    if (faction == "Alliance") then
-        return "Teleport: Stormwind"
-    else
-        return "Teleport: Orgrimmar"
-    end
-end
-
-local function getSpellbookSpellIdForName(spellName)
-    local bookType = BOOKTYPE_SPELL
-    local targetId = 0
-    for spellBookId = 1, MAX_SPELLS do
-        local name = GetSpellName(spellBookId, bookType)
-        if not name then break end
-        if name == spellName then
-            targetId = spellBookId
-            break
-        end
-    end
-    return targetId
-end
-
-CastArcaneAttack = function()
+executeArcaneRotation = function()
     if (GetTime() - state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
         state.globalCooldownActive = false
     end
 
-    if (MC.HASTE.TELEPORT_SPELLBOOK_ID == 0) then
-        MC.HASTE.TELEPORT_SPELLBOOK_ID = getSpellbookSpellIdForName(getFactionBasedPortSpell())
-        debugPrint("MageControl set teleport spell ID: " .. MC.HASTE.TELEPORT_SPELLBOOK_ID)
-    end
-
-    local buffs = GetBuffs()
+    local buffs = MC.CURRENT_BUFFS
     local spells = getSpellAvailability()
     local buffStates = getCurrentBuffs(buffs)
     local slots = getActionBarSlots()
@@ -562,7 +551,7 @@ local function showCurrentConfig()
     printMessage("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
 end
 
-local function HasAmplifyMagic()
+local function hasAmplifyMagic()
     if not UnitExists("target") then return false end
 
     for i = 1, 30 do
@@ -580,11 +569,11 @@ local function HasAmplifyMagic()
 end
 
 local function arcaneRotation()
-    local buffs = GetBuffs()
-    checkManaWarning(buffs)
+    MC.CURRENT_BUFFS = getBuffs()
+    checkManaWarning(MC.CURRENT_BUFFS)
     state.isRuptureRepeated = false
     checkChannelFinished()
-    CastArcaneAttack()
+    executeArcaneRotation()
 end
 
 local function arcaneIncantagos()
@@ -606,6 +595,33 @@ local function arcaneIncantagos()
     else
         arcaneRotation()
     end
+end
+
+local function checkDependencies()
+    local output = "Checking SuperWoW... "
+
+    -- Nil-sicher für SUPERWOW_VERSION
+    if SUPERWOW_VERSION then
+        output = output .. "found Version " .. tostring(SUPERWOW_VERSION)
+    else
+        output = output .. "not found"
+    end
+
+    output = output .. ". Checking Nampower... "
+
+    if GetNampowerVersion and GetNampowerVersion() then
+        local major, minor, patch = GetNampowerVersion()
+
+        if major and minor and patch then
+            output = output .. "found Version " .. tostring(major) .. "." .. tostring(minor) .. "." .. tostring(patch)
+        else
+            output = output .. "found (version info incomplete)"
+        end
+    else
+        output = output .. "not found"
+    end
+
+    return output
 end
 
 local function activateTrinketAndAP()
@@ -630,14 +646,13 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     local command = args[1] or ""
 
     if command == "explosion" then
-        QueueArcaneExplosion()
+        queueArcaneExplosion()
     elseif command == "arcane" then
         arcaneRotation()
     elseif command == "surge" then
         stopChannelAndCastSurge()
     elseif command == "haste" then
-        local haste = calculateHastePercent()
-        printMessage("Current Haste: " .. haste)
+        printMessage("Current haste: " .. tostring(getCurrentHasteValue()))
     elseif command == "debug" then
         MC.DEBUG = not MC.DEBUG
         printMessage("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
@@ -658,6 +673,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
             ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE,
         }
         MageControlDB.haste = {
+            BASE_VALUE = MC.HASTE.BASE_VALUE,
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
         printMessage("MageControl: Configuration reset to defaults")
@@ -682,11 +698,12 @@ MageControlFrame:RegisterEvent("SPELL_CAST_EVENT")
 MageControlFrame:RegisterEvent("SPELLCAST_FAILED")
 MageControlFrame:RegisterEvent("SPELLCAST_INTERRUPTED")
 MageControlFrame:RegisterEvent("ADDON_LOADED")
+MageControlFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        printMessage("MageControl loaded.")
+        printMessage("MageControl loaded. " .. checkDependencies())
 
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
@@ -713,6 +730,7 @@ MageControlFrame:SetScript("OnEvent", function()
         state.globalCooldownActive = true
         state.globalCooldownStart = GetTime()
         state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
+        --TODO: Check if this can cause a loop of retry
         state.isRuptureRepeated = false -- always reset after any cast
 
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
@@ -722,7 +740,11 @@ MageControlFrame:SetScript("OnEvent", function()
 
         if (state.lastSpellCast == "Arcane Rupture" and not state.isRuptureRepeated) then
             state.isRuptureRepeated = true
-            CastArcaneAttack()
+            debugPrint("Arcane Rupture failed, repeating cast")
+            executeArcaneRotation()
         end
+    elseif event == "PLAYER_AURAS_CHANGED" then
+        debugPrint("Player auras changed, updating buffs")
+        MC.CURRENT_BUFFS = getBuffs()
     end
 end)
