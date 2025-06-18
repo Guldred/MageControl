@@ -75,23 +75,6 @@ local MC = {
         SULFURON_BLAZE = "Sulfuron Blaze"
     },
 
-    BUFF_ID_TO_NAME = {
-        [12536] = "Clearcasting",
-        [51961] = "Temporal Convergence",
-        [12042] = "Arcane Power",
-        [52502] = "Arcane Rupture",
-        [23723] = "Mind Quickening",
-        [51270] = "Enlightened State",
-        [42027] = "Sulfuron Blaze"
-    },
-
-    ARCANE_POWER = {
-        MANA_DRAIN_PER_SECOND = 1,
-        DEATH_THRESHOLD = 10,
-        SAFETY_BUFFER = 5,
-        PROC_COST_PERCENT = 2
-    },
-
     BUFF_INFO = {
         CLEARCASTING = {
             id   = 12536,
@@ -228,7 +211,7 @@ local function getModifiedSpellManaCost(spellName, buffStates)
 end
 
 local function getBuffNameByID(buffID)
-    for _, info in pairs(BUFF_INFO) do
+    for _, info in pairs(MC.BUFF_INFO) do
         if info.id == buffID then
             return info.name
         end
@@ -336,11 +319,11 @@ local function isSafeToCast(spellName, buffs, buffStates)
     local procCostPercent = 0
 
     if string.find(spellName, "Arcane") then
-        procCostPercent = MC.ARCANE_POWER.PROC_COST_PERCENT
+        procCostPercent = MC.BUFF_INFO.ARCANE_POWER.proc_cost_percent
     end
 
     local projectedManaPercent = currentManaPercent - spellCostPercent - procCostPercent
-    local safetyThreshold = MC.ARCANE_POWER.DEATH_THRESHOLD + MC.ARCANE_POWER.SAFETY_BUFFER
+    local safetyThreshold = MC.BUFF_INFO.ARCANE_POWER.death_threshold + MC.BUFF_INFO.ARCANE_POWER.safety_buffer
     if projectedManaPercent < safetyThreshold then
         printMessage(string.format("|cffff0000MageControl WARNING: %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r",
             spellName, projectedManaPercent))
@@ -568,7 +551,7 @@ local function checkManaWarning(buffs)
     local arcanePowerTimeLeft = getArcanePowerTimeLeft(buffs)
     if arcanePowerTimeLeft > 0 then
         local currentMana = getCurrentManaPercent()
-        local projectedMana = currentMana - (arcanePowerTimeLeft * MC.ARCANE_POWER.MANA_DRAIN_PER_SECOND)
+        local projectedMana = currentMana - (arcanePowerTimeLeft * MC.BUFF_INFO.ARCANE_POWER.mana_drain_per_second)
 
         if projectedMana < 15 and projectedMana > 10 then
             printMessage("|cffffff00MageControl: LOW MANA WARNING - " .. math.floor(projectedMana) .. "% projected!|r")
