@@ -1,7 +1,7 @@
 SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
-local MC = {
+MC = {
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
 
     TIMING = {
@@ -122,6 +122,47 @@ local MC = {
 
     CURRENT_BUFFS = {
     },
+
+    UpdateFunctions = {
+    },
+
+    OnUpdate = function()
+        for _, func in ipairs(MC.UpdateFunctions) do
+            if (GetTime() - func.lastUpdate >= func.interval) then
+                func.f()
+                func.lastUpdate = GetTime()
+            end
+        end
+    end,
+
+    forceUpdate = function()
+        for _, func in ipairs(MC.UpdateFunctions) do
+            func.f()
+            func.lastUpdate = GetTime()
+        end
+    end,
+
+    registerUpdateFunction = function(func, interval)
+        if type(func) == "function" then
+            table.insert(MC.UpdateFunctions, {
+                f = func,
+                lastUpdate = 0,
+                interval = interval or 0.1,
+            })
+        else
+            error("MageControl: registerUpdateFunction expects a function and an interval (optional)")
+        end
+    end,
+
+    unregisterUpdateFunction = function(func)
+        for i, updateFunc in ipairs(MC.UpdateFunctions) do
+            if updateFunc.f == func then
+                table.remove(MC.UpdateFunctions, i)
+                return
+            end
+        end
+        error("MageControl: unregisterUpdateFunction could not find the specified function")
+    end,
 
     DEBUG = false
 }
@@ -733,6 +774,8 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         arcaneIncantagos()
     elseif command == "trinket" then
         activateTrinketAndAP()
+    elseif command == "lock" then
+        BuffDisplay_ToggleLock()
     elseif command == "reset" then
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
@@ -743,6 +786,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
             BASE_VALUE = MC.HASTE.BASE_VALUE,
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
+        BuffDisplay_ResetPositions()
         printMessage("MageControl: Configuration reset to defaults")
     else
         printMessage("MageControl Commands:")
@@ -813,4 +857,9 @@ MageControlFrame:SetScript("OnEvent", function()
         debugPrint("Player auras changed, updating buffs")
         MC.CURRENT_BUFFS = getBuffs()
     end
+
+    MageControlFrame:SetScript("OnUpdate", function()
+        MC.OnUpdate()
+    end)
 end)
+
