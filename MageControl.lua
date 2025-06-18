@@ -92,6 +92,41 @@ local MC = {
         PROC_COST_PERCENT = 2
     },
 
+    BUFF_INFO = {
+        CLEARCASTING = {
+            id   = 12536,
+            name = "Clearcasting",
+        },
+        TEMPORAL_CONVERGENCE = {
+            id   = 51961,
+            name = "Temporal Convergence",
+        },
+        ARCANE_POWER = {
+            id                        = 12042,
+            name                      = "Arcane Power",
+            mana_drain_per_second     = 1,
+            death_threshold           = 10,
+            safety_buffer             = 5,
+            proc_cost_percent         = 2,
+        },
+        ARCANE_RUPTURE = {
+            id   = 52502,
+            name = "Arcane Rupture",
+        },
+        MIND_QUICKENING = {
+            id   = 23723,
+            name = "Mind Quickening",
+        },
+        ENLIGHTENED_STATE = {
+            id   = 51270,
+            name = "Enlightened State",
+        },
+        SULFURON_BLAZE = {
+            id   = 42027,
+            name = "Sulfuron Blaze",
+        },
+    },
+
     SPELL_MODIFIERS = {
         ARCANE_MISSILES_RUPTURE_MULTIPLIER = 1.25,
         PROC_DAMAGE_COST_PERCENT = 2
@@ -192,6 +227,16 @@ local function getModifiedSpellManaCost(spellName, buffStates)
     return baseCost
 end
 
+local function getBuffNameByID(buffID)
+    for _, info in pairs(BUFF_INFO) do
+        if info.id == buffID then
+            return info.name
+        end
+    end
+
+    return "Untracked Buff"
+end
+
 local function getSpellCostPercent(spellName, buffStates)
     local manaCost = getModifiedSpellManaCost(spellName, buffStates)
     local maxMana = UnitManaMax("player")
@@ -210,19 +255,19 @@ local function getBuffs()
     end
     local buffs = {}
     local relevantBuffs = {
-        [MC.BUFF_NAME.CLEARCASTING] = true,
-        [MC.BUFF_NAME.TEMPORAL_CONVERGENCE] = true,
-        [MC.BUFF_NAME.ARCANE_POWER] = true,
-        [MC.BUFF_NAME.MIND_QUICKENING] = true,
-        [MC.BUFF_NAME.ENLIGHTENED_STATE] = true,
-        [MC.BUFF_NAME.SULFURON_BLAZE] = true
+        [MC.BUFF_INFO.CLEARCASTING.name] = true,
+        [MC.BUFF_INFO.TEMPORAL_CONVERGENCE.name] = true,
+        [MC.BUFF_INFO.ARCANE_POWER.name] = true,
+        [MC.BUFF_INFO.MIND_QUICKENING.name] = true,
+        [MC.BUFF_INFO.ENLIGHTENED_STATE.name] = true,
+        [MC.BUFF_INFO.SULFURON_BLAZE.name] = true
     }
 
     for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HELPFUL|PASSIVE")
-            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+            local buffName = getBuffNameByID(buffId)
 
             debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId))
 
@@ -243,11 +288,11 @@ local function getBuffs()
         local buffIndex = GetPlayerBuff(i, "HARMFUL")
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HARMFUL")
-            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+            local buffName = getBuffNameByID(buffId)
 
             debugPrint("Checking debuff: " .. buffName .. " with ID: " .. tostring(buffId))
 
-            if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
+            if buffName == MC.BUFF_INFO.ARCANE_RUPTURE.name then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
                 table.insert(buffs, {
                     name = buffName,
@@ -275,7 +320,7 @@ local function findBuff(buffs, buffName)
 end
 
 local function getArcanePowerTimeLeft(buffs)
-    local arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
+    local arcanePower = findBuff(buffs, MC.BUFF_INFO.ARCANE_POWER.name)
     return arcanePower and arcanePower:duration() or 0
 end
 
@@ -334,10 +379,10 @@ end
 
 local function getCurrentBuffs(buffs)
     return {
-        clearcasting = findBuff(buffs, MC.BUFF_NAME.CLEARCASTING),
-        temporalConvergence = findBuff(buffs, MC.BUFF_NAME.TEMPORAL_CONVERGENCE),
-        arcaneRupture = findBuff(buffs, MC.BUFF_NAME.ARCANE_RUPTURE),
-        arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
+        clearcasting = findBuff(buffs, MC.BUFF_INFO.CLEARCASTING.name),
+        temporalConvergence = findBuff(buffs, MC.BUFF_INFO.TEMPORAL_CONVERGENCE.name),
+        arcaneRupture = findBuff(buffs, MC.BUFF_INFO.ARCANE_RUPTURE.name),
+        arcanePower = findBuff(buffs, MC.BUFF_INFO.ARCANE_POWER.name)
     }
 end
 
@@ -408,10 +453,10 @@ local function getCurrentHasteValue()
     local hastePercent = MageControlDB.haste.BASE_VALUE
 
     local hasteBuffs = {
-        [MC.BUFF_NAME.ARCANE_POWER] = 30,
-        [MC.BUFF_NAME.MIND_QUICKENING] = 33,
-        [MC.BUFF_NAME.ENLIGHTENED_STATE] = 20,
-        [MC.BUFF_NAME.SULFURON_BLAZE] = 5
+        [MC.BUFF_INFO.ARCANE_POWER.name] = 30,
+        [MC.BUFF_INFO.MIND_QUICKENING.name] = 33,
+        [MC.BUFF_INFO.ENLIGHTENED_STATE.name] = 20,
+        [MC.BUFF_INFO.SULFURON_BLAZE.name] = 5
     }
 
     for buffName, buffHaste in pairs(hasteBuffs) do
