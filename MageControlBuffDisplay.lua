@@ -85,7 +85,7 @@ local function createBuffFrame(buffName)
         GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
         GameTooltip:SetText(buffName)
         if not BuffDisplay.isLocked then
-            GameTooltip:AddLine("Ziehen zum Bewegen", 0.5, 0.5, 0.5)
+            GameTooltip:AddLine("Drag to move", 0.5, 0.5, 0.5)
         end
         GameTooltip:Show()
     end)
@@ -169,9 +169,9 @@ function BuffDisplay_ToggleLock()
     end
 
     if BuffDisplay.isLocked then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Anzeigen gesperrt", 1.0, 1.0, 0.0)
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Frame locked", 1.0, 1.0, 0.0)
     else
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Anzeigen entsperrt - Ziehen zum Bewegen", 1.0, 1.0, 0.0)
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Frame unlocked - Drag to move", 1.0, 1.0, 0.0)
     end
 end
 
