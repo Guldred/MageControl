@@ -3,6 +3,7 @@ local BuffDisplay = {
     isLocked = true,
     updateInterval = 0.1,
     lastUpdate = 0,
+    iconPlaceholder = "Interface\\Icons\\INV_Misc_QuestionMark",
 
     trackedBuffs = {
         "Arcane Power",
@@ -39,18 +40,21 @@ local function createBuffFrame(buffName)
     local frameName = "MageControlBuff_" .. string.gsub(buffName, " ", "")
     local frame = CreateFrame("Frame", frameName, UIParent)
 
-    frame:SetWidth(60)
-    frame:SetHeight(30)
+    frame:SetWidth(48)
+    frame:SetHeight(48)
     frame:SetFrameStrata("HIGH")
+
+    frame.icon = frame:CreateTexture(nil, "ARTWORK")
+    frame.icon:SetWidth(32)
+    frame.icon:SetHeight(32)
+    frame.icon:SetPoint("CENTER", frame, "CENTER", 0, 0)
 
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetAllPoints(frame)
-    --frame.bg:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
     frame.bg:SetVertexColor(0, 0, 0, 0.8)
 
     frame.border = frame:CreateTexture(nil, "BORDER")
     frame.border:SetAllPoints(frame)
-    --frame.border:SetTexture("Interface\\Tooltips\\UI-Tooltip-Border")
     frame.border:SetVertexColor(1, 1, 1, 0.8)
 
     frame.timerText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -59,10 +63,15 @@ local function createBuffFrame(buffName)
     frame.timerText:SetText("0")
 
     frame.nameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    frame.nameText:SetPoint("TOP", frame, "BOTTOM", 0, -2)
+    frame.nameText:SetPoint("CENTER", frame, "CENTER", 0, -10)
     frame.nameText:SetTextColor(0.8, 0.8, 0.8, 1)
     frame.nameText:SetText(buffName)
     frame.nameText:Hide()
+
+    frame.stackText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    frame.stackText:SetPoint("BOTTOMLEFT", frame.icon, "BOTTOMLEFT", 2, 2)
+    frame.stackText:SetTextColor(1, 1, 1, 1)
+    frame.stackText:SetText("")
 
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -128,6 +137,7 @@ local function updateBuffDisplay(buffName, frame)
         local timeLeft = buff:duration()
         if timeLeft > 0 then
             frame:Show()
+            frame.icon:SetTexture(buff.icon)
             if timeLeft >= 60 then
                 frame.timerText:SetText(string.format("%.0fm", timeLeft / 60))
             elseif timeLeft >= 10 then
@@ -143,6 +153,13 @@ local function updateBuffDisplay(buffName, frame)
             else
                 frame.timerText:SetTextColor(0.2, 1, 0.2, 1) -- green
             end
+
+            if buff.stacks and buff.stacks > 1 then
+                frame.stackText:SetText(buff.stacks)
+                frame.stackText:Show()
+            else
+                frame.stackText:Hide()
+            end
         else
             frame:Hide()
         end
@@ -157,17 +174,33 @@ local function updateAllBuffDisplays()
     end
 end
 
+function lockFrames()
+    BuffDisplay.isLocked = true
+    MageControlDB.buffDisplayLocked = BuffDisplay.isLocked
+    for buffName, frame in pairs(BuffDisplay.frames) do
+        frame.nameText:Hide()
+    end
+end
+
+function unlockFrames()
+    BuffDisplay.isLocked = false
+    MageControlDB.buffDisplayLocked = BuffDisplay.isLocked
+    for buffName, frame in pairs(BuffDisplay.frames) do
+        frame.nameText:Show()
+        frame.icon:SetTexture(BuffDisplay.iconPlaceholder)
+        frame.timerText:SetText("0")
+        frame:Show()
+    end
+end
+
 function BuffDisplay_ToggleLock()
     BuffDisplay.isLocked = not BuffDisplay.isLocked
     MageControlDB.buffDisplayLocked = BuffDisplay.isLocked
 
-    for buffName, frame in pairs(BuffDisplay.frames) do
-        if BuffDisplay.isLocked then
-            frame.nameText:Hide()
-        else
-            frame.nameText:Show()
-            frame:Show()
-        end
+    if BuffDisplay.isLocked then
+        lockFrames()
+    else
+        unlockFrames()
     end
 
     if BuffDisplay.isLocked then
@@ -196,7 +229,7 @@ BuffDisplayFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeBuffPositions()
         initializeBuffFrames()
-        BuffDisplay.isLocked = true
+        lockFrames()
         MC.registerUpdateFunction(updateAllBuffDisplays, 0.2)
     elseif event == "PLAYER_AURAS_CHANGED" then
         MC.forceUpdate()

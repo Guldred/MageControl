@@ -777,8 +777,12 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         arcaneIncantagos()
     elseif command == "trinket" then
         activateTrinketAndAP()
-    elseif command == "lock" then
+    elseif command == "toggle" then
         BuffDisplay_ToggleLock()
+    elseif command == "lock" then
+        lockFrames()
+    elseif command == "unlock" then
+        unlockFrames()
     elseif command == "reset" then
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
@@ -823,6 +827,7 @@ MageControlFrame:SetScript("OnEvent", function()
         state.isChanneling = true
         state.channelFinishTime = GetTime() + ((arg1 - 0)/1000)
         state.expectedCastFinishTime = state.channelFinishTime
+        MC.CURRENT_BUFFS = getBuffs()
 
     elseif event == "SPELLCAST_CHANNEL_STOP" then
         state.isChanneling = false
