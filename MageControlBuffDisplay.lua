@@ -140,10 +140,8 @@ local function updateBuffDisplay(buffName, frame)
             frame.icon:SetTexture(buff.icon)
             if timeLeft >= 60 then
                 frame.timerText:SetText(string.format("%.0fm", timeLeft / 60))
-            elseif timeLeft >= 10 then
-                frame.timerText:SetText(string.format("%.0f", timeLeft))
             else
-                frame.timerText:SetText(string.format("%.1f", timeLeft))
+                frame.timerText:SetText(string.format("%.0f", timeLeft))
             end
 
             if timeLeft <= 3 then
