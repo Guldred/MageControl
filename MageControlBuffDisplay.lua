@@ -223,7 +223,6 @@ end
 
 local BuffDisplayFrame = CreateFrame("Frame")
 BuffDisplayFrame:RegisterEvent("ADDON_LOADED")
-BuffDisplayFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 
 BuffDisplayFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
@@ -231,7 +230,5 @@ BuffDisplayFrame:SetScript("OnEvent", function()
         initializeBuffFrames()
         lockFrames()
         MC.registerUpdateFunction(updateAllBuffDisplays, 0.2)
-    elseif event == "PLAYER_AURAS_CHANGED" then
-        MC.forceUpdate()
     end
 end)

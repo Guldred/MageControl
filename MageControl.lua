@@ -864,6 +864,7 @@ MageControlFrame:SetScript("OnEvent", function()
     elseif event == "PLAYER_AURAS_CHANGED" then
         debugPrint("Player auras changed, updating buffs")
         MC.CURRENT_BUFFS = getBuffs()
+        MC.forceUpdate()
     end
 
     MageControlFrame:SetScript("OnUpdate", function()
