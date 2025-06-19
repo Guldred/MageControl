@@ -1,7 +1,7 @@
 SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
-local MC = {
+MC = {
     GLOBAL_COOLDOWN_IN_SECONDS = 1.5,
 
     TIMING = {
@@ -11,16 +11,52 @@ local MC = {
         ARCANE_RUPTURE_MIN_DURATION = 2
     },
 
-    SPELL_ID = {
-        FIREBLAST = 10199,
-        ARCANE_SURGE = 51936,
-        ARCANE_EXPLOSION = 10202,
-        ARCANE_MISSILES = 25345,
-        ARCANE_RUPTURE = 51954,
-        FROSTBOLT_1 = 116,
-        FROSTBOLT = 25304,
-        FIREBALL = 25306,
-        AMP_MAGIC_DEBUFF = 8455
+    SPELL_INFO = {
+        FIREBLAST = {
+            id = 10199,
+            name = "Fireblast",
+            cost = 340
+        },
+        ARCANE_SURGE = {
+            id = 51936,
+            name = "Arcane Surge",
+            cost = 170
+        },
+        ARCANE_EXPLOSION = {
+            id = 10202,
+            name = "Arcane Explosion",
+            cost = 390
+        },
+        ARCANE_MISSILES = {
+            id = 25345,
+            name = "Arcane Missiles",
+            cost = 655
+        },
+        ARCANE_RUPTURE = {
+            id = 51954,
+            name = "Arcane Rupture",
+            cost = 390
+        },
+        FROSTBOLT_1 = {
+            id = 116,
+            name = "Frostbolt (Rank 1)",
+            cost = 0
+        },
+        FROSTBOLT = {
+            id = 25304,
+            name = "Frostbolt",
+            cost = 0
+        },
+        FIREBALL = {
+            id = 25306,
+            name = "Fireball",
+            cost = 0
+        },
+        AMP_MAGIC_DEBUFF = {
+            id = 8455,
+            name = "Amplify Magic",
+            cost = 0
+        }
     },
 
     DEFAULT_ACTIONBAR_SLOT = {
@@ -29,42 +65,43 @@ local MC = {
         ARCANE_SURGE = 5
     },
 
-    SPELL_NAME = {},
-
-    BUFF_NAME = {
-        CLEARCASTING = "Clearcasting",
-        TEMPORAL_CONVERGENCE = "Temporal Convergence", 
-        ARCANE_POWER = "Arcane Power",
-        ARCANE_RUPTURE = "Arcane Rupture",
-        MIND_QUCKENING = "Mind Quickening",
-        ENLIGHTENED_STATE = "Enlightened State",
-        SULFURON_BLAZE = "Sulfuron Blaze"
-    },
-
-    BUFF_ID_TO_NAME = {
-        [12536] = "Clearcasting",
-        [51961] = "Temporal Convergence",
-        [12042] = "Arcane Power",
-        [52502] = "Arcane Rupture",
-        [23723] = "Mind Quickening",
-        [51270] = "Enlightened State",
-        [42027] = "Sulfuron Blaze"
-    },
-
-    ARCANE_POWER = {
-        MANA_DRAIN_PER_SECOND = 1,
-        DEATH_THRESHOLD = 10,
-        SAFETY_BUFFER = 5,
-        PROC_COST_PERCENT = 2
-    },
-
-    SPELL_COSTS = {
-        ["arcane missiles"] = 655,
-        ["arcane surge"] = 170,
-        ["arcane rupture"] = 390,
-        ["fire blast"] = 340,
-        ["fireblast"] = 340,
-        ["arcane explosion"] = 390
+    BUFF_INFO = {
+        CLEARCASTING = {
+            id   = 12536,
+            name = "Clearcasting",
+        },
+        TEMPORAL_CONVERGENCE = {
+            id   = 51961,
+            name = "Temporal Convergence",
+        },
+        ARCANE_POWER = {
+            id                        = 12042,
+            name                      = "Arcane Power",
+            mana_drain_per_second     = 1,
+            death_threshold           = 10,
+            safety_buffer             = 5,
+            proc_cost_percent         = 2,
+        },
+        ARCANE_RUPTURE = {
+            id   = 52502,
+            name = "Arcane Rupture",
+        },
+        MIND_QUICKENING = {
+            id   = 23723,
+            name = "Mind Quickening",
+        },
+        WISDOM_OF_THE_MAKARU = {
+            id   = 51271,
+            name = "Wisdom of the Mak'aru",
+        },
+        ENLIGHTENED_STATE = {
+            id   = 51270,
+            name = "Enlightened State",
+        },
+        SULFURON_BLAZE = {
+            id   = 42027,
+            name = "Sulfuron Blaze",
+        },
     },
 
     SPELL_MODIFIERS = {
@@ -80,17 +117,49 @@ local MC = {
     CURRENT_BUFFS = {
     },
 
+    UpdateFunctions = {
+    },
+
+    OnUpdate = function()
+        for _, func in ipairs(MC.UpdateFunctions) do
+            if (GetTime() - func.lastUpdate >= func.interval) then
+                func.f()
+                func.lastUpdate = GetTime()
+            end
+        end
+    end,
+
+    forceUpdate = function()
+        for _, func in ipairs(MC.UpdateFunctions) do
+            func.f()
+            func.lastUpdate = GetTime()
+        end
+    end,
+
+    registerUpdateFunction = function(func, interval)
+        if type(func) == "function" then
+            table.insert(MC.UpdateFunctions, {
+                f = func,
+                lastUpdate = 0,
+                interval = interval or 0.1,
+            })
+        else
+            error("MageControl: registerUpdateFunction expects a function and an interval (optional)")
+        end
+    end,
+
+    unregisterUpdateFunction = function(func)
+        for i, updateFunc in ipairs(MC.UpdateFunctions) do
+            if updateFunc.f == func then
+                table.remove(MC.UpdateFunctions, i)
+                return
+            end
+        end
+        error("MageControl: unregisterUpdateFunction could not find the specified function")
+    end,
+
     DEBUG = false
 }
-
-MC.SPELL_NAME[MC.SPELL_ID.FIREBLAST] = "Fireblast"
-MC.SPELL_NAME[MC.SPELL_ID.ARCANE_SURGE] = "Arcane Surge"
-MC.SPELL_NAME[MC.SPELL_ID.ARCANE_EXPLOSION] = "Arcane Explosion"
-MC.SPELL_NAME[MC.SPELL_ID.ARCANE_MISSILES] = "Arcane Missiles"
-MC.SPELL_NAME[MC.SPELL_ID.ARCANE_RUPTURE] = "Arcane Rupture"
-MC.SPELL_NAME[MC.SPELL_ID.FROSTBOLT_1] = "Frostbolt (Rank 1)"
-MC.SPELL_NAME[MC.SPELL_ID.FROSTBOLT] = "Frostbolt"
-MC.SPELL_NAME[MC.SPELL_ID.FIREBALL] = "Fireball"
 
 MageControlDB = MageControlDB or {}
 
@@ -154,17 +223,36 @@ local function normSpellName(name)
     return string.lower(name)
 end
 
+local function getSpellCostByName(spellName)
+    local normalizedName = normSpellName(spellName)
+    for _, spellInfo in pairs(MC.SPELL_INFO) do
+        if normSpellName(spellInfo.name) == normalizedName then
+            return spellInfo.cost
+        end
+    end
+    return 0
+end
+
 local function getModifiedSpellManaCost(spellName, buffStates)
     if buffStates and buffStates.clearcasting then
         return 0
     end
-    local key = normSpellName(spellName)
-    local baseCost = MC.SPELL_COSTS[key] or 0
-    if key == "arcane missiles" and buffStates and buffStates.arcaneRupture then
+    local baseCost = getSpellCostByName(spellName)
+    if normSpellName(spellName) == "arcane missiles" and buffStates and buffStates.arcaneRupture then
         return baseCost * MC.SPELL_MODIFIERS.ARCANE_MISSILES_RUPTURE_MULTIPLIER
     end
 
     return baseCost
+end
+
+local function getBuffNameByID(buffID)
+    for _, info in pairs(MC.BUFF_INFO) do
+        if info.id == buffID then
+            return info.name
+        end
+    end
+
+    return "Untracked Buff"
 end
 
 local function getSpellCostPercent(spellName, buffStates)
@@ -185,26 +273,31 @@ local function getBuffs()
     end
     local buffs = {}
     local relevantBuffs = {
-        [MC.BUFF_NAME.CLEARCASTING] = true,
-        [MC.BUFF_NAME.TEMPORAL_CONVERGENCE] = true,
-        [MC.BUFF_NAME.ARCANE_POWER] = true,
-        [MC.BUFF_NAME.MIND_QUCKENING] = true,
-        [MC.BUFF_NAME.ENLIGHTENED_STATE] = true,
-        [MC.BUFF_NAME.SULFURON_BLAZE] = true
+        [MC.BUFF_INFO.CLEARCASTING.name] = true,
+        [MC.BUFF_INFO.TEMPORAL_CONVERGENCE.name] = true,
+        [MC.BUFF_INFO.ARCANE_POWER.name] = true,
+        [MC.BUFF_INFO.MIND_QUICKENING.name] = true,
+        [MC.BUFF_INFO.ENLIGHTENED_STATE.name] = true,
+        [MC.BUFF_INFO.SULFURON_BLAZE.name] = true,
+        [MC.BUFF_INFO.WISDOM_OF_THE_MAKARU.name] = true
     }
 
     for i = 0, 31 do 
         local buffIndex = GetPlayerBuff(i, "HELPFUL|PASSIVE")
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HELPFUL|PASSIVE")
-            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+            local buffName = getBuffNameByID(buffId)
+            local stacks = GetPlayerBuffApplications(buffIndex, "HELPFUL|PASSIVE") or 1
+            local icon = GetPlayerBuffTexture(buffIndex, "HELPFUL|PASSIVE") or "Interface\\Icons\\INV_Misc_QuestionMark"
 
-            debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId))
+            debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId) .. " has " .. tostring(stacks) .. " stacks and icon: " .. tostring(icon))
 
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
                 table.insert(buffs, {
                     name = buffName,
+                    stacks = stacks,
+                    icon = icon,
                     timeFinished = GetTime() + duration,
                     duration = function(self)
                         return self.timeFinished - GetTime()
@@ -218,14 +311,18 @@ local function getBuffs()
         local buffIndex = GetPlayerBuff(i, "HARMFUL")
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HARMFUL")
-            local buffName = MC.BUFF_ID_TO_NAME[buffId] or "Untracked Buff"
+            local buffName = getBuffNameByID(buffId)
+            local stacks = GetPlayerBuffApplications(buffIndex, "HARMFUL") or 1
+            local icon = GetPlayerBuffTexture(buffIndex, "HARMFUL") or "Interface\\Icons\\INV_Misc_QuestionMark"
 
-            debugPrint("Checking debuff: " .. buffName .. " with ID: " .. tostring(buffId))
+            debugPrint("Checking debuff: " .. buffName .. " with ID: " .. tostring(buffId) .. " has " .. tostring(stacks) .. " stacks")
 
-            if buffName == MC.BUFF_NAME.ARCANE_RUPTURE then
+            if buffName == MC.BUFF_INFO.ARCANE_RUPTURE.name then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
                 table.insert(buffs, {
                     name = buffName,
+                    stacks = stacks,
+                    icon = icon,
                     timeFinished = GetTime() + duration,
                     duration = function(self)
                         return self.timeFinished - GetTime()
@@ -250,7 +347,7 @@ local function findBuff(buffs, buffName)
 end
 
 local function getArcanePowerTimeLeft(buffs)
-    local arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
+    local arcanePower = findBuff(buffs, MC.BUFF_INFO.ARCANE_POWER.name)
     return arcanePower and arcanePower:duration() or 0
 end
 
@@ -266,11 +363,11 @@ local function isSafeToCast(spellName, buffs, buffStates)
     local procCostPercent = 0
 
     if string.find(spellName, "Arcane") then
-        procCostPercent = MC.ARCANE_POWER.PROC_COST_PERCENT
+        procCostPercent = MC.BUFF_INFO.ARCANE_POWER.proc_cost_percent
     end
 
     local projectedManaPercent = currentManaPercent - spellCostPercent - procCostPercent
-    local safetyThreshold = MC.ARCANE_POWER.DEATH_THRESHOLD + MC.ARCANE_POWER.SAFETY_BUFFER
+    local safetyThreshold = MC.BUFF_INFO.ARCANE_POWER.death_threshold + MC.BUFF_INFO.ARCANE_POWER.safety_buffer
     if projectedManaPercent < safetyThreshold then
         printMessage(string.format("|cffff0000MageControl WARNING: %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r",
             spellName, projectedManaPercent))
@@ -287,8 +384,7 @@ local function safeQueueSpell(spellName, buffs, buffStates)
     end
 
     -- If spell name is unknown, debug it
-    local key = normSpellName(spellName)
-    if not MC.SPELL_COSTS[key] then
+    if getSpellCostByName(spellName) == 0 then
         debugPrint("Unknown spell in safeQueueSpell: [" .. tostring(spellName) .. "]")
     end
 
@@ -310,10 +406,10 @@ end
 
 local function getCurrentBuffs(buffs)
     return {
-        clearcasting = findBuff(buffs, MC.BUFF_NAME.CLEARCASTING),
-        temporalConvergence = findBuff(buffs, MC.BUFF_NAME.TEMPORAL_CONVERGENCE),
-        arcaneRupture = findBuff(buffs, MC.BUFF_NAME.ARCANE_RUPTURE),
-        arcanePower = findBuff(buffs, MC.BUFF_NAME.ARCANE_POWER)
+        clearcasting = findBuff(buffs, MC.BUFF_INFO.CLEARCASTING.name),
+        temporalConvergence = findBuff(buffs, MC.BUFF_INFO.TEMPORAL_CONVERGENCE.name),
+        arcaneRupture = findBuff(buffs, MC.BUFF_INFO.ARCANE_RUPTURE.name),
+        arcanePower = findBuff(buffs, MC.BUFF_INFO.ARCANE_POWER.name)
     }
 end
 
@@ -371,7 +467,7 @@ local function getSpellAvailability()
         arcaneRuptureReady = IsActionSlotCooldownReady(slots.ARCANE_RUPTURE),
         arcaneSurgeReady = IsActionSlotCooldownReady(slots.ARCANE_SURGE),
         fireblastReady = IsActionSlotCooldownReady(slots.FIREBLAST) and 
-                        (IsSpellInRange(MC.SPELL_ID.FIREBLAST) == 1)
+                        (IsSpellInRange(MC.SPELL_INFO.FIREBLAST.id) == 1)
     }
 end
 
@@ -384,10 +480,10 @@ local function getCurrentHasteValue()
     local hastePercent = MageControlDB.haste.BASE_VALUE
 
     local hasteBuffs = {
-        [MC.BUFF_NAME.ARCANE_POWER] = 30,
-        [MC.BUFF_NAME.MIND_QUCKENING] = 33,
-        [MC.BUFF_NAME.ENLIGHTENED_STATE] = 20,
-        [MC.BUFF_NAME.SULFURON_BLAZE] = 5
+        [MC.BUFF_INFO.ARCANE_POWER.name] = 30,
+        [MC.BUFF_INFO.MIND_QUICKENING.name] = 33,
+        [MC.BUFF_INFO.ENLIGHTENED_STATE.name] = 20,
+        [MC.BUFF_INFO.SULFURON_BLAZE.name] = 5
     }
 
     for buffName, buffHaste in pairs(hasteBuffs) do
@@ -499,7 +595,7 @@ local function checkManaWarning(buffs)
     local arcanePowerTimeLeft = getArcanePowerTimeLeft(buffs)
     if arcanePowerTimeLeft > 0 then
         local currentMana = getCurrentManaPercent()
-        local projectedMana = currentMana - (arcanePowerTimeLeft * MC.ARCANE_POWER.MANA_DRAIN_PER_SECOND)
+        local projectedMana = currentMana - (arcanePowerTimeLeft * MC.BUFF_INFO.ARCANE_POWER.mana_drain_per_second)
 
         if projectedMana < 15 and projectedMana > 10 then
             printMessage("|cffffff00MageControl: LOW MANA WARNING - " .. math.floor(projectedMana) .. "% projected!|r")
@@ -548,6 +644,25 @@ local function showCurrentConfig()
     printMessage("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
 end
 
+local function getSpellIdByName(spellName)
+    local normalizedName = normSpellName(spellName)
+    for _, spellInfo in pairs(MC.SPELL_INFO) do
+        if normSpellName(spellInfo.name) == normalizedName then
+            return spellInfo.id
+        end
+    end
+    return nil
+end
+
+local function getSpellNameById(spellId)
+    for _, spellInfo in pairs(MC.SPELL_INFO) do
+        if spellInfo.id == spellId then
+            return spellInfo.name
+        end
+    end
+    return tostring(spellId)
+end
+
 local function hasAmplifyMagic()
     if not UnitExists("target") then return false end
 
@@ -557,7 +672,7 @@ local function hasAmplifyMagic()
             break
         end
         debugPrint("Checking debuff: " .. name .. " " .. id)
-        if id == MC.SPELL_ID.AMP_MAGIC_DEBUFF then
+        if id == MC.SPELL_INFO.AMP_MAGIC_DEBUFF.id then
             return true
         end
     end
@@ -662,6 +777,12 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         arcaneIncantagos()
     elseif command == "trinket" then
         activateTrinketAndAP()
+    elseif command == "toggle" then
+        BuffDisplay_ToggleLock()
+    elseif command == "lock" then
+        lockFrames()
+    elseif command == "unlock" then
+        unlockFrames()
     elseif command == "reset" then
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
@@ -672,6 +793,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
             BASE_VALUE = MC.HASTE.BASE_VALUE,
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
+        BuffDisplay_ResetPositions()
         printMessage("MageControl: Configuration reset to defaults")
     else
         printMessage("MageControl Commands:")
@@ -705,6 +827,7 @@ MageControlFrame:SetScript("OnEvent", function()
         state.isChanneling = true
         state.channelFinishTime = GetTime() + ((arg1 - 0)/1000)
         state.expectedCastFinishTime = state.channelFinishTime
+        MC.CURRENT_BUFFS = getBuffs()
 
     elseif event == "SPELLCAST_CHANNEL_STOP" then
         state.isChanneling = false
@@ -721,7 +844,7 @@ MageControlFrame:SetScript("OnEvent", function()
         state.expectedCastFinishTime = GetTime()
 
     elseif event == "SPELL_CAST_EVENT" then
-        state.lastSpellCast = MC.SPELL_NAME[arg2] or tostring(arg2) -- fallback to spell ID if missing
+        state.lastSpellCast = getSpellNameById(arg2)
         debugPrint("Spell cast: " .. tostring(state.lastSpellCast) .. " with ID: " .. tostring(arg2))
         state.globalCooldownActive = true
         state.globalCooldownStart = GetTime()
@@ -741,5 +864,11 @@ MageControlFrame:SetScript("OnEvent", function()
     elseif event == "PLAYER_AURAS_CHANGED" then
         debugPrint("Player auras changed, updating buffs")
         MC.CURRENT_BUFFS = getBuffs()
+        MC.forceUpdate()
     end
+
+    MageControlFrame:SetScript("OnUpdate", function()
+        MC.OnUpdate()
+    end)
 end)
+
