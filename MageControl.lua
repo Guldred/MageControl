@@ -65,16 +65,6 @@ MC = {
         ARCANE_SURGE = 5
     },
 
-    BUFF_NAME = {
-        CLEARCASTING = "Clearcasting",
-        TEMPORAL_CONVERGENCE = "Temporal Convergence",
-        ARCANE_POWER = "Arcane Power",
-        ARCANE_RUPTURE = "Arcane Rupture",
-        MIND_QUICKENING = "Mind Quickening",
-        ENLIGHTENED_STATE = "Enlightened State",
-        SULFURON_BLAZE = "Sulfuron Blaze"
-    },
-
     BUFF_INFO = {
         CLEARCASTING = {
             id   = 12536,
@@ -99,6 +89,10 @@ MC = {
         MIND_QUICKENING = {
             id   = 23723,
             name = "Mind Quickening",
+        },
+        WISDOM_OF_THE_MAKARU = {
+            id   = 51271,
+            name = "Wisdom of the Mak'aru",
         },
         ENLIGHTENED_STATE = {
             id   = 51270,
@@ -284,7 +278,8 @@ local function getBuffs()
         [MC.BUFF_INFO.ARCANE_POWER.name] = true,
         [MC.BUFF_INFO.MIND_QUICKENING.name] = true,
         [MC.BUFF_INFO.ENLIGHTENED_STATE.name] = true,
-        [MC.BUFF_INFO.SULFURON_BLAZE.name] = true
+        [MC.BUFF_INFO.SULFURON_BLAZE.name] = true,
+        [MC.BUFF_INFO.WISDOM_OF_THE_MAKARU.name] = true
     }
 
     for i = 0, 31 do 
@@ -292,13 +287,17 @@ local function getBuffs()
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HELPFUL|PASSIVE")
             local buffName = getBuffNameByID(buffId)
+            local stacks = GetPlayerBuffApplications(buffIndex, "HELPFUL|PASSIVE") or 1
+            local icon = GetPlayerBuffTexture(buffIndex, "HELPFUL|PASSIVE") or "Interface\\Icons\\INV_Misc_QuestionMark"
 
-            debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId))
+            debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId) .. " has " .. tostring(stacks) .. " stacks and icon: " .. tostring(icon))
 
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")
                 table.insert(buffs, {
                     name = buffName,
+                    stacks = stacks,
+                    icon = icon,
                     timeFinished = GetTime() + duration,
                     duration = function(self)
                         return self.timeFinished - GetTime()
@@ -313,13 +312,17 @@ local function getBuffs()
         if buffIndex >= 0 then
             local buffId = GetPlayerBuffID(buffIndex, "HARMFUL")
             local buffName = getBuffNameByID(buffId)
+            local stacks = GetPlayerBuffApplications(buffIndex, "HARMFUL") or 1
+            local icon = GetPlayerBuffTexture(buffIndex, "HARMFUL") or "Interface\\Icons\\INV_Misc_QuestionMark"
 
-            debugPrint("Checking debuff: " .. buffName .. " with ID: " .. tostring(buffId))
+            debugPrint("Checking debuff: " .. buffName .. " with ID: " .. tostring(buffId) .. " has " .. tostring(stacks) .. " stacks")
 
             if buffName == MC.BUFF_INFO.ARCANE_RUPTURE.name then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HARMFUL")
                 table.insert(buffs, {
                     name = buffName,
+                    stacks = stacks,
+                    icon = icon,
                     timeFinished = GetTime() + duration,
                     duration = function(self)
                         return self.timeFinished - GetTime()

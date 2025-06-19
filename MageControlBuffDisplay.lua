@@ -8,14 +8,16 @@ local BuffDisplay = {
         "Arcane Power",
         "Mind Quickening",
         "Enlightened State",
-        "Arcane Rupture"
+        "Arcane Rupture",
+        "Wisdom of the Mak'aru"
     },
 
     defaultPositions = {
         ["Arcane Power"] = { x = 100, y = -100 },
         ["Mind Quickening"] = { x = 100, y = -140 },
         ["Enlightened State"] = { x = 100, y = -180 },
-        ["Arcane Rupture"] = { x = 100, y = -220 }
+        ["Arcane Rupture"] = { x = 100, y = -220 },
+        ["Wisdom of the Mak'aru"] = { x = 100, y = -260 }
     }
 }
 
@@ -112,7 +114,7 @@ end
 
 
 local function updateBuffDisplay(buffName, frame)
-    if not MC or not MC.CURRENT_BUFFS then return end
+    if not MC or not MC.CURRENT_BUFFS or not BuffDisplay.isLocked then return end
 
     local buff = nil
     for _, buffData in ipairs(MC.CURRENT_BUFFS) do
@@ -135,11 +137,11 @@ local function updateBuffDisplay(buffName, frame)
             end
 
             if timeLeft <= 3 then
-                frame.timerText:SetTextColor(1, 0.2, 0.2, 1) -- Rot
+                frame.timerText:SetTextColor(1, 0.2, 0.2, 1) -- red
             elseif timeLeft <= 10 then
-                frame.timerText:SetTextColor(1, 1, 0.2, 1) -- Gelb
+                frame.timerText:SetTextColor(1, 1, 0.2, 1) -- yellow
             else
-                frame.timerText:SetTextColor(0.2, 1, 0.2, 1) -- Grün
+                frame.timerText:SetTextColor(0.2, 1, 0.2, 1) -- green
             end
         else
             frame:Hide()
@@ -183,11 +185,7 @@ function BuffDisplay_ResetPositions()
             BuffDisplay.frames[buffName]:SetPoint("CENTER", UIParent, "CENTER", defaultPos.x, defaultPos.y)
         end
     end
-    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Positionen zurückgesetzt", 1.0, 1.0, 0.0)
-end
-
-local function testfunc()
-    print("Testfunktion aufgerufen")
+    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Position reset", 1.0, 1.0, 0.0)
 end
 
 local BuffDisplayFrame = CreateFrame("Frame")
@@ -198,6 +196,7 @@ BuffDisplayFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeBuffPositions()
         initializeBuffFrames()
+        BuffDisplay.isLocked = true
         MC.registerUpdateFunction(updateAllBuffDisplays, 0.2)
     elseif event == "PLAYER_AURAS_CHANGED" then
         MC.forceUpdate()
