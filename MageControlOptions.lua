@@ -11,7 +11,6 @@ local function findSpellSlots()
     for slot = 1, 120 do
         local actionType, id = GetActionInfo(slot)
         if actionType == "spell" and id then
-            -- Prüfe ob es einer unserer gesuchten Spells ist
             for spellKey, targetId in pairs(spellIds) do
                 if id == targetId then
                     foundSlots[spellKey] = slot
