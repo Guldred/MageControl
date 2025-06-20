@@ -5,7 +5,8 @@ local function findSpellSlots()
     local spellIds = {
         FIREBLAST = 10199,
         ARCANE_RUPTURE = 51954,
-        ARCANE_SURGE = 51936
+        ARCANE_SURGE = 51936,
+        ARCANE_POWER = 12042
     }
 
     for slot = 1, 120 do
@@ -40,7 +41,7 @@ local function autoDetectSlots()
         table.insert(messages, spellKey .. " -> Slot " .. slot)
     end
 
-    local requiredSpells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE"}
+    local requiredSpells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE", "ARCANE_POWER"}
     local missingSpells = {}
     for _, spellKey in ipairs(requiredSpells) do
         if not foundSlots[spellKey] then
@@ -123,113 +124,8 @@ function MageControlOptions_CreateFrame()
     autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically")
     autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
 
-    local fireblastLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    fireblastLabel:SetPoint("TOPLEFT", optionsFrame, "TOPLEFT", 20, -95)
-    fireblastLabel:SetText("Fireblast Slot:")
 
-    local fireblastEditBox = CreateFrame("EditBox", "MageControlFireblastSlot", optionsFrame, "InputBoxTemplate")
-    fireblastEditBox:SetWidth(50)
-    fireblastEditBox:SetHeight(20)
-    fireblastEditBox:SetPoint("LEFT", fireblastLabel, "RIGHT", 10, 0)
-    fireblastEditBox:SetAutoFocus(false)
-    fireblastEditBox:SetNumeric(true)
-    fireblastEditBox:SetMaxLetters(3)
 
-    fireblastEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and (value < 1 or value > 120) then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
-    end)
-
-    fireblastEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
-
-    local ruptureLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    ruptureLabel:SetPoint("TOPLEFT", fireblastLabel, "BOTTOMLEFT", 0, -25)
-    ruptureLabel:SetText("Arcane Rupture Slot:")
-
-    local ruptureEditBox = CreateFrame("EditBox", "MageControlRuptureSlot", optionsFrame, "InputBoxTemplate")
-    ruptureEditBox:SetWidth(50)
-    ruptureEditBox:SetHeight(20)
-    ruptureEditBox:SetPoint("LEFT", ruptureLabel, "RIGHT", 10, 0)
-    ruptureEditBox:SetAutoFocus(false)
-    ruptureEditBox:SetNumeric(true)
-    ruptureEditBox:SetMaxLetters(3)
-    ruptureEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and (value < 1 or value > 120) then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
-    end)
-
-    ruptureEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
-
-    local surgeLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    surgeLabel:SetPoint("TOPLEFT", ruptureLabel, "BOTTOMLEFT", 0, -25)
-    surgeLabel:SetText("Arcane Surge Slot:")
-
-    local surgeEditBox = CreateFrame("EditBox", "MageControlSurgeSlot", optionsFrame, "InputBoxTemplate")
-    surgeEditBox:SetWidth(50)
-    surgeEditBox:SetHeight(20)
-    surgeEditBox:SetPoint("LEFT", surgeLabel, "RIGHT", 10, 0)
-    surgeEditBox:SetAutoFocus(false)
-    surgeEditBox:SetNumeric(true)
-    surgeEditBox:SetMaxLetters(3)
-    surgeEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and (value < 1 or value > 120) then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
-    end)
-    surgeEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
-
-    local hasteBaseValueLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    hasteBaseValueLabel:SetPoint("TOPLEFT", surgeLabel, "BOTTOMLEFT", 0, -25)
-    hasteBaseValueLabel:SetText("Haste Base Value:")
-
-    local hasteBaseValueEditBox = CreateFrame("EditBox", "MageControlHasteBaseValue", optionsFrame, "InputBoxTemplate")
-    hasteBaseValueEditBox:SetWidth(50)
-    hasteBaseValueEditBox:SetHeight(20)
-    hasteBaseValueEditBox:SetPoint("LEFT", hasteBaseValueLabel, "RIGHT", 10, 0)
-    hasteBaseValueEditBox:SetAutoFocus(false)
-    hasteBaseValueEditBox:SetNumeric(true)
-    hasteBaseValueEditBox:SetMaxLetters(2)
-    hasteBaseValueEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and value < 0 then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
-    end)
-    hasteBaseValueEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
-
-    local hasteThresholdLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    hasteThresholdLabel:SetPoint("TOPLEFT", hasteBaseValueLabel, "BOTTOMLEFT", 0, -25)
-    hasteThresholdLabel:SetText("Haste Threshold:")
-
-    local hasteThresholdEditBox = CreateFrame("EditBox", "MageControlHasteThreshold", optionsFrame, "InputBoxTemplate")
-    hasteThresholdEditBox:SetWidth(50)
-    hasteThresholdEditBox:SetHeight(20)
-    hasteThresholdEditBox:SetPoint("LEFT", hasteThresholdLabel, "RIGHT", 10, 0)
-    hasteThresholdEditBox:SetAutoFocus(false)
-    hasteThresholdEditBox:SetNumeric(true)
-    hasteThresholdEditBox:SetMaxLetters(2)
-    hasteThresholdEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and value < 0 then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
-    end)
-    hasteThresholdEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
 
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(80)
@@ -265,66 +161,9 @@ function MageControlOptions_LoadValues()
     if not MageControlDB.haste then
         MageControlDB.haste = { HASTE_THRESHOLD = 30, BASE_VALUE = 10 }
     end
-
-    local slots = MageControlDB.actionBarSlots
-    local fBox = getglobal("MageControlFireblastSlot")
-    local rBox = getglobal("MageControlRuptureSlot")
-    local sBox = getglobal("MageControlSurgeSlot")
-    local bBox = getglobal("MageControlHasteBaseValue")
-    local hBox = getglobal("MageControlHasteThreshold")
-    if fBox then fBox:SetText(tostring(slots.FIREBLAST or 1)) end
-    if rBox then rBox:SetText(tostring(slots.ARCANE_RUPTURE or 2)) end
-    if sBox then sBox:SetText(tostring(slots.ARCANE_SURGE or 5)) end
-    if bBox then bBox:SetText(tostring(MageControlDB.haste.BASE_VALUE or 10)) end
-    if hBox then hBox:SetText(tostring(MageControlDB.haste.HASTE_THRESHOLD or 30)) end
 end
 
 function MageControlOptions_Save()
-    local fBox = getglobal("MageControlFireblastSlot")
-    local rBox = getglobal("MageControlRuptureSlot")
-    local sBox = getglobal("MageControlSurgeSlot")
-    local bBox = getglobal("MageControlHasteBaseValue")
-    local hBox = getglobal("MageControlHasteThreshold")
-    local fireblastSlot = tonumber(fBox and fBox:GetText() or "1") or 1
-    local ruptureSlot = tonumber(rBox and rBox:GetText() or "2") or 2
-    local surgeSlot = tonumber(sBox and sBox:GetText() or "5") or 5
-    local hasteBaseValue = tonumber(bBox and bBox:GetText() or "10") or 10
-    local hasteThreshold = tonumber(hBox and hBox:GetText() or "30") or 30
-
-    if not fireblastSlot or fireblastSlot < 1 or fireblastSlot > 120 then
-        message("Invalid Fireblast slot. Must be between 1 and 120.")
-        return
-    end
-
-    if not ruptureSlot or ruptureSlot < 1 or ruptureSlot > 120 then
-        message("Invalid Arcane Rupture slot. Must be between 1 and 120.")
-        return
-    end
-
-    if not surgeSlot or surgeSlot < 1 or surgeSlot > 120 then
-        message("Invalid Arcane Surge slot. Must be between 1 and 120.")
-        return
-    end
-
-    if not hasteBaseValue or hasteBaseValue < 0 then
-        message("Invalid Haste Base Value. Must be a non-negative number.")
-        return
-    end
-
-    if not hasteThreshold or hasteThreshold < 0 then
-        message("Invalid Haste Threshold. Must be a positive number.")
-        return
-    end
-
-    if not MageControlDB.actionBarSlots then MageControlDB.actionBarSlots = {} end
-    if not MageControlDB.haste then MageControlDB.haste = {} end
-
-    MageControlDB.actionBarSlots.FIREBLAST = math.floor(fireblastSlot)
-    MageControlDB.actionBarSlots.ARCANE_RUPTURE = math.floor(ruptureSlot)
-    MageControlDB.actionBarSlots.ARCANE_SURGE = math.floor(surgeSlot)
-    MageControlDB.haste.BASE_VALUE = math.floor(hasteBaseValue)
-    MageControlDB.haste.HASTE_THRESHOLD = math.floor(hasteThreshold)
-
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
     if optionsFrame then optionsFrame:Hide() end
 end
@@ -333,21 +172,10 @@ function MageControlOptions_Reset()
     if MageControlDB and MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots.FIREBLAST = 1
         MageControlDB.actionBarSlots.ARCANE_RUPTURE = 2
-        MageControlDB.actionBarSlots.ARCANE_SURGE = 5
+        MageControlDB.actionBarSlots.ARCANE_SURGE = 3
     end
     if MageControlDB and MageControlDB.haste then
         MageControlDB.haste.BASE_VALUE = 10
         MageControlDB.haste.HASTE_THRESHOLD = 30
     end
-
-    local fBox = getglobal("MageControlFireblastSlot")
-    local rBox = getglobal("MageControlRuptureSlot")
-    local sBox = getglobal("MageControlSurgeSlot")
-    local bBox = getglobal("MageControlHasteBaseValue")
-    local hBox = getglobal("MageControlHasteThreshold")
-    if fBox then fBox:SetText("1") end
-    if rBox then rBox:SetText("2") end
-    if sBox then sBox:SetText("5") end
-    if bBox then bBox:SetText("10") end
-    if hBox then hBox:SetText("30") end
 end

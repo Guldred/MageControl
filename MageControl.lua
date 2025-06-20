@@ -711,7 +711,6 @@ end
 local function checkDependencies()
     local output = "Checking SuperWoW... "
 
-    -- Nil-sicher für SUPERWOW_VERSION
     if SUPERWOW_VERSION then
         output = output .. "found Version " .. tostring(SUPERWOW_VERSION)
     else
@@ -736,16 +735,19 @@ local function checkDependencies()
 end
 
 local function activateTrinketAndAP()
-    local start, duration, enabled = GetInventoryItemCooldown("player", 14)
-    if enabled == 0 then
-        debugPrint("Trinket has no activation!")
-    elseif duration == 0 then
-        debugPrint("Activating Trinket")
-        UseInventoryItem(14)
-    else
-        debugPrint("Activating Arcane Power")
-        QueueSpellByName("Arcane Power")
-    end
+    local s1, firstTrinketCurrentCooldown, firstTrinketCanBeEnabled = GetInventoryItemCooldown("player", 13)
+    local isFirstTrinketIsUsable = firstTrinketCurrentCooldown == 0 and firstTrinketCanBeEnabled == 1
+    local s2, secondTrinketCurrentCooldown, secondTrinketCanBeEnabled = GetInventoryItemCooldown("player", 14)
+    local isSecondTrinketIsUsable = secondTrinketCurrentCooldown == 0 and secondTrinketCanBeEnabled == 1
+    local arcanePowerIsReady = GetActionCooldown(MageControlDB.actionBarSlots.ARCANE_POWER) == 0
+
+-- Dont use "Shard of Nightmare". So first, we have to get the Name if the trinket.
+
+    printMessage("First Trinket is usable: " .. tostring(isFirstTrinketIsUsable))
+    printMessage("Second Trinket is usable: " .. tostring(isSecondTrinketIsUsable))
+    printMessage("Arcane Power is ready: " .. tostring(arcanePowerIsReady))
+
+
 end
 
 SlashCmdList["MAGECONTROL"] = function(msg)
