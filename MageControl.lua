@@ -735,19 +735,71 @@ local function checkDependencies()
 end
 
 local function activateTrinketAndAP()
+    -- Trinket-Status prüfen
     local s1, firstTrinketCurrentCooldown, firstTrinketCanBeEnabled = GetInventoryItemCooldown("player", 13)
-    local isFirstTrinketIsUsable = firstTrinketCurrentCooldown == 0 and firstTrinketCanBeEnabled == 1
+    local isFirstTrinketUsable = firstTrinketCurrentCooldown == 0 and firstTrinketCanBeEnabled == 1
     local s2, secondTrinketCurrentCooldown, secondTrinketCanBeEnabled = GetInventoryItemCooldown("player", 14)
-    local isSecondTrinketIsUsable = secondTrinketCurrentCooldown == 0 and secondTrinketCanBeEnabled == 1
-    local arcanePowerIsReady = GetActionCooldown(MageControlDB.actionBarSlots.ARCANE_POWER) == 0
+    local isSecondTrinketUsable = secondTrinketCurrentCooldown == 0 and secondTrinketCanBeEnabled == 1
 
--- Dont use "Shard of Nightmare". So first, we have to get the Name if the trinket.
+    -- Arcane Power Status prüfen
+    local arcanePowerSlot = MageControlDB.actionBarSlots.ARCANE_POWER
+    local arcanePowerIsReady = false
+    if arcanePowerSlot and arcanePowerSlot > 0 then
+        local start, duration = GetActionCooldown(arcanePowerSlot)
+        arcanePowerIsReady = (start == 0 or (start + duration <= GetTime()))
+    end
 
-    printMessage("First Trinket is usable: " .. tostring(isFirstTrinketIsUsable))
-    printMessage("Second Trinket is usable: " .. tostring(isSecondTrinketIsUsable))
+    -- Debug-Ausgaben
+    printMessage("First Trinket is usable: " .. tostring(isFirstTrinketUsable))
+    printMessage("Second Trinket is usable: " .. tostring(isSecondTrinketUsable))
     printMessage("Arcane Power is ready: " .. tostring(arcanePowerIsReady))
 
+    -- Sicherstellen, dass Prioritäten vorhanden sind
+    if not MageControlDB.priorities then
+        MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    end
 
+    -- Prioritäten-Map für Verfügbarkeit
+    local availabilityMap = {
+        TRINKET1 = isFirstTrinketUsable,
+        TRINKET2 = isSecondTrinketUsable,
+        ARCANE_POWER = arcanePowerIsReady
+    }
+
+    -- Action-Map für Ausführung
+    local actionMap = {
+        TRINKET1 = function()
+            UseInventoryItem(13)
+            printMessage("MageControl: Using Trinket 1 (Slot 13)")
+        end,
+        TRINKET2 = function()
+            UseInventoryItem(14)
+            printMessage("MageControl: Using Trinket 2 (Slot 14)")
+        end,
+        ARCANE_POWER = function()
+            if arcanePowerSlot and arcanePowerSlot > 0 then
+                UseAction(arcanePowerSlot)
+                printMessage("MageControl: Using Arcane Power (Slot " .. arcanePowerSlot .. ")")
+            else
+                printMessage("MageControl: Arcane Power slot not configured!")
+            end
+        end
+    }
+
+    -- Prioritätenliste durchgehen und erste verfügbare Option verwenden
+    for i, priorityKey in ipairs(MageControlDB.priorities) do
+        if availabilityMap[priorityKey] then
+            printMessage("MageControl: Activating priority " .. i .. ": " .. priorityKey)
+            actionMap[priorityKey]()
+            return true -- Eine Aktion wurde ausgeführt
+        else
+            printMessage("MageControl: Priority " .. i .. " (" .. priorityKey .. ") not available")
+        end
+    end
+
+    -- Nichts war verfügbar
+    printMessage("MageControl: No trinkets or Arcane Power available")
+    return false
 end
 
 SlashCmdList["MAGECONTROL"] = function(msg)
