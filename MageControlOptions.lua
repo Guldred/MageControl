@@ -101,8 +101,12 @@ local function updatePriorityDisplay()
     for i, item in ipairs(priorityItems) do
         item.position = i
         item.priorityText:SetText(tostring(i))
+        
+        -- Wichtig: Frame verstecken, dann neu positionieren, dann wieder zeigen
+        item:Hide()
         item:ClearAllPoints()
         item:SetPoint("TOP", item:GetParent(), "TOP", -30, -25 - (i-1) * 24)
+        item:Show()
         
         -- Show/Hide buttons based on position
         if i == 1 then
