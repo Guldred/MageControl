@@ -9,10 +9,13 @@ local function findSpellSlots()
     }
 
     for slot = 1, 120 do
-        local actionType, id = GetActionInfo(slot)
-        if actionType == "spell" and id then
+        if HasAction(slot) then
+            local text, type, id = GetActionText(slot)
+            text = text or ""
+            type = type or ""
+            id = id or 0
             for spellKey, targetId in pairs(spellIds) do
-                if id == targetId then
+                if id == targetId and not foundSlots[spellKey] then
                     foundSlots[spellKey] = slot
                 end
             end
