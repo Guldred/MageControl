@@ -46,21 +46,21 @@ local function autoDetectSlots()
     end
 
     if updated then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Spells automatisch erkannt:", 0.0, 1.0, 0.0)
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Spells detected:", 0.0, 1.0, 0.0)
         for _, msg in ipairs(messages) do
             DEFAULT_CHAT_FRAME:AddMessage("  " .. msg, 1.0, 1.0, 0.0)
         end
     end
     
     if table.getn(missingSpells) > 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Folgende Spells wurden NICHT gefunden:", 1.0, 0.5, 0.0)
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: The following spells were not found:", 1.0, 0.5, 0.0)
         for _, spellKey in ipairs(missingSpells) do
-            DEFAULT_CHAT_FRAME:AddMessage("  " .. spellKey .. " - Stelle sicher, dass der Spell in deiner Actionbar ist!", 1.0, 0.5, 0.0)
+            DEFAULT_CHAT_FRAME:AddMessage("  " .. spellKey .. " - Please make sure they are in one of your actionsbars!", 1.0, 0.5, 0.0)
         end
     end
     
     if not updated and table.getn(missingSpells) == 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Keine Spells in den Actionbars gefunden.", 1.0, 0.5, 0.0)
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: No Spells found in Actionbars.", 1.0, 0.5, 0.0)
     end
     
     return foundSlots
