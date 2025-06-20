@@ -1,5 +1,73 @@
 local optionsFrame = nil
 
+local function findSpellSlots()
+    local foundSlots = {}
+    local spellIds = {
+        FIREBLAST = 10199,
+        ARCANE_RUPTURE = 51954,
+        ARCANE_SURGE = 51936
+    }
+    
+    -- Durchlaufe alle 120 möglichen Actionbar-Slots
+    for slot = 1, 120 do
+        local actionType, id = GetActionInfo(slot)
+        if actionType == "spell" and id then
+            -- Prüfe ob es einer unserer gesuchten Spells ist
+            for spellKey, targetId in pairs(spellIds) do
+                if id == targetId then
+                    foundSlots[spellKey] = slot
+                end
+            end
+        end
+    end
+    
+    return foundSlots
+end
+
+local function autoDetectSlots()
+    local foundSlots = findSpellSlots()
+    local updated = false
+    local messages = {}
+    
+    if not MageControlDB.actionBarSlots then
+        MageControlDB.actionBarSlots = {}
+    end
+
+    for spellKey, slot in pairs(foundSlots) do
+        MageControlDB.actionBarSlots[spellKey] = slot
+        updated = true
+        table.insert(messages, spellKey .. " -> Slot " .. slot)
+    end
+
+    local requiredSpells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE"}
+    local missingSpells = {}
+    for _, spellKey in ipairs(requiredSpells) do
+        if not foundSlots[spellKey] then
+            table.insert(missingSpells, spellKey)
+        end
+    end
+
+    if updated then
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Spells automatisch erkannt:", 0.0, 1.0, 0.0)
+        for _, msg in ipairs(messages) do
+            DEFAULT_CHAT_FRAME:AddMessage("  " .. msg, 1.0, 1.0, 0.0)
+        end
+    end
+    
+    if table.getn(missingSpells) > 0 then
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Folgende Spells wurden NICHT gefunden:", 1.0, 0.5, 0.0)
+        for _, spellKey in ipairs(missingSpells) do
+            DEFAULT_CHAT_FRAME:AddMessage("  " .. spellKey .. " - Stelle sicher, dass der Spell in deiner Actionbar ist!", 1.0, 0.5, 0.0)
+        end
+    end
+    
+    if not updated and table.getn(missingSpells) == 0 then
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Keine Spells in den Actionbars gefunden.", 1.0, 0.5, 0.0)
+    end
+    
+    return foundSlots
+end
+
 function MageControlOptions_Show()
     if not optionsFrame then
         MageControlOptions_CreateFrame()
@@ -14,7 +82,7 @@ function MageControlOptions_CreateFrame()
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
-    optionsFrame:SetHeight(300)
+    optionsFrame:SetHeight(350)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     optionsFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -39,8 +107,23 @@ function MageControlOptions_CreateFrame()
     closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
+    local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
+    autoDetectButton:SetWidth(200)
+    autoDetectButton:SetHeight(25)
+    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -45)
+    autoDetectButton:SetText("Auto-Detect Spell Slots")
+    autoDetectButton:SetScript("OnClick", function()
+        local foundSlots = autoDetectSlots()
+        MageControlOptions_LoadValues()
+    end)
+
+    local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
+    autoDetectHelp:SetText("Sucht automatisch nach Spells in deinen Actionbars")
+    autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
+
     local fireblastLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    fireblastLabel:SetPoint("TOPLEFT", optionsFrame, "TOPLEFT", 20, -50)
+    fireblastLabel:SetPoint("TOPLEFT", optionsFrame, "TOPLEFT", 20, -95)
     fireblastLabel:SetText("Fireblast Slot:")
 
     local fireblastEditBox = CreateFrame("EditBox", "MageControlFireblastSlot", optionsFrame, "InputBoxTemplate")
