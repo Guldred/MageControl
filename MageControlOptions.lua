@@ -7,8 +7,7 @@ local function findSpellSlots()
         ARCANE_RUPTURE = 51954,
         ARCANE_SURGE = 51936
     }
-    
-    -- Durchlaufe alle 120 möglichen Actionbar-Slots
+
     for slot = 1, 120 do
         local actionType, id = GetActionInfo(slot)
         if actionType == "spell" and id then
