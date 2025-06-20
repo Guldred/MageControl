@@ -70,6 +70,137 @@ local function autoDetectSlots()
     return foundSlots
 end
 
+-- Priority System Functions
+local function createPriorityFrame(parent, yOffset)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetWidth(260)
+    frame:SetHeight(100)
+    frame:SetPoint("TOP", parent, "TOP", 0, yOffset)
+    
+    -- Background
+    frame:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    frame:SetBackdropColor(0, 0, 0, 0.2)
+    frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+    
+    -- Title
+    local titleText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    titleText:SetPoint("TOP", frame, "TOP", 0, -8)
+    titleText:SetText("Cooldown Priority (Drag & Drop)")
+    titleText:SetTextColor(1, 1, 1)
+    
+    return frame
+end
+
+local function createDraggableItem(parent, itemName, color, position)
+    local item = CreateFrame("Button", nil, parent)
+    item:SetWidth(200)
+    item:SetHeight(20)
+    item:SetMovable(true)
+    item:EnableMouse(true)
+    item:RegisterForDrag("LeftButton")
+    
+    -- Background
+    item:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    item:SetBackdropColor(color.r, color.g, color.b, 0.3)
+    item:SetBackdropBorderColor(color.r, color.g, color.b, 0.8)
+    
+    -- Text
+    local text = item:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    text:SetPoint("CENTER", item, "CENTER", 0, 0)
+    text:SetText(itemName)
+    text:SetTextColor(1, 1, 1)
+    
+    -- Priority number
+    local priorityText = item:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    priorityText:SetPoint("LEFT", item, "LEFT", 8, 0)
+    priorityText:SetText(tostring(position))
+    priorityText:SetTextColor(1, 1, 0)
+    
+    item.text = text
+    item.priorityText = priorityText
+    item.itemName = itemName
+    item.originalPosition = position
+    
+    return item
+end
+
+local function updatePriorityPositions(items)
+    for i, item in ipairs(items) do
+        item:SetPoint("TOP", item:GetParent(), "TOP", 0, -30 - (i-1) * 22)
+        item.priorityText:SetText(tostring(i))
+    end
+end
+
+local function setupDragAndDrop(items)
+    local draggedItem = nil
+    local insertPosition = nil
+    
+    for i, item in ipairs(items) do
+        item:SetScript("OnDragStart", function()
+            draggedItem = this
+            this:StartMoving()
+            this:SetAlpha(0.7)
+        end)
+        
+        item:SetScript("OnDragStop", function()
+            this:StopMovingOrSizing()
+            this:SetAlpha(1.0)
+            
+            if draggedItem and insertPosition then
+                -- Remove dragged item from its current position
+                local draggedIndex = nil
+                for j, itm in ipairs(items) do
+                    if itm == draggedItem then
+                        draggedIndex = j
+                        break
+                    end
+                end
+                
+                if draggedIndex then
+                    table.remove(items, draggedIndex)
+                    table.insert(items, insertPosition, draggedItem)
+                    updatePriorityPositions(items)
+                end
+            end
+            
+            draggedItem = nil
+            insertPosition = nil
+        end)
+        
+        item:SetScript("OnEnter", function()
+            if draggedItem and draggedItem ~= this then
+                -- Find the position where we would insert
+                for j, itm in ipairs(items) do
+                    if itm == this then
+                        insertPosition = j
+                        break
+                    end
+                end
+                
+                -- Visual feedback
+                this:SetBackdropBorderColor(1, 1, 0, 1)
+            end
+        end)
+        
+        item:SetScript("OnLeave", function()
+            local color = this.originalPosition == 1 and {r=0.2, g=0.8, b=0.2} or 
+                         this.originalPosition == 2 and {r=0.2, g=0.2, b=0.8} or 
+                         {r=0.8, g=0.2, b=0.8}
+            this:SetBackdropBorderColor(color.r, color.g, color.b, 0.8)
+        end)
+    end
+end
+
 function MageControlOptions_Show()
     if not optionsFrame then
         MageControlOptions_CreateFrame()
@@ -84,7 +215,7 @@ function MageControlOptions_CreateFrame()
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
-    optionsFrame:SetHeight(350)
+    optionsFrame:SetHeight(480) -- Höher für Priority-System
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     optionsFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -124,8 +255,22 @@ function MageControlOptions_CreateFrame()
     autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically")
     autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
 
-
-
+    -- Priority System hinzufügen
+    local priorityFrame = createPriorityFrame(optionsFrame, -180)
+    priorityFrame.name = "PriorityFrame"
+    
+    -- Create draggable items
+    local priorityItems = {
+        createDraggableItem(priorityFrame, "🔮 Trinket 1", {r=0.2, g=0.8, b=0.2}, 1),
+        createDraggableItem(priorityFrame, "💎 Trinket 2", {r=0.2, g=0.2, b=0.8}, 2),
+        createDraggableItem(priorityFrame, "⚡ Arcane Power", {r=0.8, g=0.2, b=0.8}, 3)
+    }
+    
+    updatePriorityPositions(priorityItems)
+    setupDragAndDrop(priorityItems)
+    
+    -- Store reference to priority items
+    optionsFrame.priorityItems = priorityItems
 
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(80)
@@ -161,9 +306,59 @@ function MageControlOptions_LoadValues()
     if not MageControlDB.haste then
         MageControlDB.haste = { HASTE_THRESHOLD = 30, BASE_VALUE = 10 }
     end
+    if not MageControlDB.priorities then
+        MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    end
+
+    -- Load priority order
+    if optionsFrame and optionsFrame.priorityItems then
+        local priorityMap = {
+            TRINKET1 = "🔮 Trinket 1",
+            TRINKET2 = "💎 Trinket 2", 
+            ARCANE_POWER = "⚡ Arcane Power"
+        }
+        
+        -- Reorder items based on saved priorities
+        local orderedItems = {}
+        for i, priorityKey in ipairs(MageControlDB.priorities) do
+            for _, item in ipairs(optionsFrame.priorityItems) do
+                if item.text:GetText() == priorityMap[priorityKey] then
+                    table.insert(orderedItems, item)
+                    break
+                end
+            end
+        end
+        
+        optionsFrame.priorityItems = orderedItems
+        updatePriorityPositions(orderedItems)
+    end
 end
 
 function MageControlOptions_Save()
+    -- Save priority order
+    if optionsFrame and optionsFrame.priorityItems then
+        local priorityOrder = {}
+        local itemMap = {
+            ["🔮 Trinket 1"] = "TRINKET1",
+            ["💎 Trinket 2"] = "TRINKET2",
+            ["⚡ Arcane Power"] = "ARCANE_POWER"
+        }
+        
+        for _, item in ipairs(optionsFrame.priorityItems) do
+            local key = itemMap[item.text:GetText()]
+            if key then
+                table.insert(priorityOrder, key)
+            end
+        end
+        
+        MageControlDB.priorities = priorityOrder
+        
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
+        for i, priority in ipairs(priorityOrder) do
+            DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
+        end
+    end
+
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
     if optionsFrame then optionsFrame:Hide() end
 end
@@ -177,5 +372,8 @@ function MageControlOptions_Reset()
     if MageControlDB and MageControlDB.haste then
         MageControlDB.haste.BASE_VALUE = 10
         MageControlDB.haste.HASTE_THRESHOLD = 30
+    end
+    if MageControlDB then
+        MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
 end
