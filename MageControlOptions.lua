@@ -97,16 +97,19 @@ local function createPriorityFrame(parent, yOffset)
     return frame
 end
 
+-- Neue Struktur: Statt Frames zu bewegen, ändern wir nur den Inhalt
+local priorityData = {
+    "🔮 Trinket 1",
+    "💎 Trinket 2",
+    "⚡ Arcane Power"
+}
+
 local function updatePriorityDisplay()
     for i, item in ipairs(priorityItems) do
-        item.position = i
+        -- Aktualisiere den Text basierend auf der aktuellen Reihenfolge
         item.priorityText:SetText(tostring(i))
-        
-        -- Wichtig: Frame verstecken, dann neu positionieren, dann wieder zeigen
-        item:Hide()
-        item:ClearAllPoints()
-        item:SetPoint("TOP", item:GetParent(), "TOP", -30, -25 - (i-1) * 24)
-        item:Show()
+        item.text:SetText(priorityData[i])
+        item.itemName = priorityData[i]  -- WICHTIG: Auch itemName aktualisieren!
         
         -- Show/Hide buttons based on position
         if i == 1 then
@@ -122,32 +125,28 @@ local function updatePriorityDisplay()
     end
     
     DEFAULT_CHAT_FRAME:AddMessage("Priority updated - current order:", 1.0, 1.0, 0.0)
-    for i, item in ipairs(priorityItems) do
-        DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. item.itemName, 0.8, 0.8, 0.8)
+    for i, name in ipairs(priorityData) do
+        DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. name, 0.8, 0.8, 0.8)
     end
 end
 
-local function moveItemUp(targetItem)
-    for i, item in ipairs(priorityItems) do
-        if item == targetItem and i > 1 then
-            -- Swap with previous item
-            priorityItems[i] = priorityItems[i-1]
-            priorityItems[i-1] = targetItem
-            updatePriorityDisplay()
-            return
-        end
+local function moveItemUp(position)
+    if position > 1 then
+        -- Swap with previous item in data array
+        local temp = priorityData[position]
+        priorityData[position] = priorityData[position - 1]
+        priorityData[position - 1] = temp
+        updatePriorityDisplay()
     end
 end
 
-local function moveItemDown(targetItem)
-    for i, item in ipairs(priorityItems) do
-        if item == targetItem and i < table.getn(priorityItems) then
-            -- Swap with next item
-            priorityItems[i] = priorityItems[i+1]
-            priorityItems[i+1] = targetItem
-            updatePriorityDisplay()
-            return
-        end
+local function moveItemDown(position)
+    if position < table.getn(priorityData) then
+        -- Swap with next item in data array
+        local temp = priorityData[position]
+        priorityData[position] = priorityData[position + 1]
+        priorityData[position + 1] = temp
+        updatePriorityDisplay()
     end
 end
 
@@ -197,15 +196,15 @@ local function createPriorityItem(parent, itemName, color, position)
     downButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
     downButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
     
-    -- Set up button callbacks immediately
+    -- Set up button callbacks - verwende Position statt Item-Referenz
     upButton:SetScript("OnClick", function()
-        DEFAULT_CHAT_FRAME:AddMessage("Up button clicked for: " .. itemName, 0.0, 1.0, 0.0)
-        moveItemUp(item)
+        DEFAULT_CHAT_FRAME:AddMessage("Up button clicked for position: " .. position, 0.0, 1.0, 0.0)
+        moveItemUp(position)
     end)
     
     downButton:SetScript("OnClick", function()
-        DEFAULT_CHAT_FRAME:AddMessage("Down button clicked for: " .. itemName, 0.0, 1.0, 0.0)
-        moveItemDown(item)
+        DEFAULT_CHAT_FRAME:AddMessage("Down button clicked for position: " .. position, 0.0, 1.0, 0.0)
+        moveItemDown(position)
     end)
     
     item.text = text
@@ -275,7 +274,7 @@ function MageControlOptions_CreateFrame()
     -- Priority System hinzufügen
     local priorityFrame = createPriorityFrame(optionsFrame, -180)
     
-    -- Create priority items ONCE
+    -- Create priority items - diese ändern sich nie in der Position
     priorityItems = {
         createPriorityItem(priorityFrame, "🔮 Trinket 1", {r=0.2, g=0.8, b=0.2}, 1),
         createPriorityItem(priorityFrame, "💎 Trinket 2", {r=0.2, g=0.2, b=0.8}, 2),
@@ -322,53 +321,45 @@ function MageControlOptions_LoadValues()
         MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
 
-    -- Load priority order
-    if priorityItems and table.getn(priorityItems) > 0 then
-        local priorityMap = {
-            TRINKET1 = "🔮 Trinket 1",
-            TRINKET2 = "💎 Trinket 2", 
-            ARCANE_POWER = "⚡ Arcane Power"
-        }
-        
-        -- Reorder items based on saved priorities
-        local orderedItems = {}
-        for i, priorityKey in ipairs(MageControlDB.priorities) do
-            for _, item in ipairs(priorityItems) do
-                if item.text:GetText() == priorityMap[priorityKey] then
-                    table.insert(orderedItems, item)
-                    break
-                end
-            end
+    -- Load priority order into our data array
+    local priorityMap = {
+        TRINKET1 = "🔮 Trinket 1",
+        TRINKET2 = "💎 Trinket 2", 
+        ARCANE_POWER = "⚡ Arcane Power"
+    }
+    
+    for i, priorityKey in ipairs(MageControlDB.priorities) do
+        if priorityMap[priorityKey] then
+            priorityData[i] = priorityMap[priorityKey]
         end
-        
-        priorityItems = orderedItems
+    end
+    
+    if priorityItems and table.getn(priorityItems) > 0 then
         updatePriorityDisplay()
     end
 end
 
 function MageControlOptions_Save()
-    -- Save priority order
-    if priorityItems and table.getn(priorityItems) > 0 then
-        local priorityOrder = {}
-        local itemMap = {
-            ["🔮 Trinket 1"] = "TRINKET1",
-            ["💎 Trinket 2"] = "TRINKET2",
-            ["⚡ Arcane Power"] = "ARCANE_POWER"
-        }
-        
-        for _, item in ipairs(priorityItems) do
-            local key = itemMap[item.text:GetText()]
-            if key then
-                table.insert(priorityOrder, key)
-            end
+    -- Save priority order based on our data array
+    local priorityOrder = {}
+    local itemMap = {
+        ["🔮 Trinket 1"] = "TRINKET1",
+        ["💎 Trinket 2"] = "TRINKET2",
+        ["⚡ Arcane Power"] = "ARCANE_POWER"
+    }
+    
+    for _, name in ipairs(priorityData) do
+        local key = itemMap[name]
+        if key then
+            table.insert(priorityOrder, key)
         end
-        
-        MageControlDB.priorities = priorityOrder
-        
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
-        for i, priority in ipairs(priorityOrder) do
-            DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
-        end
+    end
+    
+    MageControlDB.priorities = priorityOrder
+    
+    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
+    for i, priority in ipairs(priorityOrder) do
+        DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
     end
 
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
@@ -388,6 +379,13 @@ function MageControlOptions_Reset()
     if MageControlDB then
         MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
+    
+    -- Reset priority data
+    priorityData = {
+        "🔮 Trinket 1",
+        "💎 Trinket 2",
+        "⚡ Arcane Power"
+    }
     
     -- Reset priority display
     MageControlOptions_LoadValues()
