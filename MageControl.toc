@@ -2,7 +2,7 @@
 ## Title: MageControl
 ## Notes: Optimize Arcane Damage
 ## Author: Guldred, Nolin7777
-## Version: 1.6.0
+## Version: 1.6.1
 ## SavedVariables: MageControlDB
 
 MageControl.lua
