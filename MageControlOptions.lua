@@ -152,6 +152,15 @@ local function createPriorityItem(parent, itemName, color, position, totalItems)
     return item
 end
 
+local function findItemInList(priorityItems, targetItem)
+    for i, item in ipairs(priorityItems) do
+        if item == targetItem then
+            return i
+        end
+    end
+    return nil
+end
+
 local function updatePriorityDisplay(priorityItems)
     for i, item in ipairs(priorityItems) do
         item.position = i
@@ -177,9 +186,9 @@ local function setupPriorityButtons(priorityItems)
     for i, item in ipairs(priorityItems) do
         -- Up Button functionality
         item.upButton:SetScript("OnClick", function()
-            if item.position > 1 then
+            local currentIndex = findItemInList(priorityItems, item)
+            if currentIndex and currentIndex > 1 then
                 -- Swap with item above
-                local currentIndex = item.position
                 local aboveItem = priorityItems[currentIndex - 1]
                 
                 priorityItems[currentIndex - 1] = item
@@ -191,9 +200,9 @@ local function setupPriorityButtons(priorityItems)
         
         -- Down Button functionality
         item.downButton:SetScript("OnClick", function()
-            if item.position < table.getn(priorityItems) then
+            local currentIndex = findItemInList(priorityItems, item)
+            if currentIndex and currentIndex < table.getn(priorityItems) then
                 -- Swap with item below
-                local currentIndex = item.position
                 local belowItem = priorityItems[currentIndex + 1]
                 
                 priorityItems[currentIndex + 1] = item
