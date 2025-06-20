@@ -117,7 +117,7 @@ function MageControlOptions_CreateFrame()
 
     local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
-    autoDetectHelp:SetText("Sucht automatisch nach Spells in deinen Actionbars")
+    autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically")
     autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
 
     local fireblastLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
