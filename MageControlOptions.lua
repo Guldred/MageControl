@@ -74,7 +74,7 @@ end
 local function createPriorityFrame(parent, yOffset)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetWidth(260)
-    frame:SetHeight(100)
+    frame:SetHeight(120)
     frame:SetPoint("TOP", parent, "TOP", 0, yOffset)
     
     -- Background
@@ -90,19 +90,17 @@ local function createPriorityFrame(parent, yOffset)
     -- Title
     local titleText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     titleText:SetPoint("TOP", frame, "TOP", 0, -8)
-    titleText:SetText("Cooldown Priority (Drag & Drop)")
+    titleText:SetText("Cooldown Priority Order")
     titleText:SetTextColor(1, 1, 1)
     
     return frame
 end
 
-local function createDraggableItem(parent, itemName, color, position)
-    local item = CreateFrame("Button", nil, parent)
-    item:SetWidth(200)
-    item:SetHeight(20)
-    item:SetMovable(true)
-    item:EnableMouse(true)
-    item:RegisterForDrag("LeftButton")
+local function createPriorityItem(parent, itemName, color, position, totalItems)
+    local item = CreateFrame("Frame", nil, parent)
+    item:SetWidth(180)
+    item:SetHeight(22)
+    item:SetPoint("TOP", parent, "TOP", -30, -25 - (position-1) * 24)
     
     -- Background
     item:SetBackdrop({
@@ -114,89 +112,95 @@ local function createDraggableItem(parent, itemName, color, position)
     item:SetBackdropColor(color.r, color.g, color.b, 0.3)
     item:SetBackdropBorderColor(color.r, color.g, color.b, 0.8)
     
-    -- Text
-    local text = item:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    text:SetPoint("CENTER", item, "CENTER", 0, 0)
-    text:SetText(itemName)
-    text:SetTextColor(1, 1, 1)
-    
     -- Priority number
     local priorityText = item:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     priorityText:SetPoint("LEFT", item, "LEFT", 8, 0)
     priorityText:SetText(tostring(position))
     priorityText:SetTextColor(1, 1, 0)
     
+    -- Text
+    local text = item:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    text:SetPoint("LEFT", priorityText, "RIGHT", 8, 0)
+    text:SetText(itemName)
+    text:SetTextColor(1, 1, 1)
+    
+    -- Up Button
+    local upButton = CreateFrame("Button", nil, item)
+    upButton:SetWidth(16)
+    upButton:SetHeight(16)
+    upButton:SetPoint("RIGHT", item, "RIGHT", -25, 0)
+    upButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up")
+    upButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Down")
+    upButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    
+    -- Down Button
+    local downButton = CreateFrame("Button", nil, item)
+    downButton:SetWidth(16)
+    downButton:SetHeight(16)
+    downButton:SetPoint("RIGHT", item, "RIGHT", -5, 0)
+    downButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+    downButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
+    downButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    
     item.text = text
     item.priorityText = priorityText
     item.itemName = itemName
-    item.originalPosition = position
+    item.upButton = upButton
+    item.downButton = downButton
+    item.position = position
     
     return item
 end
 
-local function updatePriorityPositions(items)
-    for i, item in ipairs(items) do
-        item:SetPoint("TOP", item:GetParent(), "TOP", 0, -30 - (i-1) * 22)
+local function updatePriorityDisplay(priorityItems)
+    for i, item in ipairs(priorityItems) do
+        item.position = i
         item.priorityText:SetText(tostring(i))
+        item:ClearAllPoints()
+        item:SetPoint("TOP", item:GetParent(), "TOP", -30, -25 - (i-1) * 24)
+        
+        -- Show/Hide buttons based on position
+        if i == 1 then
+            item.upButton:Hide()
+            item.downButton:Show()
+        elseif i == table.getn(priorityItems) then
+            item.upButton:Show()
+            item.downButton:Hide()
+        else
+            item.upButton:Show()
+            item.downButton:Show()
+        end
     end
 end
 
-local function setupDragAndDrop(items)
-    local draggedItem = nil
-    local insertPosition = nil
-    
-    for i, item in ipairs(items) do
-        item:SetScript("OnDragStart", function()
-            draggedItem = this
-            this:StartMoving()
-            this:SetAlpha(0.7)
-        end)
-        
-        item:SetScript("OnDragStop", function()
-            this:StopMovingOrSizing()
-            this:SetAlpha(1.0)
-            
-            if draggedItem and insertPosition then
-                -- Remove dragged item from its current position
-                local draggedIndex = nil
-                for j, itm in ipairs(items) do
-                    if itm == draggedItem then
-                        draggedIndex = j
-                        break
-                    end
-                end
+local function setupPriorityButtons(priorityItems)
+    for i, item in ipairs(priorityItems) do
+        -- Up Button functionality
+        item.upButton:SetScript("OnClick", function()
+            if item.position > 1 then
+                -- Swap with item above
+                local currentIndex = item.position
+                local aboveItem = priorityItems[currentIndex - 1]
                 
-                if draggedIndex then
-                    table.remove(items, draggedIndex)
-                    table.insert(items, insertPosition, draggedItem)
-                    updatePriorityPositions(items)
-                end
-            end
-            
-            draggedItem = nil
-            insertPosition = nil
-        end)
-        
-        item:SetScript("OnEnter", function()
-            if draggedItem and draggedItem ~= this then
-                -- Find the position where we would insert
-                for j, itm in ipairs(items) do
-                    if itm == this then
-                        insertPosition = j
-                        break
-                    end
-                end
+                priorityItems[currentIndex - 1] = item
+                priorityItems[currentIndex] = aboveItem
                 
-                -- Visual feedback
-                this:SetBackdropBorderColor(1, 1, 0, 1)
+                updatePriorityDisplay(priorityItems)
             end
         end)
         
-        item:SetScript("OnLeave", function()
-            local color = this.originalPosition == 1 and {r=0.2, g=0.8, b=0.2} or 
-                         this.originalPosition == 2 and {r=0.2, g=0.2, b=0.8} or 
-                         {r=0.8, g=0.2, b=0.8}
-            this:SetBackdropBorderColor(color.r, color.g, color.b, 0.8)
+        -- Down Button functionality
+        item.downButton:SetScript("OnClick", function()
+            if item.position < table.getn(priorityItems) then
+                -- Swap with item below
+                local currentIndex = item.position
+                local belowItem = priorityItems[currentIndex + 1]
+                
+                priorityItems[currentIndex + 1] = item
+                priorityItems[currentIndex] = belowItem
+                
+                updatePriorityDisplay(priorityItems)
+            end
         end)
     end
 end
@@ -215,7 +219,7 @@ function MageControlOptions_CreateFrame()
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
-    optionsFrame:SetHeight(480) -- Höher für Priority-System
+    optionsFrame:SetHeight(480)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     optionsFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -257,17 +261,16 @@ function MageControlOptions_CreateFrame()
 
     -- Priority System hinzufügen
     local priorityFrame = createPriorityFrame(optionsFrame, -180)
-    priorityFrame.name = "PriorityFrame"
     
-    -- Create draggable items
+    -- Create priority items
     local priorityItems = {
-        createDraggableItem(priorityFrame, "🔮 Trinket 1", {r=0.2, g=0.8, b=0.2}, 1),
-        createDraggableItem(priorityFrame, "💎 Trinket 2", {r=0.2, g=0.2, b=0.8}, 2),
-        createDraggableItem(priorityFrame, "⚡ Arcane Power", {r=0.8, g=0.2, b=0.8}, 3)
+        createPriorityItem(priorityFrame, "🔮 Trinket 1", {r=0.2, g=0.8, b=0.2}, 1, 3),
+        createPriorityItem(priorityFrame, "💎 Trinket 2", {r=0.2, g=0.2, b=0.8}, 2, 3),
+        createPriorityItem(priorityFrame, "⚡ Arcane Power", {r=0.8, g=0.2, b=0.8}, 3, 3)
     }
     
-    updatePriorityPositions(priorityItems)
-    setupDragAndDrop(priorityItems)
+    updatePriorityDisplay(priorityItems)
+    setupPriorityButtons(priorityItems)
     
     -- Store reference to priority items
     optionsFrame.priorityItems = priorityItems
@@ -330,7 +333,8 @@ function MageControlOptions_LoadValues()
         end
         
         optionsFrame.priorityItems = orderedItems
-        updatePriorityPositions(orderedItems)
+        updatePriorityDisplay(orderedItems)
+        setupPriorityButtons(orderedItems)
     end
 end
 
@@ -375,5 +379,10 @@ function MageControlOptions_Reset()
     end
     if MageControlDB then
         MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    end
+    
+    -- Reset priority display
+    if optionsFrame and optionsFrame.priorityItems then
+        MageControlOptions_LoadValues()
     end
 end
