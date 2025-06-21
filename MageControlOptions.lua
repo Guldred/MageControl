@@ -97,15 +97,9 @@ local function createPriorityFrame(parent, yOffset)
     return frame
 end
 
-local priorityOrder = {
-    "TRINKET1",
-    "TRINKET2",
-    "ARCANE_POWER"
-}
-
-local function reorderPriorityItems(priorityItems, priorityOrder)
+local function reorderPriorityItems(priorityItems)
     local reorderedItems = {}
-    for index, key in ipairs(priorityOrder) do
+    for index, key in ipairs(MageControlDB.cooldownPriorityMap) do
         if priorityItems[key] then
             table.insert(reorderedItems, priorityItems[key])
         end
@@ -114,7 +108,7 @@ local function reorderPriorityItems(priorityItems, priorityOrder)
 end
 
 local function updatePriorityDisplay()
-    local reorderedItems = reorderPriorityItems(priorityItems, priorityOrder)
+    local reorderedItems = reorderPriorityItems(priorityItems)
 
     for i, item in ipairs(reorderedItems) do
         -- Update position and text
@@ -137,26 +131,26 @@ local function updatePriorityDisplay()
 
     -- Debug output
     DEFAULT_CHAT_FRAME:AddMessage("Priority updated - current order:", 1.0, 1.0, 0.0)
-    for i, name in ipairs(priorityOrder) do
+    for i, name in ipairs(MageControlDB.cooldownPriorityMap) do
         DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. name, 0.8, 0.8, 0.8)
     end
 end
 
 local function moveItemUp(position)
     if position > 1 then
-        local temp = priorityOrder[position]
-        priorityOrder[position] = priorityOrder[position - 1]
-        priorityOrder[position - 1] = temp
+        local temp = MageControlDB.cooldownPriorityMap[position]
+        MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position - 1]
+        MageControlDB.cooldownPriorityMap[position - 1] = temp
         updatePriorityDisplay()
         MageControlOptions_Save()
     end
 end
 
 local function moveItemDown(position)
-    if position < table.getn(priorityOrder) then
-        local temp = priorityOrder[position]
-        priorityOrder[position] = priorityOrder[position + 1]
-        priorityOrder[position + 1] = temp
+    if position < table.getn(MageControlDB.cooldownPriorityMap) then
+        local temp = MageControlDB.cooldownPriorityMap[position]
+        MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position + 1]
+        MageControlDB.cooldownPriorityMap[position + 1] = temp
         updatePriorityDisplay()
         MageControlOptions_Save()
     end
@@ -328,8 +322,8 @@ function MageControlOptions_LoadValues()
     if not MageControlDB.haste then
         MageControlDB.haste = { HASTE_THRESHOLD = 30, BASE_VALUE = 10 }
     end
-    if not MageControlDB.priorities then
-        MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    if not MageControlDB.cooldownPriorityMap then
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
 
     local priorityMap = {
@@ -338,9 +332,9 @@ function MageControlOptions_LoadValues()
         ARCANE_POWER = "ARCANE_POWER"
     }
 
-    for i, priorityKey in ipairs(MageControlDB.priorities) do
+    for i, priorityKey in ipairs(MageControlDB.cooldownPriorityMap) do
         if priorityMap[priorityKey] then
-            priorityOrder[i] = priorityMap[priorityKey]
+            MageControlDB.cooldownPriorityMap[i] = priorityMap[priorityKey]
         end
     end
     
@@ -350,25 +344,9 @@ function MageControlOptions_LoadValues()
 end
 
 function MageControlOptions_Save()
-    -- Save priority order based on our data array
-    local priorityOrder = {}
-    local itemMap = {
-        ["TRINKET1"] = "TRINKET1",
-        ["TRINKET2"] = "TRINKET2",
-        ["ARCANE_POWER"] = "ARCANE_POWER"
-    }
 
-    for _, name in ipairs(priorityOrder) do
-        local key = itemMap[name]
-        if key then
-            table.insert(priorityOrder, key)
-        end
-    end
-
-    MageControlDB.priorities = priorityOrder
-    
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
-    for i, priority in ipairs(priorityOrder) do
+    for i, priority in ipairs(MageControlDB.cooldownPriorityMap) do
         DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
     end
 
@@ -387,11 +365,11 @@ function MageControlOptions_Reset()
         MageControlDB.haste.HASTE_THRESHOLD = 30
     end
     if MageControlDB then
-        MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
     
     -- Reset priority data
-    priorityOrder = {
+    MageControlDB.cooldownPriorityMap = {
         "TRINKET1",
         "TRINKET2",
         "ARCANE_POWER"

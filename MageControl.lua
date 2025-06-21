@@ -175,6 +175,9 @@ local function initializeSettings()
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
     end
+    if not MageControlDB.cooldownPriorityMap then
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER" }
+    end
 end
 
 local function getActionBarSlots()
@@ -747,8 +750,8 @@ local function activateTrinketAndAP()
         arcanePowerIsReady = (start == 0 or (start + duration <= GetTime()))
     end
 
-    if not MageControlDB.priorities then
-        MageControlDB.priorities = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    if not MageControlDB.cooldownPriorityMap then
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
 
     local availabilityMap = {
@@ -769,7 +772,7 @@ local function activateTrinketAndAP()
         end
     }
 
-    for i, priorityKey in ipairs(MageControlDB.priorities) do
+    for i, priorityKey in ipairs(MageControlDB.cooldownPriorityMap) do
         if availabilityMap[priorityKey] then
             actionMap[priorityKey]()
             return true
