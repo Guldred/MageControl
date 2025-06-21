@@ -1,5 +1,11 @@
 local optionsFrame = nil
-local priorityItems = {}
+local priorityUiDisplayItems = {}
+
+local function debugPrint(message)
+    if MC.DEBUG then
+        printMessage("MageControl Debug: " .. message)
+    end
+end
 
 local function findSpellSlots()
     local foundSlots = {}
@@ -108,7 +114,7 @@ local function reorderPriorityItems(priorityItems)
 end
 
 local function updatePriorityDisplay()
-    local reorderedItems = reorderPriorityItems(priorityItems)
+    local reorderedItems = reorderPriorityItems(priorityUiDisplayItems)
 
     for i, item in ipairs(reorderedItems) do
         -- Update position and text
@@ -129,10 +135,9 @@ local function updatePriorityDisplay()
         end
     end
 
-    -- Debug output
-    DEFAULT_CHAT_FRAME:AddMessage("Priority updated - current order:", 1.0, 1.0, 0.0)
+    debugPrint("Priority updated - current order:", 1.0, 1.0, 0.0)
     for i, name in ipairs(MageControlDB.cooldownPriorityMap) do
-        DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. name, 0.8, 0.8, 0.8)
+        debugPrint("  " .. i .. ". " .. name, 0.8, 0.8, 0.8)
     end
 end
 
@@ -206,12 +211,12 @@ local function createPriorityItem(parent, itemName, color, position)
     downButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
 
     upButton:SetScript("OnClick", function()
-        DEFAULT_CHAT_FRAME:AddMessage("Up button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
+        debugPrint("Up button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
         moveItemUp(item.position)
     end)
     
     downButton:SetScript("OnClick", function()
-        DEFAULT_CHAT_FRAME:AddMessage("Down button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
+        debugPrint("Down button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
         moveItemDown(item.position)
     end)
     
@@ -275,18 +280,47 @@ function MageControlOptions_CreateFrame()
 
     local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
-    autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically")
+    autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically.\n" ..
+                           "Make sure the following spells are in your actionbars:\n" ..
+                           "FIREBLAST, ARCANE RUPTURE,\nARCANE SURGE, ARCANE POWER\n" ..
+                            "then click the button above to auto-detect them.")
     autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
 
     local priorityFrame = createPriorityFrame(optionsFrame, -180)
 
-    priorityItems = {
+    priorityUiDisplayItems = {
         TRINKET1 = createPriorityItem(priorityFrame, "TRINKET1", {r=0.2, g=0.8, b=0.2}, 1),
         TRINKET2 = createPriorityItem(priorityFrame, "TRINKET2", {r=0.2, g=0.2, b=0.8}, 2),
         ARCANE_POWER = createPriorityItem(priorityFrame, "ARCANE_POWER", {r=0.8, g=0.2, b=0.8}, 3)
     }
     
     updatePriorityDisplay()
+
+    local PriorityHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    PriorityHelp:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
+    PriorityHelp:SetText("Set priority for /mc trinket command\n" ..
+                        "The highest priority action is done per \n" ..
+                        "macro use. Items without usage or things\n" ..
+                        "on cooldown will be ignored.")
+    PriorityHelp:SetTextColor(0.7, 0.7, 0.7)
+
+    local lockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
+    lockButton:SetWidth(130)
+    lockButton:SetHeight(25)
+    lockButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 20, 65)
+    lockButton:SetText("Lock Buff Frames")
+    lockButton:SetScript("OnClick", function()
+        lockFrames()
+    end)
+
+    local unlockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
+    unlockButton:SetWidth(130)
+    unlockButton:SetHeight(25)
+    unlockButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -20, 65)
+    unlockButton:SetText("Unlock Buff Frames")
+    unlockButton:SetScript("OnClick", function()
+        unlockFrames()
+    end)
 
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(80)
@@ -325,32 +359,20 @@ function MageControlOptions_LoadValues()
     if not MageControlDB.cooldownPriorityMap then
         MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
-
-    local priorityMap = {
-        TRINKET1 = "TRINKET1",
-        TRINKET2 = "TRINKET2",
-        ARCANE_POWER = "ARCANE_POWER"
-    }
-
-    for i, priorityKey in ipairs(MageControlDB.cooldownPriorityMap) do
-        if priorityMap[priorityKey] then
-            MageControlDB.cooldownPriorityMap[i] = priorityMap[priorityKey]
-        end
-    end
     
-    if priorityItems and table.getn(priorityItems) > 0 then
+    if priorityUiDisplayItems and table.getn(priorityUiDisplayItems) > 0 then
         updatePriorityDisplay()
     end
 end
 
 function MageControlOptions_Save()
-
-    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
+    -- TODO: See if the save button is still required in the future. Currently it does nothing.
+    debugPrint("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
     for i, priority in ipairs(MageControlDB.cooldownPriorityMap) do
-        DEFAULT_CHAT_FRAME:AddMessage("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
+        debugPrint("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
     end
 
-    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
+    debugPrint("MageControl: Settings saved!", 1.0, 1.0, 0.0)
     --if optionsFrame then optionsFrame:Hide() end
 end
 
@@ -367,14 +389,6 @@ function MageControlOptions_Reset()
     if MageControlDB then
         MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
-    
-    -- Reset priority data
-    MageControlDB.cooldownPriorityMap = {
-        "TRINKET1",
-        "TRINKET2",
-        "ARCANE_POWER"
-    }
-    
-    -- Reset priority display
+
     MageControlOptions_LoadValues()
 end
