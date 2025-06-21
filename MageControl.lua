@@ -175,6 +175,9 @@ local function initializeSettings()
             HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
         }
     end
+    if not MageControlDB.cooldownPriorityMap then
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER" }
+    end
 end
 
 local function getActionBarSlots()
@@ -711,7 +714,6 @@ end
 local function checkDependencies()
     local output = "Checking SuperWoW... "
 
-    -- Nil-sicher für SUPERWOW_VERSION
     if SUPERWOW_VERSION then
         output = output .. "found Version " .. tostring(SUPERWOW_VERSION)
     else
@@ -736,16 +738,48 @@ local function checkDependencies()
 end
 
 local function activateTrinketAndAP()
-    local start, duration, enabled = GetInventoryItemCooldown("player", 14)
-    if enabled == 0 then
-        debugPrint("Trinket has no activation!")
-    elseif duration == 0 then
-        debugPrint("Activating Trinket")
-        UseInventoryItem(14)
-    else
-        debugPrint("Activating Arcane Power")
-        QueueSpellByName("Arcane Power")
+    local s1, firstTrinketCurrentCooldown, firstTrinketCanBeEnabled = GetInventoryItemCooldown("player", 13)
+    local isFirstTrinketUsable = firstTrinketCurrentCooldown == 0 and firstTrinketCanBeEnabled == 1
+    local s2, secondTrinketCurrentCooldown, secondTrinketCanBeEnabled = GetInventoryItemCooldown("player", 14)
+    local isSecondTrinketUsable = secondTrinketCurrentCooldown == 0 and secondTrinketCanBeEnabled == 1
+
+    local arcanePowerSlot = MageControlDB.actionBarSlots.ARCANE_POWER
+    local arcanePowerIsReady = false
+    if arcanePowerSlot and arcanePowerSlot > 0 then
+        local start, duration = GetActionCooldown(arcanePowerSlot)
+        arcanePowerIsReady = (start == 0 or (start + duration <= GetTime()))
     end
+
+    if not MageControlDB.cooldownPriorityMap then
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    end
+
+    local availabilityMap = {
+        TRINKET1 = isFirstTrinketUsable,
+        TRINKET2 = isSecondTrinketUsable,
+        ARCANE_POWER = arcanePowerIsReady
+    }
+
+    local actionMap = {
+        TRINKET1 = function()
+            UseInventoryItem(13)
+        end,
+        TRINKET2 = function()
+            UseInventoryItem(14)
+        end,
+        ARCANE_POWER = function()
+            CastSpellByName("Arcane Power")
+        end
+    }
+
+    for i, priorityKey in ipairs(MageControlDB.cooldownPriorityMap) do
+        if availabilityMap[priorityKey] then
+            actionMap[priorityKey]()
+            return true
+        end
+    end
+
+    return false
 end
 
 SlashCmdList["MAGECONTROL"] = function(msg)

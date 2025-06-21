@@ -47,7 +47,7 @@ Please ensure both are installed before use._
 2. Install [`nampower`](https://github.com/pepopo978/nampower).
 3. Install [`superwow`](https://github.com/balakethelock/SuperWoW).
 4. Restart WoW.
-5. Use `/mc options` to set up the actionbar slot numbers of Fireblast, Arcane Rupture and Arcane Surge (this is absolutely required, addon won't work otherwise). Slots are counted by bars. Bar 1 is Slots 1 to 12, Bar 2 is Slots 13 to 24 etc.
+5. Use `/mc options` to set up the actionbar slot numbers of Fireblast, Arcane Rupture and Arcane Surge (this is absolutely required, addon won't work otherwise). UPDATE 1.6.2: You can now let the addon search for the correct actionbar slots by clicking the button in the options menu.
 6. Optionally, you can change settings for base haste (talent and gear, should be about 10% with most arcane gear. Does not have to be totally exact). Haste Threshold is the value at which haste percentage the addon won't use Arcane Surge in standard rotation anymore since it is GCD based and doesn't profit. 25 - 30 is recommended.
 7. Use `/mc unlock` to move the CD Buff Duration Frames to the place you want them to be. See below for a list of frames with explanation.
 8. Use `/mc lock` to lock them in place. They will only show if the buff is running

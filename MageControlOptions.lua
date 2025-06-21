@@ -1,4 +1,233 @@
 local optionsFrame = nil
+local priorityUiDisplayItems = {}
+
+local function debugPrint(message)
+    if MC.DEBUG then
+        printMessage("MageControl Debug: " .. message)
+    end
+end
+
+local function findSpellSlots()
+    local foundSlots = {}
+    local spellIds = {
+        FIREBLAST = 10199,
+        ARCANE_RUPTURE = 51954,
+        ARCANE_SURGE = 51936,
+        ARCANE_POWER = 12042
+    }
+
+    for slot = 1, 120 do
+        if HasAction(slot) then
+            local text, type, id = GetActionText(slot)
+            text = text or ""
+            type = type or ""
+            id = id or 0
+            for spellKey, targetId in pairs(spellIds) do
+                if id == targetId and not foundSlots[spellKey] then
+                    foundSlots[spellKey] = slot
+                end
+            end
+        end
+    end
+    
+    return foundSlots
+end
+
+local function autoDetectSlots()
+    local foundSlots = findSpellSlots()
+    local updated = false
+    local messages = {}
+    
+    if not MageControlDB.actionBarSlots then
+        MageControlDB.actionBarSlots = {}
+    end
+
+    for spellKey, slot in pairs(foundSlots) do
+        MageControlDB.actionBarSlots[spellKey] = slot
+        updated = true
+        table.insert(messages, spellKey .. " -> Slot " .. slot)
+    end
+
+    local requiredSpells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE", "ARCANE_POWER"}
+    local missingSpells = {}
+    for _, spellKey in ipairs(requiredSpells) do
+        if not foundSlots[spellKey] then
+            table.insert(missingSpells, spellKey)
+        end
+    end
+
+    if updated then
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Spells detected:", 0.0, 1.0, 0.0)
+        for _, msg in ipairs(messages) do
+            DEFAULT_CHAT_FRAME:AddMessage("  " .. msg, 1.0, 1.0, 0.0)
+        end
+    end
+    
+    if table.getn(missingSpells) > 0 then
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: The following spells were not found:", 1.0, 0.5, 0.0)
+        for _, spellKey in ipairs(missingSpells) do
+            DEFAULT_CHAT_FRAME:AddMessage("  " .. spellKey .. " - Please make sure they are in one of your actionsbars!", 1.0, 0.5, 0.0)
+        end
+    end
+    
+    if not updated and table.getn(missingSpells) == 0 then
+        DEFAULT_CHAT_FRAME:AddMessage("MageControl: No Spells found in Actionbars.", 1.0, 0.5, 0.0)
+    end
+    
+    return foundSlots
+end
+
+-- Priority System Functions
+local function createPriorityFrame(parent, yOffset)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetWidth(260)
+    frame:SetHeight(120)
+    frame:SetPoint("TOP", parent, "TOP", 0, yOffset)
+    
+    -- Background
+    frame:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    frame:SetBackdropColor(0, 0, 0, 0.2)
+    frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+    
+    -- Title
+    local titleText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    titleText:SetPoint("TOP", frame, "TOP", 0, -8)
+    titleText:SetText("Cooldown Priority Order")
+    titleText:SetTextColor(1, 1, 1)
+    
+    return frame
+end
+
+local function reorderPriorityItems(priorityItems)
+    local reorderedItems = {}
+    for index, key in ipairs(MageControlDB.cooldownPriorityMap) do
+        if priorityItems[key] then
+            table.insert(reorderedItems, priorityItems[key])
+        end
+    end
+    return reorderedItems
+end
+
+local function updatePriorityDisplay()
+    local reorderedItems = reorderPriorityItems(priorityUiDisplayItems)
+
+    for i, item in ipairs(reorderedItems) do
+        -- Update position and text
+        item:SetPoint("TOP", item:GetParent(), "TOP", -30, -25 - (i - 1) * 24)
+        item.priorityText:SetText(tostring(i))
+        item.position = i
+
+        -- Update button visibility
+        if i == 1 then
+            item.upButton:Hide()
+            item.downButton:Show()
+        elseif i == table.getn(reorderedItems) then
+            item.upButton:Show()
+            item.downButton:Hide()
+        else
+            item.upButton:Show()
+            item.downButton:Show()
+        end
+    end
+
+    debugPrint("Priority updated - current order:", 1.0, 1.0, 0.0)
+    for i, name in ipairs(MageControlDB.cooldownPriorityMap) do
+        debugPrint("  " .. i .. ". " .. name, 0.8, 0.8, 0.8)
+    end
+end
+
+local function moveItemUp(position)
+    if position > 1 then
+        local temp = MageControlDB.cooldownPriorityMap[position]
+        MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position - 1]
+        MageControlDB.cooldownPriorityMap[position - 1] = temp
+        updatePriorityDisplay()
+        MageControlOptions_Save()
+    end
+end
+
+local function moveItemDown(position)
+    if position < table.getn(MageControlDB.cooldownPriorityMap) then
+        local temp = MageControlDB.cooldownPriorityMap[position]
+        MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position + 1]
+        MageControlDB.cooldownPriorityMap[position + 1] = temp
+        updatePriorityDisplay()
+        MageControlOptions_Save()
+    end
+end
+
+local function createPriorityItem(parent, itemName, color, position)
+    local item = CreateFrame("Frame", nil, parent)
+    item.position = position
+    item.color = color
+    item.itemName = itemName
+    item:SetWidth(180)
+    item:SetHeight(22)
+    item:SetPoint("TOP", parent, "TOP", -30, -25 - (position-1) * 24)
+    
+    -- Background
+    item:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    item:SetBackdropColor(item.color.r, item.color.g, item.color.b, 0.3)
+    item:SetBackdropBorderColor(item.color.r, item.color.g, item.color.b, 0.8)
+    
+    -- Priority number
+    local priorityText = item:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    priorityText:SetPoint("LEFT", item, "LEFT", 8, 0)
+    priorityText:SetText(tostring(position))
+    priorityText:SetTextColor(1, 1, 0)
+    
+    -- Text
+    local text = item:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    text:SetPoint("LEFT", priorityText, "RIGHT", 8, 0)
+    text:SetText(item.itemName)
+    text:SetTextColor(1, 1, 1)
+    
+    -- Up Button
+    local upButton = CreateFrame("Button", nil, item)
+    upButton:SetWidth(16)
+    upButton:SetHeight(16)
+    upButton:SetPoint("RIGHT", item, "RIGHT", -25, 0)
+    upButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up")
+    upButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Down")
+    upButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    
+    -- Down Button
+    local downButton = CreateFrame("Button", nil, item)
+    downButton:SetWidth(16)
+    downButton:SetHeight(16)
+    downButton:SetPoint("RIGHT", item, "RIGHT", -5, 0)
+    downButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+    downButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
+    downButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+
+    upButton:SetScript("OnClick", function()
+        debugPrint("Up button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
+        moveItemUp(item.position)
+    end)
+    
+    downButton:SetScript("OnClick", function()
+        debugPrint("Down button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
+        moveItemDown(item.position)
+    end)
+    
+    item.text = text
+    item.priorityText = priorityText
+    item.upButton = upButton
+    item.downButton = downButton
+
+    
+    return item
+end
 
 function MageControlOptions_Show()
     if not optionsFrame then
@@ -14,7 +243,7 @@ function MageControlOptions_CreateFrame()
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     optionsFrame:SetWidth(300)
-    optionsFrame:SetHeight(300)
+    optionsFrame:SetHeight(480)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     optionsFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -39,113 +268,59 @@ function MageControlOptions_CreateFrame()
     closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
-    local fireblastLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    fireblastLabel:SetPoint("TOPLEFT", optionsFrame, "TOPLEFT", 20, -50)
-    fireblastLabel:SetText("Fireblast Slot:")
-
-    local fireblastEditBox = CreateFrame("EditBox", "MageControlFireblastSlot", optionsFrame, "InputBoxTemplate")
-    fireblastEditBox:SetWidth(50)
-    fireblastEditBox:SetHeight(20)
-    fireblastEditBox:SetPoint("LEFT", fireblastLabel, "RIGHT", 10, 0)
-    fireblastEditBox:SetAutoFocus(false)
-    fireblastEditBox:SetNumeric(true)
-    fireblastEditBox:SetMaxLetters(3)
-
-    fireblastEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and (value < 1 or value > 120) then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
+    local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
+    autoDetectButton:SetWidth(200)
+    autoDetectButton:SetHeight(25)
+    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -45)
+    autoDetectButton:SetText("Auto-Detect Spell Slots")
+    autoDetectButton:SetScript("OnClick", function()
+        local foundSlots = autoDetectSlots()
+        MageControlOptions_LoadValues()
     end)
 
-    fireblastEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
+    local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
+    autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically.\n" ..
+                           "Make sure the following spells are in your actionbars:\n" ..
+                           "FIREBLAST, ARCANE RUPTURE,\nARCANE SURGE, ARCANE POWER\n" ..
+                            "then click the button above to auto-detect them.")
+    autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
 
-    local ruptureLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    ruptureLabel:SetPoint("TOPLEFT", fireblastLabel, "BOTTOMLEFT", 0, -25)
-    ruptureLabel:SetText("Arcane Rupture Slot:")
+    local priorityFrame = createPriorityFrame(optionsFrame, -180)
 
-    local ruptureEditBox = CreateFrame("EditBox", "MageControlRuptureSlot", optionsFrame, "InputBoxTemplate")
-    ruptureEditBox:SetWidth(50)
-    ruptureEditBox:SetHeight(20)
-    ruptureEditBox:SetPoint("LEFT", ruptureLabel, "RIGHT", 10, 0)
-    ruptureEditBox:SetAutoFocus(false)
-    ruptureEditBox:SetNumeric(true)
-    ruptureEditBox:SetMaxLetters(3)
-    ruptureEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and (value < 1 or value > 120) then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
+    priorityUiDisplayItems = {
+        TRINKET1 = createPriorityItem(priorityFrame, "TRINKET1", {r=0.2, g=0.8, b=0.2}, 1),
+        TRINKET2 = createPriorityItem(priorityFrame, "TRINKET2", {r=0.2, g=0.2, b=0.8}, 2),
+        ARCANE_POWER = createPriorityItem(priorityFrame, "ARCANE_POWER", {r=0.8, g=0.2, b=0.8}, 3)
+    }
+    
+    updatePriorityDisplay()
+
+    local PriorityHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    PriorityHelp:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
+    PriorityHelp:SetText("Set priority for /mc trinket command\n" ..
+                        "The highest priority action is done per \n" ..
+                        "macro use. Items without usage or things\n" ..
+                        "on cooldown will be ignored.")
+    PriorityHelp:SetTextColor(0.7, 0.7, 0.7)
+
+    local lockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
+    lockButton:SetWidth(130)
+    lockButton:SetHeight(25)
+    lockButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 20, 65)
+    lockButton:SetText("Lock Buff Frames")
+    lockButton:SetScript("OnClick", function()
+        lockFrames()
     end)
 
-    ruptureEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
-
-    local surgeLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    surgeLabel:SetPoint("TOPLEFT", ruptureLabel, "BOTTOMLEFT", 0, -25)
-    surgeLabel:SetText("Arcane Surge Slot:")
-
-    local surgeEditBox = CreateFrame("EditBox", "MageControlSurgeSlot", optionsFrame, "InputBoxTemplate")
-    surgeEditBox:SetWidth(50)
-    surgeEditBox:SetHeight(20)
-    surgeEditBox:SetPoint("LEFT", surgeLabel, "RIGHT", 10, 0)
-    surgeEditBox:SetAutoFocus(false)
-    surgeEditBox:SetNumeric(true)
-    surgeEditBox:SetMaxLetters(3)
-    surgeEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and (value < 1 or value > 120) then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
+    local unlockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
+    unlockButton:SetWidth(130)
+    unlockButton:SetHeight(25)
+    unlockButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -20, 65)
+    unlockButton:SetText("Unlock Buff Frames")
+    unlockButton:SetScript("OnClick", function()
+        unlockFrames()
     end)
-    surgeEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
-
-    local hasteBaseValueLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    hasteBaseValueLabel:SetPoint("TOPLEFT", surgeLabel, "BOTTOMLEFT", 0, -25)
-    hasteBaseValueLabel:SetText("Haste Base Value:")
-
-    local hasteBaseValueEditBox = CreateFrame("EditBox", "MageControlHasteBaseValue", optionsFrame, "InputBoxTemplate")
-    hasteBaseValueEditBox:SetWidth(50)
-    hasteBaseValueEditBox:SetHeight(20)
-    hasteBaseValueEditBox:SetPoint("LEFT", hasteBaseValueLabel, "RIGHT", 10, 0)
-    hasteBaseValueEditBox:SetAutoFocus(false)
-    hasteBaseValueEditBox:SetNumeric(true)
-    hasteBaseValueEditBox:SetMaxLetters(2)
-    hasteBaseValueEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and value < 0 then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
-    end)
-    hasteBaseValueEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
-
-    local hasteThresholdLabel = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    hasteThresholdLabel:SetPoint("TOPLEFT", hasteBaseValueLabel, "BOTTOMLEFT", 0, -25)
-    hasteThresholdLabel:SetText("Haste Threshold:")
-
-    local hasteThresholdEditBox = CreateFrame("EditBox", "MageControlHasteThreshold", optionsFrame, "InputBoxTemplate")
-    hasteThresholdEditBox:SetWidth(50)
-    hasteThresholdEditBox:SetHeight(20)
-    hasteThresholdEditBox:SetPoint("LEFT", hasteThresholdLabel, "RIGHT", 10, 0)
-    hasteThresholdEditBox:SetAutoFocus(false)
-    hasteThresholdEditBox:SetNumeric(true)
-    hasteThresholdEditBox:SetMaxLetters(2)
-    hasteThresholdEditBox:SetScript("OnTextChanged", function()
-        local value = tonumber(this:GetText())
-        if value and value < 0 then
-            this:SetTextColor(1, 0, 0)
-        else
-            this:SetTextColor(1, 1, 1)
-        end
-    end)
-    hasteThresholdEditBox:SetScript("OnEnterPressed", function() MageControlOptions_Save() end)
 
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(80)
@@ -181,89 +356,39 @@ function MageControlOptions_LoadValues()
     if not MageControlDB.haste then
         MageControlDB.haste = { HASTE_THRESHOLD = 30, BASE_VALUE = 10 }
     end
-
-    local slots = MageControlDB.actionBarSlots
-    local fBox = getglobal("MageControlFireblastSlot")
-    local rBox = getglobal("MageControlRuptureSlot")
-    local sBox = getglobal("MageControlSurgeSlot")
-    local bBox = getglobal("MageControlHasteBaseValue")
-    local hBox = getglobal("MageControlHasteThreshold")
-    if fBox then fBox:SetText(tostring(slots.FIREBLAST or 1)) end
-    if rBox then rBox:SetText(tostring(slots.ARCANE_RUPTURE or 2)) end
-    if sBox then sBox:SetText(tostring(slots.ARCANE_SURGE or 5)) end
-    if bBox then bBox:SetText(tostring(MageControlDB.haste.BASE_VALUE or 10)) end
-    if hBox then hBox:SetText(tostring(MageControlDB.haste.HASTE_THRESHOLD or 30)) end
+    if not MageControlDB.cooldownPriorityMap then
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    end
+    
+    if priorityUiDisplayItems and table.getn(priorityUiDisplayItems) > 0 then
+        updatePriorityDisplay()
+    end
 end
 
 function MageControlOptions_Save()
-    local fBox = getglobal("MageControlFireblastSlot")
-    local rBox = getglobal("MageControlRuptureSlot")
-    local sBox = getglobal("MageControlSurgeSlot")
-    local bBox = getglobal("MageControlHasteBaseValue")
-    local hBox = getglobal("MageControlHasteThreshold")
-    local fireblastSlot = tonumber(fBox and fBox:GetText() or "1") or 1
-    local ruptureSlot = tonumber(rBox and rBox:GetText() or "2") or 2
-    local surgeSlot = tonumber(sBox and sBox:GetText() or "5") or 5
-    local hasteBaseValue = tonumber(bBox and bBox:GetText() or "10") or 10
-    local hasteThreshold = tonumber(hBox and hBox:GetText() or "30") or 30
-
-    if not fireblastSlot or fireblastSlot < 1 or fireblastSlot > 120 then
-        message("Invalid Fireblast slot. Must be between 1 and 120.")
-        return
+    -- TODO: See if the save button is still required in the future. Currently it does nothing.
+    debugPrint("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
+    for i, priority in ipairs(MageControlDB.cooldownPriorityMap) do
+        debugPrint("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
     end
 
-    if not ruptureSlot or ruptureSlot < 1 or ruptureSlot > 120 then
-        message("Invalid Arcane Rupture slot. Must be between 1 and 120.")
-        return
-    end
-
-    if not surgeSlot or surgeSlot < 1 or surgeSlot > 120 then
-        message("Invalid Arcane Surge slot. Must be between 1 and 120.")
-        return
-    end
-
-    if not hasteBaseValue or hasteBaseValue < 0 then
-        message("Invalid Haste Base Value. Must be a non-negative number.")
-        return
-    end
-
-    if not hasteThreshold or hasteThreshold < 0 then
-        message("Invalid Haste Threshold. Must be a positive number.")
-        return
-    end
-
-    if not MageControlDB.actionBarSlots then MageControlDB.actionBarSlots = {} end
-    if not MageControlDB.haste then MageControlDB.haste = {} end
-
-    MageControlDB.actionBarSlots.FIREBLAST = math.floor(fireblastSlot)
-    MageControlDB.actionBarSlots.ARCANE_RUPTURE = math.floor(ruptureSlot)
-    MageControlDB.actionBarSlots.ARCANE_SURGE = math.floor(surgeSlot)
-    MageControlDB.haste.BASE_VALUE = math.floor(hasteBaseValue)
-    MageControlDB.haste.HASTE_THRESHOLD = math.floor(hasteThreshold)
-
-    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved!", 1.0, 1.0, 0.0)
-    if optionsFrame then optionsFrame:Hide() end
+    debugPrint("MageControl: Settings saved!", 1.0, 1.0, 0.0)
+    --if optionsFrame then optionsFrame:Hide() end
 end
 
 function MageControlOptions_Reset()
     if MageControlDB and MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots.FIREBLAST = 1
         MageControlDB.actionBarSlots.ARCANE_RUPTURE = 2
-        MageControlDB.actionBarSlots.ARCANE_SURGE = 5
+        MageControlDB.actionBarSlots.ARCANE_SURGE = 3
     end
     if MageControlDB and MageControlDB.haste then
         MageControlDB.haste.BASE_VALUE = 10
         MageControlDB.haste.HASTE_THRESHOLD = 30
     end
+    if MageControlDB then
+        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
+    end
 
-    local fBox = getglobal("MageControlFireblastSlot")
-    local rBox = getglobal("MageControlRuptureSlot")
-    local sBox = getglobal("MageControlSurgeSlot")
-    local bBox = getglobal("MageControlHasteBaseValue")
-    local hBox = getglobal("MageControlHasteThreshold")
-    if fBox then fBox:SetText("1") end
-    if rBox then rBox:SetText("2") end
-    if sBox then sBox:SetText("5") end
-    if bBox then bBox:SetText("10") end
-    if hBox then hBox:SetText("30") end
+    MageControlOptions_LoadValues()
 end
