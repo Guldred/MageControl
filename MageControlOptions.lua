@@ -77,30 +77,90 @@ local function autoDetectSlots()
     return foundSlots
 end
 
--- Priority System Functions
-local function createPriorityFrame(parent, yOffset)
-    local frame = CreateFrame("Frame", nil, parent)
-    frame:SetWidth(260)
-    frame:SetHeight(120)
-    frame:SetPoint("TOP", parent, "TOP", 0, yOffset)
+-- Modern Button Creation Function
+local function createModernButton(parent, width, height, text, color)
+    color = color or {r=0.2, g=0.5, b=0.8}
     
-    -- Background
-    frame:SetBackdrop({
+    local button = CreateFrame("Button", nil, parent)
+    button:SetWidth(width)
+    button:SetHeight(height)
+    
+    -- Modern rounded background
+    button:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+        tile = false, tileSize = 0, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
-    frame:SetBackdropColor(0, 0, 0, 0.2)
-    frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+    button:SetBackdropColor(color.r, color.g, color.b, 0.8)
+    button:SetBackdropBorderColor(color.r * 1.2, color.g * 1.2, color.b * 1.2, 1)
     
-    -- Title
-    local titleText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    titleText:SetPoint("TOP", frame, "TOP", 0, -8)
-    titleText:SetText("Cooldown Priority Order")
-    titleText:SetTextColor(1, 1, 1)
+    -- Button text
+    local buttonText = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    buttonText:SetPoint("CENTER", button, "CENTER", 0, 0)
+    buttonText:SetText(text)
+    buttonText:SetTextColor(1, 1, 1, 1)
+    button.text = buttonText
     
-    return frame
+    -- Hover effects
+    button:SetScript("OnEnter", function()
+        button:SetBackdropColor(color.r * 1.3, color.g * 1.3, color.b * 1.3, 0.9)
+        button:SetBackdropBorderColor(1, 1, 1, 1)
+    end)
+    
+    button:SetScript("OnLeave", function()
+        button:SetBackdropColor(color.r, color.g, color.b, 0.8)
+        button:SetBackdropBorderColor(color.r * 1.2, color.g * 1.2, color.b * 1.2, 1)
+    end)
+    
+    -- Click effect
+    button:SetScript("OnMouseDown", function()
+        button:SetBackdropColor(color.r * 0.7, color.g * 0.7, color.b * 0.7, 0.9)
+    end)
+    
+    button:SetScript("OnMouseUp", function()
+        button:SetBackdropColor(color.r * 1.3, color.g * 1.3, color.b * 1.3, 0.9)
+    end)
+    
+    return button
+end
+
+-- Modern Section Frame Creation
+local function createModernSection(parent, width, height, title, yOffset)
+    local section = CreateFrame("Frame", nil, parent)
+    section:SetWidth(width)
+    section:SetHeight(height)
+    section:SetPoint("TOP", parent, "TOP", 0, yOffset)
+    
+    -- Modern gradient background
+    section:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false, tileSize = 0, edgeSize = 2,
+        insets = { left = 8, right = 8, top = 8, bottom = 8 }
+    })
+    section:SetBackdropColor(0.1, 0.1, 0.15, 0.9)
+    section:SetBackdropBorderColor(0.3, 0.4, 0.6, 1)
+    
+    -- Section title with modern styling
+    local titleText = section:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    titleText:SetPoint("TOP", section, "TOP", 0, -12)
+    titleText:SetText(title)
+    titleText:SetTextColor(0.8, 0.9, 1, 1)
+    
+    -- Title underline
+    local underline = section:CreateTexture(nil, "ARTWORK")
+    underline:SetHeight(1)
+    underline:SetWidth(width - 40)
+    underline:SetPoint("TOP", titleText, "BOTTOM", 0, -4)
+    underline:SetColorTexture(0.3, 0.4, 0.6, 0.8)
+    
+    return section
+end
+
+-- Priority System Functions
+local function createPriorityFrame(parent, yOffset)
+    return createModernSection(parent, 280, 130, "⚡ Cooldown Priority Order", yOffset)
 end
 
 local function reorderPriorityItems(priorityItems)
@@ -118,7 +178,7 @@ local function updatePriorityDisplay()
 
     for i, item in ipairs(reorderedItems) do
         -- Update position and text
-        item:SetPoint("TOP", item:GetParent(), "TOP", -30, -25 - (i - 1) * 24)
+        item:SetPoint("TOP", item:GetParent(), "TOP", -30, -35 - (i - 1) * 28)
         item.priorityText:SetText(tostring(i))
         item.position = i
 
@@ -166,49 +226,87 @@ local function createPriorityItem(parent, itemName, color, position)
     item.position = position
     item.color = color
     item.itemName = itemName
-    item:SetWidth(180)
-    item:SetHeight(22)
-    item:SetPoint("TOP", parent, "TOP", -30, -25 - (position-1) * 24)
+    item:SetWidth(220)
+    item:SetHeight(24)
+    item:SetPoint("TOP", parent, "TOP", -30, -35 - (position-1) * 28)
     
-    -- Background
+    -- Modern item background with gradient
     item:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+        tile = false, tileSize = 0, edgeSize = 1,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
-    item:SetBackdropColor(item.color.r, item.color.g, item.color.b, 0.3)
-    item:SetBackdropBorderColor(item.color.r, item.color.g, item.color.b, 0.8)
+    item:SetBackdropColor(color.r * 0.6, color.g * 0.6, color.b * 0.6, 0.4)
+    item:SetBackdropBorderColor(color.r, color.g, color.b, 0.8)
     
-    -- Priority number
-    local priorityText = item:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    priorityText:SetPoint("LEFT", item, "LEFT", 8, 0)
+    -- Priority number with modern styling
+    local priorityText = item:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    priorityText:SetPoint("LEFT", item, "LEFT", 12, 0)
     priorityText:SetText(tostring(position))
-    priorityText:SetTextColor(1, 1, 0)
+    priorityText:SetTextColor(1, 0.9, 0.3, 1)
     
-    -- Text
-    local text = item:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    text:SetPoint("LEFT", priorityText, "RIGHT", 8, 0)
-    text:SetText(item.itemName)
-    text:SetTextColor(1, 1, 1)
+    -- Text with better positioning
+    local text = item:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    text:SetPoint("LEFT", priorityText, "RIGHT", 12, 0)
+    text:SetText(itemName)
+    text:SetTextColor(0.9, 0.9, 0.9, 1)
     
-    -- Up Button
+    -- Modern arrow buttons
     local upButton = CreateFrame("Button", nil, item)
-    upButton:SetWidth(16)
-    upButton:SetHeight(16)
-    upButton:SetPoint("RIGHT", item, "RIGHT", -25, 0)
-    upButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up")
-    upButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Down")
-    upButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    upButton:SetWidth(20)
+    upButton:SetHeight(20)
+    upButton:SetPoint("RIGHT", item, "RIGHT", -35, 0)
     
-    -- Down Button
+    -- Custom up arrow
+    upButton:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false, tileSize = 0, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    upButton:SetBackdropColor(0.2, 0.4, 0.2, 0.8)
+    upButton:SetBackdropBorderColor(0.4, 0.8, 0.4, 1)
+    
+    local upArrow = upButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    upArrow:SetPoint("CENTER", upButton, "CENTER", 0, 0)
+    upArrow:SetText("▲")
+    upArrow:SetTextColor(0.8, 1, 0.8, 1)
+    
     local downButton = CreateFrame("Button", nil, item)
-    downButton:SetWidth(16)
-    downButton:SetHeight(16)
-    downButton:SetPoint("RIGHT", item, "RIGHT", -5, 0)
-    downButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
-    downButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
-    downButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    downButton:SetWidth(20)
+    downButton:SetHeight(20)
+    downButton:SetPoint("RIGHT", item, "RIGHT", -10, 0)
+    
+    -- Custom down arrow
+    downButton:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false, tileSize = 0, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    downButton:SetBackdropColor(0.4, 0.2, 0.2, 0.8)
+    downButton:SetBackdropBorderColor(0.8, 0.4, 0.4, 1)
+    
+    local downArrow = downButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    downArrow:SetPoint("CENTER", downButton, "CENTER", 0, 0)
+    downArrow:SetText("▼")
+    downArrow:SetTextColor(1, 0.8, 0.8, 1)
+
+    -- Button hover effects
+    upButton:SetScript("OnEnter", function()
+        upButton:SetBackdropColor(0.3, 0.6, 0.3, 1)
+    end)
+    upButton:SetScript("OnLeave", function()
+        upButton:SetBackdropColor(0.2, 0.4, 0.2, 0.8)
+    end)
+    
+    downButton:SetScript("OnEnter", function()
+        downButton:SetBackdropColor(0.6, 0.3, 0.3, 1)
+    end)
+    downButton:SetScript("OnLeave", function()
+        downButton:SetBackdropColor(0.4, 0.2, 0.2, 0.8)
+    end)
 
     upButton:SetScript("OnClick", function()
         debugPrint("Up button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
@@ -224,7 +322,6 @@ local function createPriorityItem(parent, itemName, color, position)
     item.priorityText = priorityText
     item.upButton = upButton
     item.downButton = downButton
-
     
     return item
 end
@@ -239,116 +336,104 @@ function MageControlOptions_Show()
 end
 
 function MageControlOptions_CreateFrame()
-    if optionsFrame then return end -- Prevent duplicate creation
+    if optionsFrame then return end
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
-    optionsFrame:SetWidth(300)
-    optionsFrame:SetHeight(480)
+    optionsFrame:SetWidth(360)
+    optionsFrame:SetHeight(520)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    
+    -- Modern main window styling
     optionsFrame:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false, tileSize = 0, edgeSize = 3,
+        insets = { left = 12, right = 12, top = 12, bottom = 12 }
     })
+    optionsFrame:SetBackdropColor(0.05, 0.05, 0.1, 0.95)
+    optionsFrame:SetBackdropBorderColor(0.3, 0.4, 0.6, 1)
+    
     optionsFrame:SetMovable(true)
     optionsFrame:EnableMouse(true)
     optionsFrame:RegisterForDrag("LeftButton")
     optionsFrame:SetScript("OnDragStart", function() this:StartMoving() end)
     optionsFrame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
 
-    -- [ESC] to close
     tinsert(UISpecialFrames, "MageControlOptionsFrame")
 
-    local title = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOP", optionsFrame, "TOP", 0, -15)
-    title:SetText("MageControl Options")
+    -- Modern title with glow effect
+    local title = optionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    title:SetPoint("TOP", optionsFrame, "TOP", 0, -20)
+    title:SetText("🔮 MageControl Settings")
+    title:SetTextColor(0.8, 0.9, 1, 1)
 
-    local closeButton = CreateFrame("Button", nil, optionsFrame, "UIPanelCloseButton")
-    closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
+    -- Modern close button
+    local closeButton = createModernButton(optionsFrame, 24, 24, "✕", {r=0.8, g=0.2, b=0.2})
+    closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -15, -15)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
-    local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    autoDetectButton:SetWidth(200)
-    autoDetectButton:SetHeight(25)
-    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -45)
-    autoDetectButton:SetText("Auto-Detect Spell Slots")
+    -- Spell Detection Section
+    local spellSection = createModernSection(optionsFrame, 320, 80, "🎯 Spell Detection", -60)
+    
+    local autoDetectButton = createModernButton(spellSection, 220, 28, "🔍 Auto-Detect Spell Slots", {r=0.2, g=0.6, b=0.8})
+    autoDetectButton:SetPoint("TOP", spellSection, "TOP", 0, -35)
     autoDetectButton:SetScript("OnClick", function()
         local foundSlots = autoDetectSlots()
         MageControlOptions_LoadValues()
     end)
 
-    local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
-    autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically.\n" ..
-                           "Make sure the following spells are in your actionbars:\n" ..
-                           "FIREBLAST, ARCANE RUPTURE,\nARCANE SURGE, ARCANE POWER\n" ..
-                            "then click the button above to auto-detect them.")
-    autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
+    local autoDetectHelp = spellSection:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -8)
+    autoDetectHelp:SetText("Automatically finds spells in your action bars")
+    autoDetectHelp:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    local priorityFrame = createPriorityFrame(optionsFrame, -180)
+    -- Priority Section
+    local priorityFrame = createPriorityFrame(optionsFrame, -150)
 
     priorityUiDisplayItems = {
-        TRINKET1 = createPriorityItem(priorityFrame, "TRINKET1", {r=0.2, g=0.8, b=0.2}, 1),
-        TRINKET2 = createPriorityItem(priorityFrame, "TRINKET2", {r=0.2, g=0.2, b=0.8}, 2),
-        ARCANE_POWER = createPriorityItem(priorityFrame, "ARCANE_POWER", {r=0.8, g=0.2, b=0.8}, 3)
+        TRINKET1 = createPriorityItem(priorityFrame, "🔮 Trinket 1", {r=0.3, g=0.8, b=0.3}, 1),
+        TRINKET2 = createPriorityItem(priorityFrame, "💎 Trinket 2", {r=0.3, g=0.3, b=0.8}, 2),
+        ARCANE_POWER = createPriorityItem(priorityFrame, "⚡ Arcane Power", {r=0.8, g=0.3, b=0.8}, 3)
     }
     
     updatePriorityDisplay()
 
-    local PriorityHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    PriorityHelp:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
-    PriorityHelp:SetText("Set priority for /mc trinket command\n" ..
-                        "The highest priority action is done per \n" ..
-                        "macro use. Items without usage or things\n" ..
-                        "on cooldown will be ignored.")
-    PriorityHelp:SetTextColor(0.7, 0.7, 0.7)
+    local priorityHelp = priorityFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    priorityHelp:SetPoint("BOTTOM", priorityFrame, "BOTTOM", 0, 8)
+    priorityHelp:SetText("Higher priority items are used first")
+    priorityHelp:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    local lockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    lockButton:SetWidth(130)
-    lockButton:SetHeight(25)
-    lockButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 20, 65)
-    lockButton:SetText("Lock Buff Frames")
-    lockButton:SetScript("OnClick", function()
-        lockFrames()
-    end)
+    -- Buff Management Section
+    local buffSection = createModernSection(optionsFrame, 320, 60, "📊 Buff Frame Controls", -290)
+    
+    local lockButton = createModernButton(buffSection, 140, 26, "🔒 Lock Frames", {r=0.6, g=0.4, b=0.2})
+    lockButton:SetPoint("TOPLEFT", buffSection, "TOPLEFT", 20, -30)
+    lockButton:SetScript("OnClick", function() lockFrames() end)
 
-    local unlockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    unlockButton:SetWidth(130)
-    unlockButton:SetHeight(25)
-    unlockButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -20, 65)
-    unlockButton:SetText("Unlock Buff Frames")
-    unlockButton:SetScript("OnClick", function()
-        unlockFrames()
-    end)
+    local unlockButton = createModernButton(buffSection, 140, 26, "🔓 Unlock Frames", {r=0.2, g=0.6, b=0.4})
+    unlockButton:SetPoint("TOPRIGHT", buffSection, "TOPRIGHT", -20, -30)
+    unlockButton:SetScript("OnClick", function() unlockFrames() end)
 
-    local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    saveButton:SetWidth(80)
-    saveButton:SetHeight(25)
-    saveButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 20, 20)
-    saveButton:SetText("Save")
+    -- Bottom Action Buttons
+    local saveButton = createModernButton(optionsFrame, 90, 30, "💾 Save", {r=0.2, g=0.7, b=0.3})
+    saveButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 25, 25)
     saveButton:SetScript("OnClick", MageControlOptions_Save)
 
-    local resetButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    resetButton:SetWidth(80)
-    resetButton:SetHeight(25)
-    resetButton:SetPoint("BOTTOM", optionsFrame, "BOTTOM", 0, 20)
-    resetButton:SetText("Reset")
+    local resetButton = createModernButton(optionsFrame, 90, 30, "🔄 Reset", {r=0.7, g=0.5, b=0.2})
+    resetButton:SetPoint("BOTTOM", optionsFrame, "BOTTOM", 0, 25)
     resetButton:SetScript("OnClick", function()
         MageControlOptions_Reset()
         MageControlOptions_Save()
     end)
 
-    local cancelButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    cancelButton:SetWidth(80)
-    cancelButton:SetHeight(25)
-    cancelButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -20, 20)
-    cancelButton:SetText("Cancel")
+    local cancelButton = createModernButton(optionsFrame, 90, 30, "❌ Cancel", {r=0.7, g=0.3, b=0.3})
+    cancelButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -25, 25)
     cancelButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
     optionsFrame:Hide()
 end
 
+-- Rest of the existing functions remain the same
 function MageControlOptions_LoadValues()
     if not MageControlDB or not MageControlDB.actionBarSlots then
         return
@@ -357,23 +442,17 @@ function MageControlOptions_LoadValues()
         MageControlDB.haste = { HASTE_THRESHOLD = 30, BASE_VALUE = 10 }
     end
     if not MageControlDB.cooldownPriorityMap then
-        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
+        MageControlDB.cooldownPriorityMap = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
-    
+
     if priorityUiDisplayItems and table.getn(priorityUiDisplayItems) > 0 then
         updatePriorityDisplay()
     end
 end
 
 function MageControlOptions_Save()
-    -- TODO: See if the save button is still required in the future. Currently it does nothing.
-    debugPrint("MageControl: Priority Order saved:", 1.0, 1.0, 0.0)
-    for i, priority in ipairs(MageControlDB.cooldownPriorityMap) do
-        debugPrint("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
-    end
-
-    debugPrint("MageControl: Settings saved!", 1.0, 1.0, 0.0)
-    --if optionsFrame then optionsFrame:Hide() end
+    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings saved! ✨", 0.2, 1.0, 0.2)
+    if optionsFrame then optionsFrame:Hide() end
 end
 
 function MageControlOptions_Reset()
@@ -387,8 +466,9 @@ function MageControlOptions_Reset()
         MageControlDB.haste.HASTE_THRESHOLD = 30
     end
     if MageControlDB then
-        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER"}
+        MageControlDB.cooldownPriorityMap = {"TRINKET1", "TRINKET2", "ARCANE_POWER"}
     end
-
+    
     MageControlOptions_LoadValues()
+    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Settings reset! 🔄", 1.0, 0.8, 0.2)
 end
