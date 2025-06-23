@@ -8,7 +8,7 @@ local function debugPrint(message)
 end
 
 local function checkDependencies()
-    local output = "CSuperWoW: "
+    local output = "SuperWoW: "
 
     if SUPERWOW_VERSION then
         output = output .. " Version " .. tostring(SUPERWOW_VERSION)
@@ -63,6 +63,7 @@ local function autoDetectSlots()
     local foundSlots = findSpellSlots()
     local updated = false
     local messages = {}
+    local optionsMessage = ""
     
     if not MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots = {}
@@ -83,24 +84,24 @@ local function autoDetectSlots()
     end
 
     if updated then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Spells detected:", 0.0, 1.0, 0.0)
+        optionsMessage = optionsMessage .. "Spells detected:\n"
         for _, msg in ipairs(messages) do
-            DEFAULT_CHAT_FRAME:AddMessage("  " .. msg, 1.0, 1.0, 0.0)
+            optionsMessage = optionsMessage .. msg .. "\n"
         end
     end
     
     if table.getn(missingSpells) > 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: The following spells were not found:", 1.0, 0.5, 0.0)
+        optionsMessage = optionsMessage .. "The following spells were not found:\n"
         for _, spellKey in ipairs(missingSpells) do
-            DEFAULT_CHAT_FRAME:AddMessage("  " .. spellKey .. " - Please make sure they are in one of your actionsbars!", 1.0, 0.5, 0.0)
+            optionsMessage = optionsMessage .. "  " .. spellKey .. "\nPlease make sure they are in one of your actionsbars!\n"
         end
     end
     
     if not updated and table.getn(missingSpells) == 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: No Spells found in Actionbars.", 1.0, 0.5, 0.0)
+        optionsMessage = optionsMessage .. "MageControl: No Spells found in Actionbars."
     end
     
-    return foundSlots
+    return optionsMessage
 end
 
 -- Priority System Functions
@@ -268,7 +269,7 @@ function MageControlOptions_CreateFrame()
     if optionsFrame then return end -- Prevent duplicate creation
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
-    optionsFrame:SetWidth(300)
+    optionsFrame:SetWidth(350)
     optionsFrame:SetHeight(480)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     optionsFrame:SetBackdrop({
@@ -295,21 +296,24 @@ function MageControlOptions_CreateFrame()
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
     local dependencyInfo = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    dependencyInfo:SetPoint("TOP", optionsFrame, "TOP", 0, -25)
+    dependencyInfo:SetPoint("TOP", optionsFrame, "TOP", 0, -40)
     dependencyInfo:SetText(checkDependencies())
     dependencyInfo:SetTextColor(0.7, 0.7, 0.7)
+
+    local optionsMessage = ""
+    local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 
     local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     autoDetectButton:SetWidth(200)
     autoDetectButton:SetHeight(25)
-    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -55)
+    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -65)
     autoDetectButton:SetText("Auto-Detect Spell Slots")
     autoDetectButton:SetScript("OnClick", function()
-        local foundSlots = autoDetectSlots()
+        optionsMessage = autoDetectSlots()
+        autoDetectHelp:SetText(optionsMessage)
         MageControlOptions_LoadValues()
     end)
 
-    local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
     autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically.\n" ..
                            "Make sure the following spells are in your actionbars:\n" ..

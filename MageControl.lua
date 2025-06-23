@@ -706,7 +706,7 @@ local function arcaneIncantagos()
     local spellToQueue = targetSpellMap[targetName]
     if spellToQueue then
         local castId, visId, autoId, casting, channeling, onswing, autoattack = GetCurrentCastingInfo()
-        local isArcaneSpell = castID == MC.SPELL_INFO.ARCANE_MISSILES or castId == MC.SPELL_INFO.ARCANE_RUPTURE
+        local isArcaneSpell = channeling == 1 or castId == MC.SPELL_INFO.ARCANE_RUPTURE.id
         if (isArcaneSpell) then
             SpellStopCasting()
         end
