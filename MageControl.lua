@@ -705,36 +705,15 @@ local function arcaneIncantagos()
 
     local spellToQueue = targetSpellMap[targetName]
     if spellToQueue then
+        local castId, visId, autoId, casting, channeling, onswing, autoattack = GetCurrentCastingInfo()
+        local isArcaneSpell = castID == MC.SPELL_INFO.ARCANE_MISSILES or castId == MC.SPELL_INFO.ARCANE_RUPTURE
+        if (isArcaneSpell) then
+            SpellStopCasting()
+        end
         QueueSpellByName(spellToQueue)
     else
         arcaneRotation()
     end
-end
-
-local function checkDependencies()
-    local output = "Checking SuperWoW... "
-
-    if SUPERWOW_VERSION then
-        output = output .. "found Version " .. tostring(SUPERWOW_VERSION)
-    else
-        output = output .. "not found"
-    end
-
-    output = output .. ". Checking Nampower... "
-
-    if GetNampowerVersion and GetNampowerVersion() then
-        local major, minor, patch = GetNampowerVersion()
-
-        if major and minor and patch then
-            output = output .. "found Version " .. tostring(major) .. "." .. tostring(minor) .. "." .. tostring(patch)
-        else
-            output = output .. "found (version info incomplete)"
-        end
-    else
-        output = output .. "not found"
-    end
-
-    return output
 end
 
 local function activateTrinketAndAP()
@@ -855,7 +834,7 @@ MageControlFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        printMessage("MageControl loaded. " .. checkDependencies())
+        printMessage("MageControl loaded.")
 
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true

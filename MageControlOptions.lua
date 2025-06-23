@@ -7,6 +7,32 @@ local function debugPrint(message)
     end
 end
 
+local function checkDependencies()
+    local output = "CSuperWoW: "
+
+    if SUPERWOW_VERSION then
+        output = output .. " Version " .. tostring(SUPERWOW_VERSION)
+    else
+        output = output .. "Not found!"
+    end
+
+    output = output .. ".\nNampower: "
+
+    if GetNampowerVersion and GetNampowerVersion() then
+        local major, minor, patch = GetNampowerVersion()
+
+        if major and minor and patch then
+            output = output .. "Version " .. tostring(major) .. "." .. tostring(minor) .. "." .. tostring(patch)
+        else
+            output = output .. "Version unknown (still ok)"
+        end
+    else
+        output = output .. "Not found!"
+    end
+
+    return output
+end
+
 local function findSpellSlots()
     local foundSlots = {}
     local spellIds = {
@@ -268,10 +294,15 @@ function MageControlOptions_CreateFrame()
     closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
+    local dependencyInfo = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    dependencyInfo:SetPoint("TOP", optionsFrame, "TOP", 0, -25)
+    dependencyInfo:SetText(checkDependencies())
+    dependencyInfo:SetTextColor(0.7, 0.7, 0.7)
+
     local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     autoDetectButton:SetWidth(200)
     autoDetectButton:SetHeight(25)
-    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -45)
+    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -55)
     autoDetectButton:SetText("Auto-Detect Spell Slots")
     autoDetectButton:SetScript("OnClick", function()
         local foundSlots = autoDetectSlots()
