@@ -7,6 +7,32 @@ local function debugPrint(message)
     end
 end
 
+local function checkDependencies()
+    local output = "SuperWoW: "
+
+    if SUPERWOW_VERSION then
+        output = output .. " Version " .. tostring(SUPERWOW_VERSION)
+    else
+        output = output .. "Not found!"
+    end
+
+    output = output .. ".\nNampower: "
+
+    if GetNampowerVersion and GetNampowerVersion() then
+        local major, minor, patch = GetNampowerVersion()
+
+        if major and minor and patch then
+            output = output .. "Version " .. tostring(major) .. "." .. tostring(minor) .. "." .. tostring(patch)
+        else
+            output = output .. "Version unknown (still ok)"
+        end
+    else
+        output = output .. "Not found!"
+    end
+
+    return output
+end
+
 local function findSpellSlots()
     local foundSlots = {}
     local spellIds = {
@@ -37,6 +63,7 @@ local function autoDetectSlots()
     local foundSlots = findSpellSlots()
     local updated = false
     local messages = {}
+    local optionsMessage = ""
     
     if not MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots = {}
@@ -57,24 +84,24 @@ local function autoDetectSlots()
     end
 
     if updated then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: Spells detected:", 0.0, 1.0, 0.0)
+        optionsMessage = optionsMessage .. "Spells detected:\n"
         for _, msg in ipairs(messages) do
-            DEFAULT_CHAT_FRAME:AddMessage("  " .. msg, 1.0, 1.0, 0.0)
+            optionsMessage = optionsMessage .. msg .. "\n"
         end
     end
     
     if table.getn(missingSpells) > 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: The following spells were not found:", 1.0, 0.5, 0.0)
+        optionsMessage = optionsMessage .. "The following spells were not found:\n"
         for _, spellKey in ipairs(missingSpells) do
-            DEFAULT_CHAT_FRAME:AddMessage("  " .. spellKey .. " - Please make sure they are in one of your actionsbars!", 1.0, 0.5, 0.0)
+            optionsMessage = optionsMessage .. "  " .. spellKey .. "\nPlease make sure they are in one of your actionsbars!\n"
         end
     end
     
     if not updated and table.getn(missingSpells) == 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("MageControl: No Spells found in Actionbars.", 1.0, 0.5, 0.0)
+        optionsMessage = optionsMessage .. "MageControl: No Spells found in Actionbars."
     end
     
-    return foundSlots
+    return optionsMessage
 end
 
 -- Priority System Functions
@@ -229,6 +256,38 @@ local function createPriorityItem(parent, itemName, color, position)
     return item
 end
 
+local function createSlider(parentFrame, relativePointFrame, label, minValue, maxValue, step, defaultValue, dbKey)
+    -- Slider Frame
+    local slider = CreateFrame("Slider", nil, parentFrame, "OptionsSliderTemplate")
+    --
+    slider:SetWidth(200)
+    slider:SetHeight(20)
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetMinMaxValues(minValue, maxValue)
+    slider:SetValueStep(step)
+    slider:SetValue(defaultValue)
+    slider:SetPoint("BOTTOM", relativePointFrame, "BOTTOM", 0, -40)
+
+    -- Slider Label
+    local sliderLabel = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    sliderLabel:SetPoint("BOTTOM", slider, "TOP", 0, 5)
+    sliderLabel:SetText(label)
+
+    -- Value Display
+    local valueDisplay = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    valueDisplay:SetPoint("TOP", slider, "BOTTOM", 0, -5)
+    valueDisplay:SetText(tostring(defaultValue))
+
+    -- OnValueChanged Event
+    slider:SetScript("OnValueChanged", function()
+        local v = math.floor(this:GetValue() + 0.5)
+        valueDisplay:SetText(v)
+        MageControlDB[dbKey] = v
+    end)
+
+    return slider
+end
+
 function MageControlOptions_Show()
     if not optionsFrame then
         MageControlOptions_CreateFrame()
@@ -242,7 +301,7 @@ function MageControlOptions_CreateFrame()
     if optionsFrame then return end -- Prevent duplicate creation
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
-    optionsFrame:SetWidth(300)
+    optionsFrame:SetWidth(350)
     optionsFrame:SetHeight(480)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     optionsFrame:SetBackdrop({
@@ -268,17 +327,25 @@ function MageControlOptions_CreateFrame()
     closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
+    local dependencyInfo = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    dependencyInfo:SetPoint("TOP", optionsFrame, "TOP", 0, -40)
+    dependencyInfo:SetText(checkDependencies())
+    dependencyInfo:SetTextColor(0.7, 0.7, 0.7)
+
+    local optionsMessage = ""
+    local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+
     local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     autoDetectButton:SetWidth(200)
     autoDetectButton:SetHeight(25)
-    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -45)
+    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -65)
     autoDetectButton:SetText("Auto-Detect Spell Slots")
     autoDetectButton:SetScript("OnClick", function()
-        local foundSlots = autoDetectSlots()
+        optionsMessage = autoDetectSlots()
+        autoDetectHelp:SetText(optionsMessage)
         MageControlOptions_LoadValues()
     end)
 
-    local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
     autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically.\n" ..
                            "Make sure the following spells are in your actionbars:\n" ..
@@ -286,7 +353,7 @@ function MageControlOptions_CreateFrame()
                             "then click the button above to auto-detect them.")
     autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
 
-    local priorityFrame = createPriorityFrame(optionsFrame, -180)
+    local priorityFrame = createPriorityFrame(optionsFrame, -160)
 
     priorityUiDisplayItems = {
         TRINKET1 = createPriorityItem(priorityFrame, "TRINKET1", {r=0.2, g=0.8, b=0.2}, 1),
@@ -296,13 +363,24 @@ function MageControlOptions_CreateFrame()
     
     updatePriorityDisplay()
 
-    local PriorityHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    PriorityHelp:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
-    PriorityHelp:SetText("Set priority for /mc trinket command\n" ..
+    local priorityHelpFrame = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    priorityHelpFrame:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
+    priorityHelpFrame:SetText("Set priority for /mc trinket command\n" ..
                         "The highest priority action is done per \n" ..
                         "macro use. Items without usage or things\n" ..
                         "on cooldown will be ignored.")
-    PriorityHelp:SetTextColor(0.7, 0.7, 0.7)
+    priorityHelpFrame:SetTextColor(0.7, 0.7, 0.7)
+
+    local slider = createSlider(
+            optionsFrame,
+            priorityHelpFrame,
+            "Minimum Mana for Arcane Power Use",
+            0,
+            100,
+            1,
+            MageControlDB.minManaForArcanePowerUse or 50,
+            "minManaForArcanePowerUse"
+    )
 
     local lockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     lockButton:SetWidth(130)

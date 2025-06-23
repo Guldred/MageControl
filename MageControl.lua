@@ -163,6 +163,10 @@ MC = {
 
 MageControlDB = MageControlDB or {}
 
+local function printMessage(text)
+    DEFAULT_CHAT_FRAME:AddMessage(text, 1.0, 1.0, 0.0)
+end
+
 local function initializeSettings()
     if not MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots = {
@@ -178,14 +182,13 @@ local function initializeSettings()
     if not MageControlDB.cooldownPriorityMap then
         MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER" }
     end
+    if not MageControlDB.minManaForArcanePowerUse then
+        MageControlDB.minManaForArcanePowerUse = 50
+    end
 end
 
 local function getActionBarSlots()
     return MageControlDB.actionBarSlots
-end
-
-local function printMessage(text)
-    DEFAULT_CHAT_FRAME:AddMessage(text, 1.0, 1.0, 0.0)
 end
 
 local state = {
@@ -705,36 +708,15 @@ local function arcaneIncantagos()
 
     local spellToQueue = targetSpellMap[targetName]
     if spellToQueue then
+        local castId, visId, autoId, casting, channeling, onswing, autoattack = GetCurrentCastingInfo()
+        local isArcaneSpell = channeling == 1 or castId == MC.SPELL_INFO.ARCANE_RUPTURE.id
+        if (isArcaneSpell) then
+            SpellStopCasting()
+        end
         QueueSpellByName(spellToQueue)
     else
         arcaneRotation()
     end
-end
-
-local function checkDependencies()
-    local output = "Checking SuperWoW... "
-
-    if SUPERWOW_VERSION then
-        output = output .. "found Version " .. tostring(SUPERWOW_VERSION)
-    else
-        output = output .. "not found"
-    end
-
-    output = output .. ". Checking Nampower... "
-
-    if GetNampowerVersion and GetNampowerVersion() then
-        local major, minor, patch = GetNampowerVersion()
-
-        if major and minor and patch then
-            output = output .. "found Version " .. tostring(major) .. "." .. tostring(minor) .. "." .. tostring(patch)
-        else
-            output = output .. "found (version info incomplete)"
-        end
-    else
-        output = output .. "not found"
-    end
-
-    return output
 end
 
 local function activateTrinketAndAP()
@@ -747,7 +729,8 @@ local function activateTrinketAndAP()
     local arcanePowerIsReady = false
     if arcanePowerSlot and arcanePowerSlot > 0 then
         local start, duration = GetActionCooldown(arcanePowerSlot)
-        arcanePowerIsReady = (start == 0 or (start + duration <= GetTime()))
+        arcanePowerIsReady = (start == 0 or (start + duration <= GetTime())) and
+                             MageControlDB.minManaForArcanePowerUse <= getCurrentManaPercent()
     end
 
     if not MageControlDB.cooldownPriorityMap then
@@ -855,7 +838,7 @@ MageControlFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         initializeSettings()
-        printMessage("MageControl loaded. " .. checkDependencies())
+        printMessage("MageControl loaded.")
 
     elseif event == "SPELLCAST_CHANNEL_START" then
         state.isChanneling = true
