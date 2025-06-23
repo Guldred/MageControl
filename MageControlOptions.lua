@@ -256,6 +256,38 @@ local function createPriorityItem(parent, itemName, color, position)
     return item
 end
 
+local function createSlider(parentFrame, relativePointFrame, label, minValue, maxValue, step, defaultValue, dbKey)
+    -- Slider Frame
+    local slider = CreateFrame("Slider", nil, parentFrame, "OptionsSliderTemplate")
+    --
+    slider:SetWidth(200)
+    slider:SetHeight(20)
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetMinMaxValues(minValue, maxValue)
+    slider:SetValueStep(step)
+    slider:SetValue(defaultValue)
+    slider:SetPoint("BOTTOM", relativePointFrame, "BOTTOM", 0, -40)
+
+    -- Slider Label
+    local sliderLabel = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    sliderLabel:SetPoint("BOTTOM", slider, "TOP", 0, 5)
+    sliderLabel:SetText(label)
+
+    -- Value Display
+    local valueDisplay = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    valueDisplay:SetPoint("TOP", slider, "BOTTOM", 0, -5)
+    valueDisplay:SetText(tostring(defaultValue))
+
+    -- OnValueChanged Event
+    slider:SetScript("OnValueChanged", function()
+        local v = math.floor(this:GetValue() + 0.5)
+        valueDisplay:SetText(v)
+        MageControlDB[dbKey] = v
+    end)
+
+    return slider
+end
+
 function MageControlOptions_Show()
     if not optionsFrame then
         MageControlOptions_CreateFrame()
@@ -321,7 +353,7 @@ function MageControlOptions_CreateFrame()
                             "then click the button above to auto-detect them.")
     autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
 
-    local priorityFrame = createPriorityFrame(optionsFrame, -180)
+    local priorityFrame = createPriorityFrame(optionsFrame, -160)
 
     priorityUiDisplayItems = {
         TRINKET1 = createPriorityItem(priorityFrame, "TRINKET1", {r=0.2, g=0.8, b=0.2}, 1),
@@ -331,13 +363,24 @@ function MageControlOptions_CreateFrame()
     
     updatePriorityDisplay()
 
-    local PriorityHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    PriorityHelp:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
-    PriorityHelp:SetText("Set priority for /mc trinket command\n" ..
+    local priorityHelpFrame = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    priorityHelpFrame:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
+    priorityHelpFrame:SetText("Set priority for /mc trinket command\n" ..
                         "The highest priority action is done per \n" ..
                         "macro use. Items without usage or things\n" ..
                         "on cooldown will be ignored.")
-    PriorityHelp:SetTextColor(0.7, 0.7, 0.7)
+    priorityHelpFrame:SetTextColor(0.7, 0.7, 0.7)
+
+    local slider = createSlider(
+            optionsFrame,
+            priorityHelpFrame,
+            "Minimum Mana for Arcane Power Use",
+            0,
+            100,
+            1,
+            MageControlDB.minManaForArcanePowerUse or 50,
+            "minManaForArcanePowerUse"
+    )
 
     local lockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     lockButton:SetWidth(130)
