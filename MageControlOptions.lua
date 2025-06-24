@@ -104,11 +104,9 @@ local function autoDetectSlots()
     return optionsMessage
 end
 
--- Moderne Button-Styling-Funktion
 local function applyModernButtonStyle(button, color)
     color = color or {r=0.2, g=0.5, b=0.8}
-    
-    -- Modernere Farben und Hover-Effekte
+
     button:SetScript("OnEnter", function()
         if button:IsEnabled() then
             button:SetAlpha(0.9)
@@ -120,14 +118,12 @@ local function applyModernButtonStyle(button, color)
     end)
 end
 
--- Priority System Functions
 local function createPriorityFrame(parent, yOffset)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetWidth(280)
     frame:SetHeight(130)
     frame:SetPoint("TOP", parent, "TOP", 0, yOffset)
-    
-    -- Moderneres Background-Design
+
     frame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -136,8 +132,7 @@ local function createPriorityFrame(parent, yOffset)
     })
     frame:SetBackdropColor(0.08, 0.08, 0.12, 0.85)
     frame:SetBackdropBorderColor(0.3, 0.4, 0.6, 1)
-    
-    -- Modernerer Titel mit besserer Typografie
+
     local titleText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     titleText:SetPoint("TOP", frame, "TOP", 0, -10)
     titleText:SetText("⚡ Cooldown Priority Order")
@@ -160,12 +155,10 @@ local function updatePriorityDisplay()
     local reorderedItems = reorderPriorityItems(priorityUiDisplayItems)
 
     for i, item in ipairs(reorderedItems) do
-        -- Update position and text
         item:SetPoint("TOP", item:GetParent(), "TOP", -30, -30 - (i - 1) * 26)
         item.priorityText:SetText(tostring(i))
         item.position = i
 
-        -- Update button visibility
         if i == 1 then
             item.upButton:Hide()
             item.downButton:Show()
@@ -212,8 +205,7 @@ local function createPriorityItem(parent, itemName, color, position)
     item:SetWidth(220)
     item:SetHeight(24)
     item:SetPoint("TOP", parent, "TOP", -30, -30 - (position-1) * 26)
-    
-    -- Moderneres Item-Design
+
     item:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -222,20 +214,17 @@ local function createPriorityItem(parent, itemName, color, position)
     })
     item:SetBackdropColor(color.r * 0.6, color.g * 0.6, color.b * 0.6, 0.4)
     item:SetBackdropBorderColor(color.r, color.g, color.b, 0.8)
-    
-    -- Modernere Prioritätsnummer
+
     local priorityText = item:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     priorityText:SetPoint("LEFT", item, "LEFT", 10, 0)
     priorityText:SetText(tostring(position))
     priorityText:SetTextColor(1, 0.9, 0.3, 1)
-    
-    -- Besserer Text
+
     local text = item:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     text:SetPoint("LEFT", priorityText, "RIGHT", 12, 0)
     text:SetText(itemName)
     text:SetTextColor(0.9, 0.9, 0.9, 1)
-    
-    -- Modernere Up-Button
+
     local upButton = CreateFrame("Button", nil, item)
     upButton:SetWidth(18)
     upButton:SetHeight(18)
@@ -243,8 +232,7 @@ local function createPriorityItem(parent, itemName, color, position)
     upButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up")
     upButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Down")
     upButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
-    
-    -- Modernere Down-Button
+
     local downButton = CreateFrame("Button", nil, item)
     downButton:SetWidth(18)
     downButton:SetHeight(18)
@@ -253,7 +241,6 @@ local function createPriorityItem(parent, itemName, color, position)
     downButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
     downButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
 
-    -- Hover-Effekte für Buttons
     upButton:SetScript("OnEnter", function()
         upButton:SetAlpha(0.8)
     end)
@@ -335,8 +322,7 @@ function MageControlOptions_CreateFrame()
     optionsFrame:SetWidth(380)
     optionsFrame:SetHeight(520)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-    
-    -- Moderneres Haupt-Fenster Design
+
     optionsFrame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -355,7 +341,6 @@ function MageControlOptions_CreateFrame()
     -- [ESC] to close
     tinsert(UISpecialFrames, "MageControlOptionsFrame")
 
-    -- Modern Title
     local title = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
     title:SetPoint("TOP", optionsFrame, "TOP", 0, -20)
     title:SetText("🔮 MageControl Options")
@@ -365,7 +350,6 @@ function MageControlOptions_CreateFrame()
     closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
-    -- Dependency Info mit modernerem Styling
     local dependencyInfo = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     dependencyInfo:SetPoint("TOP", optionsFrame, "TOP", 0, -50)
     dependencyInfo:SetText("📋 " .. checkDependencies())
@@ -374,7 +358,6 @@ function MageControlOptions_CreateFrame()
     local optionsMessage = ""
     local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 
-    -- Auto-Detect Button mit modernerem Styling
     local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     autoDetectButton:SetWidth(220)
     autoDetectButton:SetHeight(28)
@@ -417,7 +400,6 @@ function MageControlOptions_CreateFrame()
             "minManaForArcanePowerUse"
     )
 
-    -- Moderne Buff-Buttons
     local lockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     lockButton:SetWidth(140)
     lockButton:SetHeight(28)
@@ -438,7 +420,6 @@ function MageControlOptions_CreateFrame()
         unlockFrames()
     end)
 
-    -- Bottom Action Buttons mit modernerem Styling
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(90)
     saveButton:SetHeight(30)
