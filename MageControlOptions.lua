@@ -323,7 +323,7 @@ function MageControlOptions_CreateFrame()
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 15, right = 15, top = 15, bottom = 15 }
+        insets = { left = 8, right = 8, top = 8, bottom = 8 }
     })
     optionsFrame:SetBackdropColor(0.05, 0.05, 0.1, 0.95)
     optionsFrame:SetBackdropBorderColor(0.3, 0.4, 0.6, 1)
