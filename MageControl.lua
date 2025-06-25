@@ -7,7 +7,8 @@ MC = {
     TIMING = {
         CAST_FINISH_THRESHOLD = 0.75,
         GCD_REMAINING_THRESHOLD = 0.75,
-        GCD_BUFFER = 1.6,
+        GCD_BUFFER = 1.5,
+        GCD_BUFFER_FIREBLAST = 1.5,
         ARCANE_RUPTURE_MIN_DURATION = 2
     },
 
@@ -158,6 +159,112 @@ MC = {
         error("MageControl: unregisterUpdateFunction could not find the specified function")
     end,
 
+    IMMUNITY_LIST = {
+        ["fire"] = {
+            -- Molten Core Bosse
+            ["Ragnaros"] = true,
+            ["Baron Geddon"] = true,
+            ["Majordomo Executus"] = true,
+            ["Golemagg the Incinerator"] = true,
+            ["Sulfuron Harbinger"] = true,
+            ["Garr"] = true,
+            ["Magmadar"] = true,
+            ["Lucifron"] = true,
+            ["Gehennas"] = true,
+            ["Shazzrah"] = true,
+
+            -- Molten Core Trashmobs
+            ["Flamewaker Elite"] = true,
+            ["Flamewaker Shadowcaster"] = true,
+            ["Flamewaker"] = true,
+            ["Flamewaker Priest"] = true,
+            ["Flamewaker Healer"] = true,
+            ["Flamewaker Protector"] = true,
+            ["Firelord"] = true,
+            ["Lava Surger"] = true,
+            ["Lava Elemental"] = true,
+            ["Molten Giant"] = true,
+            ["Molten Destroyer"] = true,
+            ["Molten Behemoth"] = true,
+            ["Ancient Core Hound"] = true,
+            ["Core Hound"] = true,
+
+            -- Blackrock Depths
+            ["Ambassador Flamelash"] = true,
+            ["Pyromancer Loregrain"] = true,
+            ["Blazing Fireguard"] = true,
+            ["Firewalker"] = true,
+
+            -- Blackrock Spire
+            ["Pyroguard Emberseer"] = true,
+            ["Firebrand Invoker"] = true,
+            ["Firebrand Pyromancer"] = true,
+            ["Firebrand Darkweaver"] = true,
+
+            -- Feuerelementare (Welt)
+            ["Fire Elemental"] = true,
+            ["Greater Fire Elemental"] = true,
+            ["Lesser Fire Elemental"] = true,
+            ["Blazing Elemental"] = true,
+            ["Magma Elemental"] = true,
+            ["Living Flame"] = true,
+            ["Lava Spawn"] = true,
+            ["Flame Imp"] = true,
+            ["Infernal"] = true,
+
+            -- Drachen (Schwarzer Drachenschwarm)
+            ["Flamescale Dragonspawn"] = true,
+            ["Firemane Scout"] = true,
+            ["Scalding Broodling"] = true,
+            ["Blackwing Legionnaire"] = true,
+            ["Blackwing Spellbinder"] = true,
+
+            -- Weitere spezielle Mobs
+            ["Pyrewood Sentry"] = true,
+            ["Flame Buffet"] = true,
+            ["Burning Blade Shadowmage"] = true,
+            ["Burning Destroyer"] = true,
+            ["Molten War Golem"] = true,
+
+            -- Östliche Pestländer
+            ["Scourge Flame"] = true,
+
+            -- Azshara
+            ["Wildfire"] = true,
+            ["Blazing Windlasher"] = true,
+
+            -- Un'Goro Krater
+            ["Scorching Elemental"] = true,
+
+            -- Tanaris
+            ["Wastewander Scofflaw"] = true, -- Feuerresistent
+
+            -- Searing Gorge
+            ["Heavy War Golem"] = true,
+            ["Tempered War Golem"] = true,
+
+            -- Burning Steppes
+            ["Blackrock Sentry"] = true,
+            ["Firegut Ogre"] = true,
+            ["Firegut Brute"] = true,
+            ["Doomforge Arcanasmith"] = true,
+            ["Doomforge Dragoon"] = true,
+
+            -- Felwood
+            ["Infernal"] = true,
+            ["Felguard"] = true, -- Teilweise
+
+            -- Winterspring
+            ["Magma Lord Bokk"] = true,
+
+            -- Alterac Mountains
+            ["Flame Elemental"] = true,
+
+            -- Test
+            ["Apprentice Training Dummy"] = true
+        }
+    },
+
     DEBUG = false
 }
 
@@ -165,6 +272,13 @@ MageControlDB = MageControlDB or {}
 
 local function printMessage(text)
     DEFAULT_CHAT_FRAME:AddMessage(text, 1.0, 1.0, 0.0)
+end
+
+local function getTalentRank(tab, num)
+    -- AP: GetTalentInfo(1,19)
+    -- Fireblast: (2,5)
+    local name, iconTexture, tier, column, rank, maxRank, isExceptional, meetsPrereq = GetTalentInfo(tab,num)
+    return rank
 end
 
 local function initializeSettings()
@@ -185,6 +299,14 @@ local function initializeSettings()
     if not MageControlDB.minManaForArcanePowerUse then
         MageControlDB.minManaForArcanePowerUse = 50
     end
+    local timingByRank = {
+        [0] = 1.5,
+        [1] = 1.35,
+        [2] = 1.2,
+        [3] = 1.0
+    }
+    MC.TIMING.GCD_BUFFER_FIREBLAST = timingByRank[getTalentRank(2,5)] or 1.5
+    printMessage("Set Fireblast Timing to " .. tostring(MC.TIMING.GCD_BUFFER_FIREBLAST) .. " seconds")
 end
 
 local function getActionBarSlots()
@@ -209,6 +331,19 @@ local function debugPrint(message)
     if MC.DEBUG then
         printMessage("MageControl Debug: " .. message)
     end
+end
+
+local function checkImmunity(type, targetName)
+    local immunityList = MC.IMMUNITY_LIST[type] or {}
+    local listExists = (MC.IMMUNITY_LIST[type] ~= nil)
+
+    debugPrint("Immunity check - Type: " .. type .. ", List exists: " .. tostring(listExists))
+    debugPrint("Target: " .. tostring(targetName))
+
+    local isImmuneTarget = immunityList[targetName] or false
+    debugPrint("Is immune: " .. tostring(isImmuneTarget))
+
+    return isImmuneTarget
 end
 
 local function isValidActionSlot(slot)
@@ -462,9 +597,9 @@ local function getActionSlotCooldownInMilliseconds(slot)
     return (start + duration) - currentTime
 end
 
-local function isArcaneRuptureOneGlobalAway(slot)
+local function isArcaneRuptureOneGlobalAway(slot, timing)
     local cooldown = getActionSlotCooldownInMilliseconds(slot)
-    return (cooldown < MC.TIMING.GCD_BUFFER and cooldown > 0)
+    return (cooldown < timing and cooldown > 0)
 end
 
 local function getSpellAvailability()
@@ -540,6 +675,7 @@ executeArcaneRotation = function()
         state.globalCooldownActive = false
     end
 
+    local targetName = UnitName("target")
     local buffs = MC.CURRENT_BUFFS
     local spells = getSpellAvailability()
     local buffStates = getCurrentBuffs(buffs)
@@ -581,16 +717,16 @@ executeArcaneRotation = function()
         return
     end
 
-    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE)) then
-        if (spells.arcaneSurgeReady) then
-            debugPrint("Arcane Rupture is one GCD away, casting Arcane Surge")
-            safeQueueSpell("Arcane Surge", buffs, buffStates)
-            return
-        elseif (spells.fireblastReady) then
-            debugPrint("Arcane Rupture is one GCD away, casting Fire Blast")
-            safeQueueSpell("Fire Blast", buffs, buffStates)
-            return
-        end
+    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER) and spells.arcaneSurgeReady) then
+        debugPrint("Arcane Rupture is one GCD away, casting Arcane Surge")
+        safeQueueSpell("Arcane Surge", buffs, buffStates)
+        return
+    end
+
+    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER_FIREBLAST) and spells.fireblastReady and not checkImmunity("fire", targetName)) then
+        debugPrint("Arcane Rupture is one Fireblast GCD away, casting Fire Blast")
+        safeQueueSpell("Fire Blast", buffs, buffStates)
+        return
     end
 
     debugPrint("Defaulting to Arcane Missiles")
@@ -775,6 +911,8 @@ SlashCmdList["MAGECONTROL"] = function(msg)
 
     if command == "explosion" then
         queueArcaneExplosion()
+    elseif command == "talents" then
+        getTalentRank()
     elseif command == "arcane" then
         arcaneRotation()
     elseif command == "surge" then
