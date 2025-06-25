@@ -155,7 +155,7 @@ local function updatePriorityDisplay()
     local reorderedItems = reorderPriorityItems(priorityUiDisplayItems)
 
     for i, item in ipairs(reorderedItems) do
-        item:SetPoint("TOP", item:GetParent(), "TOP", -30, -30 - (i - 1) * 26)
+        item:SetPoint("TOP", item:GetParent(), "TOP", 0, -30 - (i - 1) * 26)
         item.priorityText:SetText(tostring(i))
         item.position = i
 
@@ -204,7 +204,7 @@ local function createPriorityItem(parent, itemName, color, position)
     item.itemName = itemName
     item:SetWidth(220)
     item:SetHeight(24)
-    item:SetPoint("TOP", parent, "TOP", -30, -30 - (position-1) * 26)
+    item:SetPoint("TOP", parent, "TOP", 0, -30 - (position-1) * 26)
 
     item:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -274,7 +274,6 @@ local function createPriorityItem(parent, itemName, color, position)
 end
 
 local function createSlider(parentFrame, relativePointFrame, label, minValue, maxValue, step, defaultValue, dbKey)
-    -- Slider Frame
     local slider = CreateFrame("Slider", nil, parentFrame, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(20)
@@ -284,19 +283,16 @@ local function createSlider(parentFrame, relativePointFrame, label, minValue, ma
     slider:SetValue(defaultValue)
     slider:SetPoint("BOTTOM", relativePointFrame, "BOTTOM", 0, -40)
 
-    -- Slider Label with modern Styling
     local sliderLabel = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     sliderLabel:SetPoint("BOTTOM", slider, "TOP", 0, 5)
     sliderLabel:SetText("⚙️ " .. label)
     sliderLabel:SetTextColor(0.8, 0.9, 1, 1)
 
-    -- Value Display
     local valueDisplay = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     valueDisplay:SetPoint("TOP", slider, "BOTTOM", 0, -5)
     valueDisplay:SetText(tostring(defaultValue) .. "%")
     valueDisplay:SetTextColor(0.9, 0.9, 0.9, 1)
 
-    -- OnValueChanged Event
     slider:SetScript("OnValueChanged", function()
         local v = math.floor(this:GetValue() + 0.5)
         valueDisplay:SetText(v .. "%")
