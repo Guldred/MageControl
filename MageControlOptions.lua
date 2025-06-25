@@ -104,28 +104,39 @@ local function autoDetectSlots()
     return optionsMessage
 end
 
--- Priority System Functions
+local function applyModernButtonStyle(button, color)
+    color = color or {r=0.2, g=0.5, b=0.8}
+
+    button:SetScript("OnEnter", function()
+        if button:IsEnabled() then
+            button:SetAlpha(0.9)
+        end
+    end)
+    
+    button:SetScript("OnLeave", function()
+        button:SetAlpha(1.0)
+    end)
+end
+
 local function createPriorityFrame(parent, yOffset)
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetWidth(260)
-    frame:SetHeight(120)
+    frame:SetWidth(280)
+    frame:SetHeight(130)
     frame:SetPoint("TOP", parent, "TOP", 0, yOffset)
-    
-    -- Background
+
     frame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+        insets = { left = 6, right = 6, top = 6, bottom = 6 }
     })
-    frame:SetBackdropColor(0, 0, 0, 0.2)
-    frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
-    
-    -- Title
-    local titleText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    titleText:SetPoint("TOP", frame, "TOP", 0, -8)
-    titleText:SetText("Cooldown Priority Order")
-    titleText:SetTextColor(1, 1, 1)
+    frame:SetBackdropColor(0.08, 0.08, 0.12, 0.85)
+    frame:SetBackdropBorderColor(0.3, 0.4, 0.6, 1)
+
+    local titleText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    titleText:SetPoint("TOP", frame, "TOP", 0, -10)
+    titleText:SetText("⚡ Cooldown Priority Order")
+    titleText:SetTextColor(0.8, 0.9, 1, 1)
     
     return frame
 end
@@ -144,12 +155,10 @@ local function updatePriorityDisplay()
     local reorderedItems = reorderPriorityItems(priorityUiDisplayItems)
 
     for i, item in ipairs(reorderedItems) do
-        -- Update position and text
-        item:SetPoint("TOP", item:GetParent(), "TOP", -30, -25 - (i - 1) * 24)
+        item:SetPoint("TOP", item:GetParent(), "TOP", 0, -30 - (i - 1) * 26)
         item.priorityText:SetText(tostring(i))
         item.position = i
 
-        -- Update button visibility
         if i == 1 then
             item.upButton:Hide()
             item.downButton:Show()
@@ -193,49 +202,58 @@ local function createPriorityItem(parent, itemName, color, position)
     item.position = position
     item.color = color
     item.itemName = itemName
-    item:SetWidth(180)
-    item:SetHeight(22)
-    item:SetPoint("TOP", parent, "TOP", -30, -25 - (position-1) * 24)
-    
-    -- Background
+    item:SetWidth(220)
+    item:SetHeight(24)
+    item:SetPoint("TOP", parent, "TOP", 0, -30 - (position-1) * 26)
+
     item:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
-    item:SetBackdropColor(item.color.r, item.color.g, item.color.b, 0.3)
-    item:SetBackdropBorderColor(item.color.r, item.color.g, item.color.b, 0.8)
-    
-    -- Priority number
+    item:SetBackdropColor(color.r * 0.6, color.g * 0.6, color.b * 0.6, 0.4)
+    item:SetBackdropBorderColor(color.r, color.g, color.b, 0.8)
+
     local priorityText = item:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    priorityText:SetPoint("LEFT", item, "LEFT", 8, 0)
+    priorityText:SetPoint("LEFT", item, "LEFT", 10, 0)
     priorityText:SetText(tostring(position))
-    priorityText:SetTextColor(1, 1, 0)
-    
-    -- Text
+    priorityText:SetTextColor(1, 0.9, 0.3, 1)
+
     local text = item:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    text:SetPoint("LEFT", priorityText, "RIGHT", 8, 0)
-    text:SetText(item.itemName)
-    text:SetTextColor(1, 1, 1)
-    
-    -- Up Button
+    text:SetPoint("LEFT", priorityText, "RIGHT", 12, 0)
+    text:SetText(itemName)
+    text:SetTextColor(0.9, 0.9, 0.9, 1)
+
     local upButton = CreateFrame("Button", nil, item)
-    upButton:SetWidth(16)
-    upButton:SetHeight(16)
-    upButton:SetPoint("RIGHT", item, "RIGHT", -25, 0)
+    upButton:SetWidth(18)
+    upButton:SetHeight(18)
+    upButton:SetPoint("RIGHT", item, "RIGHT", -30, 0)
     upButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up")
     upButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Down")
     upButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
-    
-    -- Down Button
+
     local downButton = CreateFrame("Button", nil, item)
-    downButton:SetWidth(16)
-    downButton:SetHeight(16)
-    downButton:SetPoint("RIGHT", item, "RIGHT", -5, 0)
+    downButton:SetWidth(18)
+    downButton:SetHeight(18)
+    downButton:SetPoint("RIGHT", item, "RIGHT", -8, 0)
     downButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
     downButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
     downButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+
+    upButton:SetScript("OnEnter", function()
+        upButton:SetAlpha(0.8)
+    end)
+    upButton:SetScript("OnLeave", function()
+        upButton:SetAlpha(1.0)
+    end)
+    
+    downButton:SetScript("OnEnter", function()
+        downButton:SetAlpha(0.8)
+    end)
+    downButton:SetScript("OnLeave", function()
+        downButton:SetAlpha(1.0)
+    end)
 
     upButton:SetScript("OnClick", function()
         debugPrint("Up button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
@@ -251,15 +269,12 @@ local function createPriorityItem(parent, itemName, color, position)
     item.priorityText = priorityText
     item.upButton = upButton
     item.downButton = downButton
-
     
     return item
 end
 
 local function createSlider(parentFrame, relativePointFrame, label, minValue, maxValue, step, defaultValue, dbKey)
-    -- Slider Frame
     local slider = CreateFrame("Slider", nil, parentFrame, "OptionsSliderTemplate")
-    --
     slider:SetWidth(200)
     slider:SetHeight(20)
     slider:SetOrientation("HORIZONTAL")
@@ -268,20 +283,19 @@ local function createSlider(parentFrame, relativePointFrame, label, minValue, ma
     slider:SetValue(defaultValue)
     slider:SetPoint("BOTTOM", relativePointFrame, "BOTTOM", 0, -40)
 
-    -- Slider Label
     local sliderLabel = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     sliderLabel:SetPoint("BOTTOM", slider, "TOP", 0, 5)
-    sliderLabel:SetText(label)
+    sliderLabel:SetText("⚙️ " .. label)
+    sliderLabel:SetTextColor(0.8, 0.9, 1, 1)
 
-    -- Value Display
     local valueDisplay = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     valueDisplay:SetPoint("TOP", slider, "BOTTOM", 0, -5)
-    valueDisplay:SetText(tostring(defaultValue))
+    valueDisplay:SetText(tostring(defaultValue) .. "%")
+    valueDisplay:SetTextColor(0.9, 0.9, 0.9, 1)
 
-    -- OnValueChanged Event
     slider:SetScript("OnValueChanged", function()
         local v = math.floor(this:GetValue() + 0.5)
-        valueDisplay:SetText(v)
+        valueDisplay:SetText(v .. "%")
         MageControlDB[dbKey] = v
     end)
 
@@ -298,18 +312,22 @@ function MageControlOptions_Show()
 end
 
 function MageControlOptions_CreateFrame()
-    if optionsFrame then return end -- Prevent duplicate creation
+    if optionsFrame then return end
 
     optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
-    optionsFrame:SetWidth(350)
-    optionsFrame:SetHeight(480)
+    optionsFrame:SetWidth(380)
+    optionsFrame:SetHeight(520)
     optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+
     optionsFrame:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        insets = { left = 15, right = 15, top = 15, bottom = 15 }
     })
+    optionsFrame:SetBackdropColor(0.05, 0.05, 0.1, 0.95)
+    optionsFrame:SetBackdropBorderColor(0.3, 0.4, 0.6, 1)
+    
     optionsFrame:SetMovable(true)
     optionsFrame:EnableMouse(true)
     optionsFrame:RegisterForDrag("LeftButton")
@@ -319,57 +337,53 @@ function MageControlOptions_CreateFrame()
     -- [ESC] to close
     tinsert(UISpecialFrames, "MageControlOptionsFrame")
 
-    local title = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOP", optionsFrame, "TOP", 0, -15)
-    title:SetText("MageControl Options")
+    local title = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
+    title:SetPoint("TOP", optionsFrame, "TOP", 0, -20)
+    title:SetText("🔮 MageControl Options")
+    title:SetTextColor(0.8, 0.9, 1, 1)
 
     local closeButton = CreateFrame("Button", nil, optionsFrame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
     local dependencyInfo = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    dependencyInfo:SetPoint("TOP", optionsFrame, "TOP", 0, -40)
-    dependencyInfo:SetText(checkDependencies())
-    dependencyInfo:SetTextColor(0.7, 0.7, 0.7)
+    dependencyInfo:SetPoint("TOP", optionsFrame, "TOP", 0, -50)
+    dependencyInfo:SetText("📋 " .. checkDependencies())
+    dependencyInfo:SetTextColor(0.7, 0.8, 0.9, 1)
 
     local optionsMessage = ""
     local autoDetectHelp = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 
     local autoDetectButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    autoDetectButton:SetWidth(200)
-    autoDetectButton:SetHeight(25)
-    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -65)
-    autoDetectButton:SetText("Auto-Detect Spell Slots")
+    autoDetectButton:SetWidth(220)
+    autoDetectButton:SetHeight(28)
+    autoDetectButton:SetPoint("TOP", optionsFrame, "TOP", 0, -75)
+    autoDetectButton:SetText("🔍 Auto-Detect Spell Slots")
+    applyModernButtonStyle(autoDetectButton, {r=0.2, g=0.6, b=0.8})
     autoDetectButton:SetScript("OnClick", function()
         optionsMessage = autoDetectSlots()
         autoDetectHelp:SetText(optionsMessage)
         MageControlOptions_LoadValues()
     end)
 
-    autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
-    autoDetectHelp:SetText("Lookup Spell Slots in Actionbars automatically.\n" ..
-                           "Make sure the following spells are in your actionbars:\n" ..
-                           "FIREBLAST, ARCANE RUPTURE,\nARCANE SURGE, ARCANE POWER\n" ..
-                            "then click the button above to auto-detect them.")
-    autoDetectHelp:SetTextColor(0.7, 0.7, 0.7)
+    autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -8)
+    autoDetectHelp:SetText("Automatically detects spells in your action bars.\nMake sure required spells are placed first.")
+    autoDetectHelp:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    local priorityFrame = createPriorityFrame(optionsFrame, -160)
+    local priorityFrame = createPriorityFrame(optionsFrame, -170)
 
     priorityUiDisplayItems = {
-        TRINKET1 = createPriorityItem(priorityFrame, "TRINKET1", {r=0.2, g=0.8, b=0.2}, 1),
-        TRINKET2 = createPriorityItem(priorityFrame, "TRINKET2", {r=0.2, g=0.2, b=0.8}, 2),
-        ARCANE_POWER = createPriorityItem(priorityFrame, "ARCANE_POWER", {r=0.8, g=0.2, b=0.8}, 3)
+        TRINKET1 = createPriorityItem(priorityFrame, "🔮 TRINKET1", {r=0.3, g=0.8, b=0.3}, 1),
+        TRINKET2 = createPriorityItem(priorityFrame, "💎 TRINKET2", {r=0.3, g=0.3, b=0.8}, 2),
+        ARCANE_POWER = createPriorityItem(priorityFrame, "⚡ ARCANE_POWER", {r=0.8, g=0.3, b=0.8}, 3)
     }
     
     updatePriorityDisplay()
 
     local priorityHelpFrame = optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    priorityHelpFrame:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
-    priorityHelpFrame:SetText("Set priority for /mc trinket command\n" ..
-                        "The highest priority action is done per \n" ..
-                        "macro use. Items without usage or things\n" ..
-                        "on cooldown will be ignored.")
-    priorityHelpFrame:SetTextColor(0.7, 0.7, 0.7)
+    priorityHelpFrame:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -8)
+    priorityHelpFrame:SetText("Higher priority items are used first with /mc trinket")
+    priorityHelpFrame:SetTextColor(0.7, 0.8, 0.9, 1)
 
     local slider = createSlider(
             optionsFrame,
@@ -383,45 +397,50 @@ function MageControlOptions_CreateFrame()
     )
 
     local lockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    lockButton:SetWidth(130)
-    lockButton:SetHeight(25)
-    lockButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 20, 65)
-    lockButton:SetText("Lock Buff Frames")
+    lockButton:SetWidth(140)
+    lockButton:SetHeight(28)
+    lockButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 25, 70)
+    lockButton:SetText("🔒 Lock Buff Frames")
+    applyModernButtonStyle(lockButton, {r=0.6, g=0.4, b=0.2})
     lockButton:SetScript("OnClick", function()
         lockFrames()
     end)
 
     local unlockButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    unlockButton:SetWidth(130)
-    unlockButton:SetHeight(25)
-    unlockButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -20, 65)
-    unlockButton:SetText("Unlock Buff Frames")
+    unlockButton:SetWidth(140)
+    unlockButton:SetHeight(28)
+    unlockButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -25, 70)
+    unlockButton:SetText("🔓 Unlock Buff Frames")
+    applyModernButtonStyle(unlockButton, {r=0.2, g=0.6, b=0.4})
     unlockButton:SetScript("OnClick", function()
         unlockFrames()
     end)
 
     local saveButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    saveButton:SetWidth(80)
-    saveButton:SetHeight(25)
-    saveButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 20, 20)
-    saveButton:SetText("Save")
+    saveButton:SetWidth(90)
+    saveButton:SetHeight(30)
+    saveButton:SetPoint("BOTTOMLEFT", optionsFrame, "BOTTOMLEFT", 25, 25)
+    saveButton:SetText("💾 Save")
+    applyModernButtonStyle(saveButton, {r=0.2, g=0.7, b=0.3})
     saveButton:SetScript("OnClick", MageControlOptions_Save)
 
     local resetButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    resetButton:SetWidth(80)
-    resetButton:SetHeight(25)
-    resetButton:SetPoint("BOTTOM", optionsFrame, "BOTTOM", 0, 20)
-    resetButton:SetText("Reset")
+    resetButton:SetWidth(90)
+    resetButton:SetHeight(30)
+    resetButton:SetPoint("BOTTOM", optionsFrame, "BOTTOM", 0, 25)
+    resetButton:SetText("🔄 Reset")
+    applyModernButtonStyle(resetButton, {r=0.7, g=0.5, b=0.2})
     resetButton:SetScript("OnClick", function()
         MageControlOptions_Reset()
         MageControlOptions_Save()
     end)
 
     local cancelButton = CreateFrame("Button", nil, optionsFrame, "GameMenuButtonTemplate")
-    cancelButton:SetWidth(80)
-    cancelButton:SetHeight(25)
-    cancelButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -20, 20)
-    cancelButton:SetText("Cancel")
+    cancelButton:SetWidth(90)
+    cancelButton:SetHeight(30)
+    cancelButton:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -25, 25)
+    cancelButton:SetText("❌ Cancel")
+    applyModernButtonStyle(cancelButton, {r=0.7, g=0.3, b=0.3})
     cancelButton:SetScript("OnClick", function() optionsFrame:Hide() end)
 
     optionsFrame:Hide()
@@ -450,7 +469,7 @@ function MageControlOptions_Save()
         debugPrint("  " .. i .. ". " .. priority, 0.8, 0.8, 0.8)
     end
 
-    debugPrint("MageControl: Settings saved!", 1.0, 1.0, 0.0)
+    debugPrint("MageControl: Settings saved! ✨", 1.0, 1.0, 0.0)
     --if optionsFrame then optionsFrame:Hide() end
 end
 
