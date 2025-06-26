@@ -264,6 +264,7 @@ MC = {
             ["Apprentice Training Dummy"] = true
         }
     },
+    CURRENT_TARGET = "",
 
     DEBUG = false
 }
@@ -333,14 +334,14 @@ local function debugPrint(message)
     end
 end
 
-local function checkImmunity(type, targetName)
+local function checkImmunity(type)
     local immunityList = MC.IMMUNITY_LIST[type] or {}
     local listExists = (MC.IMMUNITY_LIST[type] ~= nil)
 
     debugPrint("Immunity check - Type: " .. type .. ", List exists: " .. tostring(listExists))
-    debugPrint("Target: " .. tostring(targetName))
+    debugPrint("Target: " .. tostring(MC.CURRENT_TARGET))
 
-    local isImmuneTarget = immunityList[targetName] or false
+    local isImmuneTarget = immunityList[MC.CURRENT_TARGET] or false
     debugPrint("Is immune: " .. tostring(isImmuneTarget))
 
     return isImmuneTarget
@@ -675,7 +676,6 @@ executeArcaneRotation = function()
         state.globalCooldownActive = false
     end
 
-    local targetName = UnitName("target")
     local buffs = MC.CURRENT_BUFFS
     local spells = getSpellAvailability()
     local buffStates = getCurrentBuffs(buffs)
@@ -723,7 +723,7 @@ executeArcaneRotation = function()
         return
     end
 
-    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER_FIREBLAST) and spells.fireblastReady and not checkImmunity("fire", targetName)) then
+    if (isArcaneRuptureOneGlobalAway(slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER_FIREBLAST) and spells.fireblastReady and not checkImmunity("fire")) then
         debugPrint("Arcane Rupture is one Fireblast GCD away, casting Fire Blast")
         safeQueueSpell("Fire Blast", buffs, buffStates)
         return
@@ -901,6 +901,11 @@ local function activateTrinketAndAP()
     return false
 end
 
+local function updateCurrentTarget()
+    MC.CURRENT_TARGET = UnitName("target") or "none"
+    debugPrint("New target ist: " .. MC.CURRENT_TARGET)
+end
+
 SlashCmdList["MAGECONTROL"] = function(msg)
     local args = {}
     for word in string.gfind(msg, "%S+") do
@@ -911,8 +916,6 @@ SlashCmdList["MAGECONTROL"] = function(msg)
 
     if command == "explosion" then
         queueArcaneExplosion()
-    elseif command == "talents" then
-        getTalentRank()
     elseif command == "arcane" then
         arcaneRotation()
     elseif command == "surge" then
@@ -972,6 +975,7 @@ MageControlFrame:RegisterEvent("SPELLCAST_FAILED")
 MageControlFrame:RegisterEvent("SPELLCAST_INTERRUPTED")
 MageControlFrame:RegisterEvent("ADDON_LOADED")
 MageControlFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
+MageControlFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
@@ -1020,6 +1024,9 @@ MageControlFrame:SetScript("OnEvent", function()
         debugPrint("Player auras changed, updating buffs")
         MC.CURRENT_BUFFS = getBuffs()
         MC.forceUpdate()
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        debugPrint("Player target changed, updating current target")
+        updateCurrentTarget()
     end
 
     MageControlFrame:SetScript("OnUpdate", function()
