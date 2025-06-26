@@ -18,27 +18,15 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         MC.arcaneRotation()
     elseif command == "surge" then
         MC.stopChannelAndCastSurge()
-    elseif command == "haste" then
-        MC.printMessage("Current haste: " .. tostring(MC.getCurrentHasteValue()))
     elseif command == "debug" then
         MC.DEBUG = not MC.DEBUG
         MC.printMessage("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
     elseif command == "options" or command == "config" then
         MC.showOptionsMenu()
-    elseif command == "set" and args[2] and args[3] then
-        MC.setActionBarSlot(args[2], args[3])
-    elseif command == "show" then
-        MC.showCurrentConfig()
     elseif command == "arcaneinc" then
         MC.arcaneIncantagos()
     elseif command == "trinket" then
         MC.activateTrinketAndAP()
-    elseif command == "toggle" then
-        MC.BuffDisplay_ToggleLock()
-    elseif command == "lock" then
-        MC.lockFrames()
-    elseif command == "unlock" then
-        MC.unlockFrames()
     elseif command == "reset" then
         MageControlDB.actionBarSlots = {
             FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
