@@ -16,15 +16,14 @@ _A high-performance World of Warcraft addon for Arcane Mages on Turtle WoW._
 
 ## ⚡ Commands
 
-| Command         | Description                                                                                                                                               |
-|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `/mc options`   | Opens settings to configure action bar spell slots.                                                                                                       |
-| `/mc arcane`    | Starts the optimized single-target Arcane rotation.                                                                                                       |
-| `/mc explosion` | Queues Arcane Explosion for instant AoE.                                                                                                                  |
-| `/mc arcaneinc` | Single Target variant for Incantagos (Kara40). Automatically switching to Frostbolt (Blue Affinity) and Fireball (Red Affinity) for the respective target |
-| `/mc lock`      | Locks the CD Buff Duration Frame.                                                                                                                         |
-| `/mc unlock`    | Unlocks the CD Buff Duration Frame.                                                                                                                       |
-| `/mc reset`     | Resets settings and duration frames. Use if you get errors or problems.                                                                                   |
+| Command         | Description                                                                                                                                                                                                                                      |
+|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `/mc options`   | Opens settings to configure action bar spell slots.                                                                                                                                                                                              |
+| `/mc arcane`    | Starts the optimized single-target Arcane rotation.                                                                                                                                                                                              |
+| `/mc explosion` | Queues Arcane Explosion for instant AoE.                                                                                                                                                                                                         |
+| `/mc arcaneinc` | Single Target variant for Incantagos (Kara40). Automatically switching to Frostbolt (Blue Affinity) and Fireball (Red Affinity) for the respective target                                                                                        |
+| `/mc trinket`   | This activates both trinkets and arcane power, but only 1 of them per macro use. The order can be set in options. Please note: Things on cooldown, trinkets without activation and arcane power while below minimum mana setting will be ignored |
+| `/mc reset`     | Resets settings and duration frames. Use if you get errors or problems.                                                                                                                                                                          |
 
 ---
 
@@ -47,11 +46,12 @@ Please ensure both are installed before use._
 2. Install [`nampower`](https://github.com/pepopo978/nampower).
 3. Install [`superwow`](https://github.com/balakethelock/SuperWoW).
 4. Restart WoW.
-5. Use `/mc options` to set up the actionbar slot numbers of Fireblast, Arcane Rupture and Arcane Surge (this is absolutely required, addon won't work otherwise). UPDATE 1.6.2: You can now let the addon search for the correct actionbar slots by clicking the button in the options menu.
-6. Optionally, you can change settings for base haste (talent and gear, should be about 10% with most arcane gear. Does not have to be totally exact). Haste Threshold is the value at which haste percentage the addon won't use Arcane Surge in standard rotation anymore since it is GCD based and doesn't profit. 25 - 30 is recommended.
-7. Use `/mc unlock` to move the CD Buff Duration Frames to the place you want them to be. See below for a list of frames with explanation.
-8. Use `/mc lock` to lock them in place. They will only show if the buff is running
-9. Done!
+5. Use `/mc options`
+6. Set up the actionbar slot numbers of Fireblast, Arcane Rupture, Arcane Surge and Arcane Power (this is absolutely required, addon won't work otherwise). UPDATE 1.6.2: You can now let the addon search for the correct actionbar slots by clicking the button in the options menu.
+7. Optionally, you can change settings for Cooldown priority for the /mc trinket functionality. Also, there is a slider to set minimum mana for Arcane Power activation via /mc trinket.
+8. Use the unlock button to move the CD Buff Duration Frames to the place you want them to be. See below for a list of frames with explanation.
+9. Use the lock button to lock them in place. They will only show if the buff is running
+10. Done!
 
 ---
 
