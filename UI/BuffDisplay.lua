@@ -1,4 +1,25 @@
-local BuffDisplay = {
+MC.initBuffFrames = function()
+    MC.initializeBuffPositions()
+    MC.initializeBuffFrames()
+    MC.lockFrames()
+    MC.registerUpdateFunction(MC.updateAllBuffDisplays, 0.2)
+end
+
+MC.initializeBuffPositions = function()
+    if not MageControlDB.buffPositions then
+        MageControlDB.buffPositions = {}
+        for buffName, pos in pairs(MC.buffDisplay.defaultPositions) do
+            MageControlDB.buffPositions[buffName] = { x = pos.x, y = pos.y }
+        end
+    end
+
+    if MageControlDB.buffDisplayLocked == nil then
+        MageControlDB.buffDisplayLocked = true
+    end
+    MC.buffDisplay.isLocked = MageControlDB.buffDisplayLocked
+end
+
+MC.buffDisplay = {
     frames = {},
     isLocked = true,
     updateInterval = 0.1,
@@ -22,21 +43,7 @@ local BuffDisplay = {
     }
 }
 
-local function initializeBuffPositions()
-    if not MageControlDB.buffPositions then
-        MageControlDB.buffPositions = {}
-        for buffName, pos in pairs(BuffDisplay.defaultPositions) do
-            MageControlDB.buffPositions[buffName] = { x = pos.x, y = pos.y }
-        end
-    end
-
-    if MageControlDB.buffDisplayLocked == nil then
-        MageControlDB.buffDisplayLocked = true
-    end
-    BuffDisplay.isLocked = MageControlDB.buffDisplayLocked
-end
-
-local function createBuffFrame(buffName)
+MC.createBuffFrame = function(buffName)
     local frameName = "MageControlBuff_" .. string.gsub(buffName, " ", "")
     local frame = CreateFrame("Frame", frameName, UIParent)
 
@@ -78,13 +85,13 @@ local function createBuffFrame(buffName)
     frame:RegisterForDrag("LeftButton")
 
     frame:SetScript("OnDragStart", function()
-        if not BuffDisplay.isLocked then
+        if not MC.buffDisplay.isLocked then
             this:StartMoving()
         end
     end)
 
     frame:SetScript("OnDragStop", function()
-        if not BuffDisplay.isLocked then
+        if not MC.buffDisplay.isLocked then
             this:StopMovingOrSizing()
 
             local point, relativeTo, relativePoint, xOfs, yOfs = this:GetPoint()
@@ -95,7 +102,7 @@ local function createBuffFrame(buffName)
     frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
         GameTooltip:SetText(buffName)
-        if not BuffDisplay.isLocked then
+        if not MC.buffDisplay.isLocked then
             GameTooltip:AddLine("Drag to move", 0.5, 0.5, 0.5)
         end
         GameTooltip:Show()
@@ -105,7 +112,7 @@ local function createBuffFrame(buffName)
         GameTooltip:Hide()
     end)
 
-    local pos = MageControlDB.buffPositions[buffName] or BuffDisplay.defaultPositions[buffName]
+    local pos = MageControlDB.buffPositions[buffName] or MC.buffDisplay.defaultPositions[buffName]
     frame:SetPoint("CENTER", UIParent, "CENTER", pos.x, pos.y)
 
     frame:Hide()
@@ -113,17 +120,16 @@ local function createBuffFrame(buffName)
     return frame
 end
 
-local function initializeBuffFrames()
-    for _, buffName in ipairs(BuffDisplay.trackedBuffs) do
-        if not BuffDisplay.frames[buffName] then
-            BuffDisplay.frames[buffName] = createBuffFrame(buffName)
+MC.initializeBuffFrames = function()
+    for _, buffName in ipairs(MC.buffDisplay.trackedBuffs) do
+        if not MC.buffDisplay.frames[buffName] then
+            MC.buffDisplay.frames[buffName] = MC.createBuffFrame(buffName)
         end
     end
 end
 
-
-local function updateBuffDisplay(buffName, frame)
-    if not MC or not MC.CURRENT_BUFFS or not BuffDisplay.isLocked then return end
+MC.updateBuffDisplay = function(buffName, frame)
+    if not MC or not MC.CURRENT_BUFFS or not MC.buffDisplay.isLocked then return end
 
     local buff = nil
     for _, buffData in ipairs(MC.CURRENT_BUFFS) do
@@ -166,67 +172,55 @@ local function updateBuffDisplay(buffName, frame)
     end
 end
 
-local function updateAllBuffDisplays()
-    for buffName, frame in pairs(BuffDisplay.frames) do
-        updateBuffDisplay(buffName, frame)
+MC.updateAllBuffDisplays = function()
+    for buffName, frame in pairs(MC.buffDisplay.frames) do
+        MC.updateBuffDisplay(buffName, frame)
     end
 end
 
-function lockFrames()
-    BuffDisplay.isLocked = true
-    MageControlDB.buffDisplayLocked = BuffDisplay.isLocked
-    for buffName, frame in pairs(BuffDisplay.frames) do
+MC.lockFrames = function()
+    MC.buffDisplay.isLocked = true
+    MageControlDB.buffDisplayLocked = MC.buffDisplay.isLocked
+    for buffName, frame in pairs(MC.buffDisplay.frames) do
         frame.nameText:Hide()
     end
 end
 
-function unlockFrames()
-    BuffDisplay.isLocked = false
-    MageControlDB.buffDisplayLocked = BuffDisplay.isLocked
-    for buffName, frame in pairs(BuffDisplay.frames) do
+MC.unlockFrames = function()
+    MC.buffDisplay.isLocked = false
+    MageControlDB.buffDisplayLocked = MC.buffDisplay.isLocked
+    for buffName, frame in pairs(MC.buffDisplay.frames) do
         frame.nameText:Show()
-        frame.icon:SetTexture(BuffDisplay.iconPlaceholder)
+        frame.icon:SetTexture(MC.buffDisplay.iconPlaceholder)
         frame.timerText:SetText("0")
         frame:Show()
     end
 end
 
-function BuffDisplay_ToggleLock()
-    BuffDisplay.isLocked = not BuffDisplay.isLocked
-    MageControlDB.buffDisplayLocked = BuffDisplay.isLocked
+MC.BuffDisplay_ToggleLock = function()
+    MC.buffDisplay.isLocked = not MC.buffDisplay.isLocked
+    MageControlDB.buffDisplayLocked = MC.buffDisplay.isLocked
 
-    if BuffDisplay.isLocked then
-        lockFrames()
+    if MC.buffDisplay.isLocked then
+        MC.lockFrames()
     else
-        unlockFrames()
+        MC.unlockFrames()
     end
 
-    if BuffDisplay.isLocked then
+    if MC.buffDisplay.isLocked then
         DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Frame locked", 1.0, 1.0, 0.0)
     else
         DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Frame unlocked - Drag to move", 1.0, 1.0, 0.0)
     end
 end
 
-function BuffDisplay_ResetPositions()
-    for buffName, defaultPos in pairs(BuffDisplay.defaultPositions) do
+MC.BuffDisplay_ResetPositions = function()
+    for buffName, defaultPos in pairs(buffDisplay.defaultPositions) do
         MageControlDB.buffPositions[buffName] = { x = defaultPos.x, y = defaultPos.y }
-        if BuffDisplay.frames[buffName] then
-            BuffDisplay.frames[buffName]:ClearAllPoints()
-            BuffDisplay.frames[buffName]:SetPoint("CENTER", UIParent, "CENTER", defaultPos.x, defaultPos.y)
+        if MC.buffDisplay.frames[buffName] then
+            MC.buffDisplay.frames[buffName]:ClearAllPoints()
+            MC.buffDisplay.frames[buffName]:SetPoint("CENTER", UIParent, "CENTER", defaultPos.x, defaultPos.y)
         end
     end
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Position reset", 1.0, 1.0, 0.0)
 end
-
-local BuffDisplayFrame = CreateFrame("Frame")
-BuffDisplayFrame:RegisterEvent("ADDON_LOADED")
-
-BuffDisplayFrame:SetScript("OnEvent", function()
-    if event == "ADDON_LOADED" and arg1 == "MageControl" then
-        initializeBuffPositions()
-        initializeBuffFrames()
-        lockFrames()
-        MC.registerUpdateFunction(updateAllBuffDisplays, 0.2)
-    end
-end)
