@@ -108,7 +108,7 @@ MC.isActionSlotCooldownReady = function(slot)
 
     local start, duration, enabled = GetActionCooldown(slot)
     local currentTime = GetTime()
-    local remaining = (start + duration) - currentTime
+    local remaining = MC.calculateRemainingTimeAfterCurrentCast((start + duration) - currentTime)
     local isJustGlobalCooldown = false
     if remaining > 0 and MC.state.globalCooldownActive then
         local remainingGlobalCd = MC.TIMING.GCD_BUFFER - (GetTime() - MC.state.globalCooldownStart)
@@ -161,11 +161,11 @@ MC.isMissilesWorthCasting = function(buffStates)
         return false
     end
 
-    local remainingDuration = ruptureBuff:duration()
+    local remainingDuration = ruptureBuff:durationAfterCurrentSpellCast()
     MC.debugPrint("Arcane Rupture remaining duration by calculation: " .. remainingDuration)
     local hastePercent = MC.getCurrentHasteValue() / 100
     local channelTime = 6 / (1 + hastePercent)
-    local requiredTime = channelTime * 0.6
+    local requiredTime = channelTime * 0.4
 
     return remainingDuration >= requiredTime
 end
@@ -189,7 +189,7 @@ end
 MC.showCurrentConfig = function()
     local slots = MC.getActionBarSlots()
     MC.printMessage("MageControl - Current Configuration:")
-    MC.printMessage("  Fireblast: Slot " .. slots.FIREBLAST)
+    MC.printMessage("  Fire Blast: Slot " .. slots.FIREBLAST)
     MC.printMessage("  Arcane Rupture: Slot " .. slots.ARCANE_RUPTURE)
     MC.printMessage("  Arcane Surge: Slot " .. slots.ARCANE_SURGE)
 end

@@ -34,6 +34,9 @@ MC.getBuffs = function()
                     timeFinished = GetTime() + duration,
                     duration = function(self)
                         return self.timeFinished - GetTime()
+                    end,
+                    durationAfterCurrentSpellCast = function(self)
+                        return MC.calculateRemainingTimeAfterCurrentCast(self:duration())
                     end
                 })
             end
@@ -59,6 +62,9 @@ MC.getBuffs = function()
                     timeFinished = GetTime() + duration,
                     duration = function(self)
                         return self.timeFinished - GetTime()
+                    end,
+                    durationAfterCurrentSpellCast = function(self)
+                        return MC.calculateRemainingTimeAfterCurrentCast(self:duration())
                     end
                 })
             end

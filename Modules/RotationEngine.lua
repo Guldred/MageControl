@@ -80,7 +80,7 @@ MC.arcaneRotationPriority = {
     {
         name = "Fire Blast One GCD Away",
         condition = function(state)
-            return MC.isArcaneRuptureOneGlobalAway(state.slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER_FIREBLAST) and 
+            return MC.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER_FIREBLAST) and
                    state.spells.fireblastReady and 
                    not MC.checkImmunity("fire")
         end,

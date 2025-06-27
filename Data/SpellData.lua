@@ -2,7 +2,7 @@
 MC.SPELL_INFO = {
     FIREBLAST = {
         id = 10199,
-        name = "Fireblast",
+        name = "Fire Blast",
         cost = 340
     },
     ARCANE_SURGE = {

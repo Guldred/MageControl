@@ -161,6 +161,23 @@ MC.isArcaneRuptureOneGlobalAway = function(slot, timing)
     return (cooldown < timing and cooldown > 0)
 end
 
+MC.isArcaneRuptureOneGlobalAwayAfterCurrentCast = function(slot, timing)
+    local cooldownAfterCurrentCast = MC.calculateRemainingTimeAfterCurrentCast(MC.getActionSlotCooldownInMilliseconds(slot))
+    return (cooldownAfterCurrentCast < timing and cooldownAfterCurrentCast > 0)
+end
+
+MC.calculateRemainingTimeAfterCurrentCast = function(time)
+    local currentCastTimeRemaining = MC.state.expectedCastFinishTime - GetTime()
+    if currentCastTimeRemaining < 0 then
+        currentCastTimeRemaining = 0
+    end
+    local calculatedCooldownAfterCurrentCast = time - currentCastTimeRemaining
+    if calculatedCooldownAfterCurrentCast < 0 then
+        calculatedCooldownAfterCurrentCast = 0
+    end
+    return calculatedCooldownAfterCurrentCast
+end
+
 MC.getSpellAvailability = function()
     local slots = MC.getActionBarSlots()
     return {
