@@ -96,7 +96,7 @@ MC.getCurrentBuffs = function(buffs)
     }
 end
 
-MC.isActionSlotCooldownReady = function(slot)
+MC.isActionSlotCooldownReadyAndUsableInSeconds = function(slot, seconds)
     if not MC.isValidActionSlot(slot) then
         return false
     end
@@ -117,7 +117,7 @@ MC.isActionSlotCooldownReady = function(slot)
         end
     end
 
-    return remaining <= 0 or isJustGlobalCooldown
+    return (remaining + seconds) <= 0 or isJustGlobalCooldown
 end
 
 MC.getActionSlotCooldownInMilliseconds = function(slot)

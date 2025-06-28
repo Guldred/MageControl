@@ -162,7 +162,8 @@ MC.isArcaneRuptureOneGlobalAway = function(slot, timing)
 end
 
 MC.isArcaneRuptureOneGlobalAwayAfterCurrentCast = function(slot, timing)
-    local cooldownAfterCurrentCast = MC.calculateRemainingTimeAfterCurrentCast(MC.getActionSlotCooldownInMilliseconds(slot))
+    local cooldownInSeconds = MC.getActionSlotCooldownInMilliseconds(slot)
+    local cooldownAfterCurrentCast = MC.calculateRemainingTimeAfterCurrentCast(cooldownInSeconds)
     return (cooldownAfterCurrentCast < timing and cooldownAfterCurrentCast > 0)
 end
 
@@ -175,15 +176,16 @@ MC.calculateRemainingTimeAfterCurrentCast = function(time)
     if calculatedCooldownAfterCurrentCast < 0 then
         calculatedCooldownAfterCurrentCast = 0
     end
+    MC.debugPrint("Cooldown right now: " .. time .. " --- Cooldown after current cast: " .. calculatedCooldownAfterCurrentCast .. " seconds")
     return calculatedCooldownAfterCurrentCast
 end
 
 MC.getSpellAvailability = function()
     local slots = MC.getActionBarSlots()
     return {
-        arcaneRuptureReady = MC.isActionSlotCooldownReady(slots.ARCANE_RUPTURE),
-        arcaneSurgeReady = MC.isActionSlotCooldownReady(slots.ARCANE_SURGE),
-        fireblastReady = MC.isActionSlotCooldownReady(slots.FIREBLAST) and
+        arcaneRuptureReady = MC.isActionSlotCooldownReadyAndUsableInSeconds(slots.ARCANE_RUPTURE, 0),
+        arcaneSurgeReady = MC.isActionSlotCooldownReadyAndUsableInSeconds(slots.ARCANE_SURGE, 0),
+        fireblastReady = MC.isActionSlotCooldownReadyAndUsableInSeconds(slots.FIREBLAST, 0) and
                 (IsSpellInRange(MC.SPELL_INFO.FIREBLAST.id) == 1)
     }
 end
@@ -193,17 +195,33 @@ MC.shouldWaitForCast = function()
     return timeToCastFinish > MC.TIMING.CAST_FINISH_THRESHOLD
 end
 
-MC.handleChannelInterruption = function(spells, buffStates, buffs)
-    if (MC.state.isChanneling and not buffStates.arcaneRupture and spells.arcaneRuptureReady) then
-        ChannelStopCastingNextTick()
-        if (spells.arcaneSurgeReady) then
-            MC.safeQueueSpell("Arcane Surge", buffs, buffStates)
-        else
-            MC.safeQueueSpell("Arcane Rupture", buffs, buffStates)
-        end
+MC.isInterruptionRequired = function(spells, buffStates)
+    local shouldCancelWhileHighHaste = MC.isHighHasteActive()
+                                        and MC.state.isChanneling and
+                                        not buffStates.arcaneRupture and
+                                        spells.arcaneRuptureReady
+    if (shouldCancelWhileHighHaste) then
+        return true
+    end
+    local shouldCancelWhileNoHighHaste = not MC.isHighHasteActive()
+                                        and MC.state.isChanneling and
+                                        buffStates.arcaneRupture and
+                                        spells.arcaneRuptureReady and
+                                        not MC.isActionSlotCooldownReadyAndUsableInSeconds(MC.getActionBarSlots().ARCANE_SURGE, 1)
+    if (shouldCancelWhileNoHighHaste) then
         return true
     end
     return false
+end
+
+MC.handleChannelInterruption = function(spells, buffs, buffStates)
+    ChannelStopCastingNextTick()
+    if (spells.arcaneSurgeReady) then
+        MC.safeQueueSpell("Arcane Surge", buffs, buffStates)
+    else
+        MC.safeQueueSpell("Arcane Rupture", buffs, buffStates)
+    end
+    return true
 end
 
 MC.checkManaWarning = function(buffs)

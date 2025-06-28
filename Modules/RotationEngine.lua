@@ -2,10 +2,10 @@ MC.arcaneRotationPriority = {
     {
         name = "Channel Interruption",
         condition = function(state)
-            return MC.handleChannelInterruption(state.spells, state.buffStates, state.buffs)
+            return MC.isInterruptionRequired(state.spells, state.buffStates)
         end,
         action = function(state)
-            -- Already handled in condition check
+            MC.handleChannelInterruption(state.spells, state.buffs, state.buffStates)
             return true
         end
     },
@@ -66,10 +66,11 @@ MC.arcaneRotationPriority = {
         end
     },
     {
-        name = "Arcane Surge One GCD Away",
+        name = "Arcane Rupture One GCD Away (Arcane Surge)",
         condition = function(state)
-            return MC.isArcaneRuptureOneGlobalAway(state.slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER) and 
-                   state.spells.arcaneSurgeReady
+            return MC.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER) and
+                    state.spells.arcaneSurgeReady and
+                    not MC.isHighHasteActive()
         end,
         action = function(state)
             MC.debugPrint("Arcane Rupture is one GCD away, casting Arcane Surge")
@@ -78,11 +79,12 @@ MC.arcaneRotationPriority = {
         end
     },
     {
-        name = "Fire Blast One GCD Away",
+        name = "Arcane Rupture One GCD Away (Fire Blast)",
         condition = function(state)
             return MC.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, MC.TIMING.GCD_BUFFER_FIREBLAST) and
-                   state.spells.fireblastReady and 
-                   not MC.checkImmunity("fire")
+                    state.spells.fireblastReady and
+                    not MC.checkImmunity("fire") and
+                    not MC.isHighHasteActive()
         end,
         action = function(state)
             MC.debugPrint("Arcane Rupture is one Fireblast GCD away, casting Fire Blast")
