@@ -26,6 +26,7 @@ UI\Components\PriorityList.lua
 
 # UI
 UI\BuffDisplay.lua
+UI\ActionDisplay.lua
 UI\OptionsFrame.lua
 
 # Modules

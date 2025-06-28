@@ -1,11 +1,6 @@
-MC.initBuffFrames = function()
-    MC.initializeBuffPositions()
-    MC.initializeBuffFrames()
-    MC.lockFrames()
-    MC.registerUpdateFunction(MC.updateAllBuffDisplays, 0.2)
-end
 
-MC.initializeBuffPositions = function()
+
+local initializeBuffPositions = function()
     if not MageControlDB.buffPositions then
         MageControlDB.buffPositions = {}
         for buffName, pos in pairs(MC.buffDisplay.defaultPositions) do
@@ -43,7 +38,7 @@ MC.buffDisplay = {
     }
 }
 
-MC.createBuffFrame = function(buffName)
+local createBuffFrame = function(buffName)
     local frameName = "MageControlBuff_" .. string.gsub(buffName, " ", "")
     local frame = CreateFrame("Frame", frameName, UIParent)
 
@@ -120,15 +115,15 @@ MC.createBuffFrame = function(buffName)
     return frame
 end
 
-MC.initializeBuffFrames = function()
+local initializeBuffFrames = function()
     for _, buffName in ipairs(MC.buffDisplay.trackedBuffs) do
         if not MC.buffDisplay.frames[buffName] then
-            MC.buffDisplay.frames[buffName] = MC.createBuffFrame(buffName)
+            MC.buffDisplay.frames[buffName] = createBuffFrame(buffName)
         end
     end
 end
 
-MC.updateBuffDisplay = function(buffName, frame)
+local updateBuffDisplay = function(buffName, frame)
     if not MC or not MC.CURRENT_BUFFS or not MC.buffDisplay.isLocked then return end
 
     local buff = nil
@@ -172,9 +167,9 @@ MC.updateBuffDisplay = function(buffName, frame)
     end
 end
 
-MC.updateAllBuffDisplays = function()
+local updateAllBuffDisplays = function()
     for buffName, frame in pairs(MC.buffDisplay.frames) do
-        MC.updateBuffDisplay(buffName, frame)
+        updateBuffDisplay(buffName, frame)
     end
 end
 
@@ -223,4 +218,11 @@ MC.BuffDisplay_ResetPositions = function()
         end
     end
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Buff-Position reset", 1.0, 1.0, 0.0)
+end
+
+MC.initBuffFrames = function()
+    initializeBuffPositions()
+    initializeBuffFrames()
+    MC.lockFrames()
+    MC.registerUpdateFunction(updateAllBuffDisplays, 0.2)
 end

@@ -9,11 +9,13 @@ MageControlFrame:RegisterEvent("SPELLCAST_INTERRUPTED")
 MageControlFrame:RegisterEvent("ADDON_LOADED")
 MageControlFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 MageControlFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+MageControlFrame:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
 
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
         MC.initializeSettings()
         MC.initBuffFrames()
+        MC.initActionFrames()
         MC.printMessage("MageControl loaded.")
 
     elseif event == "SPELLCAST_CHANNEL_START" then
@@ -43,6 +45,10 @@ MageControlFrame:SetScript("OnEvent", function()
         MC.state.globalCooldownStart = GetTime()
         MC.state.expectedCastFinishTime = GetTime() + MC.GLOBAL_COOLDOWN_IN_SECONDS
 
+        if (MC.SPELL_INFO.ARCANE_SURGE.id == arg2) then
+            MC.state.surgeActiveTill = 0
+        end
+
     elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
         MC.state.isChanneling = false
         MC.state.isCastingArcaneRupture = false
@@ -61,6 +67,10 @@ MageControlFrame:SetScript("OnEvent", function()
     elseif event == "PLAYER_TARGET_CHANGED" then
         MC.debugPrint("Player target changed, updating current target")
         MC.updateCurrentTarget()
+    elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
+        if string.sub(arg1, -9) == "resisted)" then
+            MC.state.surgeActiveTill = GetTime() + 3.9
+        end
     end
 
     MageControlFrame:SetScript("OnUpdate", function()

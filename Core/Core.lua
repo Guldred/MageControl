@@ -48,6 +48,7 @@ MC.state = {
     lastSpellCast = "",
     lastRuptureRepeatTime = 0,
     expectedCastFinishTime = 0,
+    surgeActiveTill = 0,
     -- Buff caching
     buffsCache = nil,
     buffsCacheTime = 0
