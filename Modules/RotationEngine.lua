@@ -1,14 +1,24 @@
 MC.arcaneRotationPriority = {
     {
-        name = "Channel Interruption",
+        name = "Channel Interruption for Rebuff",
         condition = function(state)
             return MC.isInterruptionRequired(state.spells, state.buffStates)
         end,
         action = function(state)
-            MC.handleChannelInterruption(state.spells, state.buffs, state.buffStates)
+            MC.handleChannelInterruption(state.spells, state.buffs, state.buffStates, false)
             return true
         end
     },
+--[[    { --TODO: Get this to work
+        name = "Channel Interruption for Surge at last second",
+        condition = function(state)
+            return MC.isInterruptionRequiredAtLastSecond(state.spells, state.buffStates)
+        end,
+        action = function(state)
+            MC.handleChannelInterruption(state.spells, state.buffs, state.buffStates, true)
+            return true
+        end
+    },]]
     {
         name = "Wait for Cast",
         condition = function(state)

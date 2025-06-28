@@ -108,7 +108,7 @@ end
 
 local updateSurgeFrame = function(frame)
     local timeLeft = MC.state.surgeActiveTill - GetTime()
-    if (timeLeft > 0) then
+    if (timeLeft > 0 and IsUsableAction(MC.getActionBarSlots().ARCANE_SURGE) == 1) then
         frame:Show()
         frame.icon:SetTexture(MC.actionDisplay.icons["Arcane Surge"])
         frame.timerText:SetText(string.format("%.1f", timeLeft))

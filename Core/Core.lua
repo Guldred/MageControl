@@ -42,6 +42,7 @@ end
 MC.state = {
     isChanneling = false,
     channelFinishTime = 0,
+    channelDurationInSeconds = 0,
     isCastingArcaneRupture = false,
     globalCooldownActive = false,
     globalCooldownStart = 0,
@@ -49,6 +50,7 @@ MC.state = {
     lastRuptureRepeatTime = 0,
     expectedCastFinishTime = 0,
     surgeActiveTill = 0,
+    lastSpellHitTime = 0,
     -- Buff caching
     buffsCache = nil,
     buffsCacheTime = 0
@@ -201,23 +203,91 @@ MC.isInterruptionRequired = function(spells, buffStates)
                                         and MC.state.isChanneling and
                                         not buffStates.arcaneRupture and
                                         spells.arcaneRuptureReady
-    if (shouldCancelWhileHighHaste) then
-        return true
-    end
-    local shouldCancelWhileNoHighHaste = not MC.isHighHasteActive()
+
+    local shouldCancelWhileLowHaste = not MC.isHighHasteActive()
                                         and MC.state.isChanneling and
-                                        buffStates.arcaneRupture and
+                                        not buffStates.arcaneRupture and
                                         spells.arcaneRuptureReady and
                                         not MC.isActionSlotCooldownReadyAndUsableInSeconds(MC.getActionBarSlots().ARCANE_SURGE, 1)
-    if (shouldCancelWhileNoHighHaste) then
-        return true
-    end
-    return false
+
+    return shouldCancelWhileHighHaste or shouldCancelWhileLowHaste
 end
 
-MC.handleChannelInterruption = function(spells, buffs, buffStates)
+MC.isInterruptionRequiredAtLastSecond = function(spells, buffStates)
+    if (MC.isHighHasteActive()) then return false end
+    local start, duration, enabled = GetActionCooldown(MC.getActionBarSlots().ARCANE_SURGE)
+    local currentTime = GetTime()
+    local remainingSurgeUptime = (start + duration) - currentTime
+    local remainingChannelTime = MC.state.channelFinishTime - currentTime
+
+    -- Prüfen, ob wir überhaupt channeln
+    if not MC.state.isChanneling then return false end
+
+    local timePerMissile = MC.state.channelDurationInSeconds / 6
+    -- Berechne alle Missile-Zeitpunkte (vom Ende des Channels aus)
+    local missileTimes = {
+        MC.state.channelFinishTime - (5 * timePerMissile),  -- Index 1
+        MC.state.channelFinishTime - (4 * timePerMissile),  -- Index 2
+        MC.state.channelFinishTime - (3 * timePerMissile),  -- Index 3
+        MC.state.channelFinishTime - (2 * timePerMissile),  -- Index 4
+        MC.state.channelFinishTime - timePerMissile,       -- Index 5
+        MC.state.channelFinishTime                        -- Index 6
+    }
+
+    -- Berechne das Ende der Surge-Uptime
+    local surgeEndTime = currentTime + remainingSurgeUptime
+
+    -- Ermittle die aktuelle Missile-Position
+    local currentMissileIndex = 6 - math.ceil(remainingChannelTime / timePerMissile) + 1
+
+    -- Finde die letzte Missile, die noch im Surge-Fenster liegt
+    local lastPossibleMissile = 0
+    for i = 1, 6 do
+        if missileTimes[i] <= surgeEndTime then
+            lastPossibleMissile = i
+        else
+            break
+        end
+    end
+
+    if lastPossibleMissile == 0 then
+        return false
+    end
+
+    -- Zeit bis zur letzten möglichen Missile berechnen
+    local timeUntilLastMissile = missileTimes[lastPossibleMissile] - currentTime
+
+    -- Prüfen, ob Arcane Surge zum Zeitpunkt der letzten Missile bereit sein wird
+    local surgeCooldownReadyForLastMissile = MC.isActionSlotCooldownReadyAndUsableInSeconds(
+        MC.getActionBarSlots().ARCANE_SURGE,
+        timeUntilLastMissile
+    )
+
+    local start, duration, enabled = GetActionCooldown(MC.getActionBarSlots().ARCANE_SURGE)
+    local currentTime = GetTime()
+    local remainingSurgeCd = MC.calculateRemainingTimeAfterCurrentCast((start + duration) - currentTime)
+    local surgeWillBeReady = remainingSurgeCd <= timeUntilLastMissile
+
+    local EARLIEST_CANCEL_POINT = 2
+
+    local nextMissileIndex = currentMissileIndex + 1
+    local shouldInterrupt = (nextMissileIndex == lastPossibleMissile) and
+                           currentMissileIndex >= EARLIEST_CANCEL_POINT and
+                            surgeWillBeReady
+    MC.printMessage("Current missile: " .. currentMissileIndex)
+    MC.printMessage("Last possible missile: " .. lastPossibleMissile)
+    MC.printMessage("Time until last missile: " .. timeUntilLastMissile)
+    MC.printMessage("Surge cooldown ready for last missile: " .. tostring(surgeWillBeReady))
+    MC.printMessage("Surge Cooldown: " .. tostring(remainingSurgeCd))
+
+
+
+    return shouldInterrupt
+end
+
+MC.handleChannelInterruption = function(spells, buffs, buffStates, forcedSurge)
     ChannelStopCastingNextTick()
-    if (spells.arcaneSurgeReady) then
+    if (spells.arcaneSurgeReady or forcedSurge) then
         MC.safeQueueSpell("Arcane Surge", buffs, buffStates)
     else
         MC.safeQueueSpell("Arcane Rupture", buffs, buffStates)

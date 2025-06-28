@@ -23,7 +23,7 @@ MC.getBuffs = function()
             local stacks = GetPlayerBuffApplications(buffIndex, "HELPFUL|PASSIVE") or 1
             local icon = GetPlayerBuffTexture(buffIndex, "HELPFUL|PASSIVE") or "Interface\\Icons\\INV_Misc_QuestionMark"
 
-            MC.debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId) .. " has " .. tostring(stacks) .. " stacks and icon: " .. tostring(icon))
+            --MC.debugPrint("Checking buff: " .. buffName .. " with ID: " .. tostring(buffId) .. " has " .. tostring(stacks) .. " stacks and icon: " .. tostring(icon))
 
             if relevantBuffs[buffName] then
                 local duration = GetPlayerBuffTimeLeft(buffIndex, "HELPFUL|PASSIVE")

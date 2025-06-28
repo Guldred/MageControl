@@ -21,6 +21,7 @@ MageControlFrame:SetScript("OnEvent", function()
     elseif event == "SPELLCAST_CHANNEL_START" then
         MC.state.isChanneling = true
         MC.state.channelFinishTime = GetTime() + ((arg1 - 0)/1000)
+        MC.state.channelDurationInSeconds = MC.state.channelFinishTime - GetTime()
         MC.state.expectedCastFinishTime = MC.state.channelFinishTime
         MC.CURRENT_BUFFS = MC.getBuffs()
 
@@ -68,9 +69,12 @@ MageControlFrame:SetScript("OnEvent", function()
         MC.debugPrint("Player target changed, updating current target")
         MC.updateCurrentTarget()
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
-        if string.sub(arg1, -9) == "resisted)" then
+        --if not (MC.state.lastSpellHitTime + 0.1 > GetTime()) then
+        if string.find(arg1, "resisted") then
             MC.state.surgeActiveTill = GetTime() + 3.9
         end
+        --MC.state.lastSpellHitTime = GetTime()
+        --end
     end
 
     MageControlFrame:SetScript("OnUpdate", function()
