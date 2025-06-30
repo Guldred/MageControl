@@ -24,6 +24,7 @@ MageControlFrame:SetScript("OnEvent", function()
         MC.state.channelDurationInSeconds = MC.state.channelFinishTime - GetTime()
         MC.state.expectedCastFinishTime = MC.state.channelFinishTime
         MC.CURRENT_BUFFS = MC.getBuffs()
+        MC.ARCANE_MISSILES_FIRE_TIMES = MC.calculateArcaneMissileFireTimes(arg1)
 
     elseif event == "SPELLCAST_CHANNEL_STOP" then
         MC.state.isChanneling = false

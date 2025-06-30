@@ -51,3 +51,12 @@ MC.SPELL_MODIFIERS = {
     ARCANE_MISSILES_RUPTURE_MULTIPLIER = 1.25,
     PROC_DAMAGE_COST_PERCENT = 2
 }
+
+MC.INCANTAGOS_SPELL_MAP = {
+    ["Heroic Training Dummy"] = "Fireball",
+    ["Expert Training Dummy"] = "Frostbolt",
+    ["Red Affinity"] = "Fireball",
+    ["Blue Affinity"] = "Frostbolt"
+}
+
+MC.ARCANE_MISSILES_FIRE_TIMES = {}

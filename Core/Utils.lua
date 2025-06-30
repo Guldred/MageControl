@@ -120,7 +120,7 @@ MC.isActionSlotCooldownReadyAndUsableInSeconds = function(slot, seconds)
     return (remaining + seconds) <= 0 or isJustGlobalCooldown
 end
 
-MC.getActionSlotCooldownInMilliseconds = function(slot)
+MC.getActionSlotCooldownSeconds = function(slot)
     if not MC.isValidActionSlot(slot) then
         return 0
     end
@@ -186,6 +186,18 @@ MC.setActionBarSlot = function(spellType, slot)
     end
 end
 
+MC.checkManaWarning = function(buffs)
+    local arcanePowerTimeLeft = MC.getArcanePowerTimeLeft(buffs)
+    if arcanePowerTimeLeft > 0 then
+        local currentMana = MC.getCurrentManaPercent()
+        local projectedMana = currentMana - (arcanePowerTimeLeft * MC.BUFF_INFO.ARCANE_POWER.mana_drain_per_second)
+
+        if projectedMana < 15 and projectedMana > 10 then
+            MC.printMessage("|cffffff00MageControl: LOW MANA WARNING - " .. math.floor(projectedMana) .. "% projected!|r")
+        end
+    end
+end
+
 MC.showCurrentConfig = function()
     local slots = MC.getActionBarSlots()
     MC.printMessage("MageControl - Current Configuration:")
@@ -211,4 +223,19 @@ MC.getSpellNameById = function(spellId)
         end
     end
     return tostring(spellId)
+end
+
+MC.shouldWaitForCast = function()
+    local timeToCastFinish = MC.state.expectedCastFinishTime - GetTime()
+    return timeToCastFinish > MC.TIMING.CAST_FINISH_THRESHOLD
+end
+
+MC.updateCurrentTarget = function()
+    MC.CURRENT_TARGET = UnitName("target") or "none"
+    MC.debugPrint("New target ist: " .. MC.CURRENT_TARGET)
+end
+
+MC.getArcanePowerTimeLeft = function(buffs)
+    local arcanePower = MC.findBuff(buffs, MC.BUFF_INFO.ARCANE_POWER.name)
+    return arcanePower and arcanePower:duration() or 0
 end

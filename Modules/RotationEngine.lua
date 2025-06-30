@@ -1,24 +1,96 @@
+-- HELPERS
+-----------------------------
+
+local isInterruptionRequiredAfterNextMissile = function()
+    if not MC.state.isChanneling then
+        return false
+    end
+
+    local EARLIEST_CANCEL_POINT = 2
+
+    if not MC.isInLastPossibleMissileWindow() then
+        return false
+    end
+
+    local currentTime = GetTime()
+    local currentMissileIndex = 0
+    for i = 1, table.getn(MC.ARCANE_MISSILES_FIRE_TIMES) do
+        if currentTime >= MC.ARCANE_MISSILES_FIRE_TIMES[i] then
+            currentMissileIndex = i
+        else
+            break
+        end
+    end
+
+    if currentMissileIndex < EARLIEST_CANCEL_POINT then
+        return false
+    end
+
+    local arcaneSurgeCooldownRemaining = MC.getActionSlotCooldownSeconds(MC.getActionBarSlots().ARCANE_SURGE)
+
+    local nextMissileIndex = currentMissileIndex + 1
+    local timeUntilNextMissile = MC.ARCANE_MISSILES_FIRE_TIMES[nextMissileIndex] - currentTime
+    
+    local surgeCooldownReadyForNextMissile = arcaneSurgeCooldownRemaining <= timeUntilNextMissile
+
+    MC.printMessage("Current missile: " .. currentMissileIndex)
+    MC.printMessage("Next missile (last possible): " .. nextMissileIndex)
+    MC.printMessage("Time until next missile: " .. timeUntilNextMissile)
+    MC.printMessage("Surge cooldown ready for next missile: " .. tostring(surgeCooldownReadyForNextMissile))
+
+    return surgeCooldownReadyForNextMissile
+end
+
+local isInterruptionRequired = function(spells, buffStates)
+    local shouldCancelWhileHighHaste = MC.isHighHasteActive()
+            and MC.state.isChanneling and
+            not buffStates.arcaneRupture and
+            spells.arcaneRuptureReady
+
+    local shouldCancelWhileLowHaste = not MC.isHighHasteActive()
+            and MC.state.isChanneling and
+            not buffStates.arcaneRupture and
+            spells.arcaneRuptureReady and
+            not MC.isActionSlotCooldownReadyAndUsableInSeconds(MC.getActionBarSlots().ARCANE_SURGE, 1)
+
+    return shouldCancelWhileHighHaste or shouldCancelWhileLowHaste
+end
+
+local handleChannelInterruption = function(spells, buffs, buffStates, forcedSurge)
+    ChannelStopCastingNextTick()
+    if (spells.arcaneSurgeReady or forcedSurge) then
+        MC.safeQueueSpell("Arcane Surge", buffs, buffStates)
+    else
+        MC.safeQueueSpell("Arcane Rupture", buffs, buffStates)
+    end
+    return true
+end
+
+-----------------------------
+-- MAIN PRIO LOGIC
+-----------------------------
+
 MC.arcaneRotationPriority = {
     {
         name = "Channel Interruption for Rebuff",
         condition = function(state)
-            return MC.isInterruptionRequired(state.spells, state.buffStates)
+            return isInterruptionRequired(state.spells, state.buffStates)
         end,
         action = function(state)
-            MC.handleChannelInterruption(state.spells, state.buffs, state.buffStates, false)
+            handleChannelInterruption(state.spells, state.buffs, state.buffStates, false)
             return true
         end
     },
---[[    { --TODO: Get this to work
+    { --TODO: Get this to work
         name = "Channel Interruption for Surge at last second",
         condition = function(state)
-            return MC.isInterruptionRequiredAtLastSecond(state.spells, state.buffStates)
+            return isInterruptionRequiredAfterNextMissile(state.spells, state.buffStates)
         end,
         action = function(state)
-            MC.handleChannelInterruption(state.spells, state.buffs, state.buffStates, true)
+            handleChannelInterruption(state.spells, state.buffs, state.buffStates, true)
             return true
         end
-    },]]
+    },
     {
         name = "Wait for Cast",
         condition = function(state)
@@ -156,12 +228,14 @@ MC.cooldownActions = {
     }
 }
 
-MC.incantagosSpellMap = {
-    ["Heroic Training Dummy"] = "Fireball",
-    ["Expert Training Dummy"] = "Frostbolt",
-    ["Red Affinity"] = "Fireball",
-    ["Blue Affinity"] = "Frostbolt"
-}
+MC.stopChannelAndCastSurge = function()
+    local spells = MC.getSpellAvailability()
+
+    if (spells.arcaneSurgeReady) then
+        ChannelStopCastingNextTick()
+        QueueSpellByName("Arcane Surge")
+    end
+end
 
 local function updateGlobalCooldownState()
     if (GetTime() - MC.state.globalCooldownStart > MC.GLOBAL_COOLDOWN_IN_SECONDS) then
@@ -218,7 +292,7 @@ MC.arcaneIncantagos = function()
         return
     end
     
-    local spellToQueue = MC.incantagosSpellMap[targetName]
+    local spellToQueue = MC.INCANTAGOS_SPELL_MAP[targetName]
     if spellToQueue then
         local castId, visId, autoId, casting, channeling, onswing, autoattack = GetCurrentCastingInfo()
         local isArcaneSpell = channeling == 1 or castId == MC.SPELL_INFO.ARCANE_RUPTURE.id
