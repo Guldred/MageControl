@@ -26,7 +26,7 @@ local isInterruptionRequiredAfterNextMissile = function()
         return false
     end
 
-    local arcaneSurgeCooldownRemaining = MC.getActionSlotCooldownSeconds(MC.getActionBarSlots().ARCANE_SURGE)
+    local arcaneSurgeCooldownRemaining = MC.getActionSlotCooldownInSeconds(MC.getActionBarSlots().ARCANE_SURGE)
 
     local nextMissileIndex = currentMissileIndex + 1
     local timeUntilNextMissile = MC.ARCANE_MISSILES_FIRE_TIMES[nextMissileIndex] - currentTime

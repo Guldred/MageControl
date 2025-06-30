@@ -120,7 +120,7 @@ MC.isActionSlotCooldownReadyAndUsableInSeconds = function(slot, seconds)
     return (remaining + seconds) <= 0 or isJustGlobalCooldown
 end
 
-MC.getActionSlotCooldownSeconds = function(slot)
+MC.getActionSlotCooldownInSeconds = function(slot)
     if not MC.isValidActionSlot(slot) then
         return 0
     end
