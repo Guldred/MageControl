@@ -118,7 +118,7 @@ MC.optionsCreateFrame = function()
 
     MC.optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     MC.optionsFrame:SetWidth(400)
-    MC.optionsFrame:SetHeight(620)
+    MC.optionsFrame:SetHeight(740)
     MC.optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     MC.optionsFrame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -135,6 +135,7 @@ MC.optionsCreateFrame = function()
     MC.optionsFrame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
     tinsert(UISpecialFrames, "MageControlOptionsFrame")
 
+    -- Header-Bereich
     local title = MC.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
     title:SetPoint("TOP", MC.optionsFrame, "TOP", 0, -20)
     title:SetText("🔮 MageControl Options")
@@ -149,6 +150,7 @@ MC.optionsCreateFrame = function()
     dependencyInfo:SetText("📋 " .. MC.checkDependencies())
     dependencyInfo:SetTextColor(0.7, 0.8, 0.9, 1)
 
+    -- Setup-Bereich erstellen
     local setupPanel = CreateFrame("Frame", nil, MC.optionsFrame)
     setupPanel:SetWidth(380)
     setupPanel:SetHeight(100)
@@ -167,6 +169,7 @@ MC.optionsCreateFrame = function()
     setupTitle:SetText("Setup")
     setupTitle:SetTextColor(0.9, 0.9, 0.3, 1)
 
+    -- Setup-Buttons - horizontal zentriert
     local buttonsWidth = 120 + 20 + 90 + 20 + 90
     local startX = (380 - buttonsWidth) / 2
 
@@ -211,9 +214,10 @@ MC.optionsCreateFrame = function()
         MC.unlockActionFrames()
     end)
 
+    -- Hauptkonfigurationspanel
     local configPanel = CreateFrame("Frame", nil, MC.optionsFrame)
     configPanel:SetWidth(380)
-    configPanel:SetHeight(385)
+    configPanel:SetHeight(530)
     configPanel:SetPoint("TOP", setupPanel, "BOTTOM", 0, -15)
     configPanel:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -229,19 +233,30 @@ MC.optionsCreateFrame = function()
     configTitle:SetText("Configuration")
     configTitle:SetTextColor(0.9, 0.9, 0.3, 1)
 
-    local priorityFrame = CreateFrame("Frame", nil, configPanel)
-    priorityFrame:SetWidth(360)
-    priorityFrame:SetHeight(80)
-    priorityFrame:SetPoint("TOP", configPanel, "TOP", 0, -30)
+    -- Unterbereich 1: Priority Group
+    local priorityGroup = CreateFrame("Frame", nil, configPanel)
+    priorityGroup:SetWidth(360)
+    priorityGroup:SetHeight(200)
+    priorityGroup:SetPoint("TOP", configPanel, "TOP", 0, -40)
+    priorityGroup:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    priorityGroup:SetBackdropColor(0.15, 0.15, 0.2, 0.7)
+    priorityGroup:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
 
-    local priorityFrame = MC.createPriorityFrame(configPanel)
+    -- Unterbereichstitel
+    local priorityTitle = priorityGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    priorityTitle:SetPoint("TOPLEFT", priorityGroup, "TOPLEFT", 10, -10)
+    priorityTitle:SetText("Trinket Priority")
+    priorityTitle:SetTextColor(0.9, 0.8, 0.5, 1)
+
+    -- Priority Frame
+    local priorityFrame = MC.createPriorityFrame(priorityGroup)
     priorityFrame:ClearAllPoints()
-    priorityFrame:SetPoint("TOP", configPanel, "TOP", 0, -30)
-
-    if priorityFrame:GetWidth() < configPanel:GetWidth() then
-        local offsetX = (configPanel:GetWidth() - priorityFrame:GetWidth()) / 2
-        priorityFrame:SetPoint("TOP", configPanel, "TOP", 0, -30)
-    end
+    priorityFrame:SetPoint("TOP", priorityGroup, "TOP", 0, -30)
 
     MC.priorityUiDisplayItems = {
         TRINKET1 = MC.createPriorityItem(priorityFrame, "🔮 TRINKET1", {r=0.3, g=0.8, b=0.3}, 1),
@@ -250,17 +265,36 @@ MC.optionsCreateFrame = function()
     }
     MC.updatePriorityDisplay()
 
-    local priorityHelpFrame = configPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    priorityHelpFrame:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -8)
-    priorityHelpFrame:SetWidth(360)  -- Breite setzen
-    priorityHelpFrame:SetJustifyH("CENTER")  -- Text zentrieren
+    local priorityHelpFrame = priorityGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    priorityHelpFrame:SetPoint("TOP", priorityFrame, "BOTTOM", 0, -5)
+    priorityHelpFrame:SetWidth(340)
+    priorityHelpFrame:SetJustifyH("CENTER")
     priorityHelpFrame:SetText("Higher priority items are used first with /mc trinket")
     priorityHelpFrame:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    local minimumManaSlider = CreateFrame("Slider", nil, configPanel, "OptionsSliderTemplate")
+    -- Unterbereich 2: Mana Schwellenwert
+    local manaGroup = CreateFrame("Frame", nil, configPanel)
+    manaGroup:SetWidth(360)
+    manaGroup:SetHeight(100)
+    manaGroup:SetPoint("TOP", priorityGroup, "BOTTOM", 0, -15)
+    manaGroup:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    manaGroup:SetBackdropColor(0.15, 0.15, 0.2, 0.7)
+    manaGroup:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
+
+    local manaTitle = manaGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    manaTitle:SetPoint("TOPLEFT", manaGroup, "TOPLEFT", 10, -10)
+    manaTitle:SetText("Arcane Power Settings")
+    manaTitle:SetTextColor(0.9, 0.8, 0.5, 1)
+
+    local minimumManaSlider = CreateFrame("Slider", nil, manaGroup, "OptionsSliderTemplate")
     minimumManaSlider:SetWidth(200)
     minimumManaSlider:SetHeight(20)
-    minimumManaSlider:SetPoint("TOP", priorityHelpFrame, "BOTTOM", 0, -35)
+    minimumManaSlider:SetPoint("TOP", manaGroup, "TOP", 0, -50)
     minimumManaSlider:SetOrientation("HORIZONTAL")
     minimumManaSlider:SetMinMaxValues(0, 100)
     minimumManaSlider:SetValueStep(1)
@@ -282,10 +316,29 @@ MC.optionsCreateFrame = function()
         MageControlDB.minManaForArcanePowerUse = v
     end)
 
-    local missilesSurgeSlider = CreateFrame("Slider", nil, configPanel, "OptionsSliderTemplate")
+    -- Unterbereich 3: Missiles Surge
+    local missileGroup = CreateFrame("Frame", nil, configPanel)
+    missileGroup:SetWidth(360)
+    missileGroup:SetHeight(150)
+    missileGroup:SetPoint("TOP", manaGroup, "BOTTOM", 0, -15)
+    missileGroup:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    missileGroup:SetBackdropColor(0.15, 0.15, 0.2, 0.7)
+    missileGroup:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
+
+    local missileTitle = missileGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    missileTitle:SetPoint("TOPLEFT", missileGroup, "TOPLEFT", 10, -10)
+    missileTitle:SetText("Arcane Surge Settings")
+    missileTitle:SetTextColor(0.9, 0.8, 0.5, 1)
+
+    local missilesSurgeSlider = CreateFrame("Slider", nil, missileGroup, "OptionsSliderTemplate")
     missilesSurgeSlider:SetWidth(200)
     missilesSurgeSlider:SetHeight(20)
-    missilesSurgeSlider:SetPoint("TOP", minimumManaSlider, "BOTTOM", 0, -50)
+    missilesSurgeSlider:SetPoint("TOP", missileGroup, "TOP", 0, -50)
     missilesSurgeSlider:SetOrientation("HORIZONTAL")
     missilesSurgeSlider:SetMinMaxValues(1, 6)
     missilesSurgeSlider:SetValueStep(1)
@@ -307,11 +360,11 @@ MC.optionsCreateFrame = function()
         MageControlDB.minMissilesForSurgeCancel = v
     end)
 
-    local missilesSurgeDesc = configPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    missilesSurgeDesc:SetPoint("TOP", missilesSurgeSlider, "BOTTOM", 0, -20)
-    missilesSurgeDesc:SetWidth(360)
+    local missilesSurgeDesc = missileGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    missilesSurgeDesc:SetPoint("TOP", missileValueDisplay, "BOTTOM", 0, -10)
+    missilesSurgeDesc:SetWidth(340)
     missilesSurgeDesc:SetJustifyH("CENTER")
-    missilesSurgeDesc:SetText("If Arcane Surge is ready while channeling Arcane Missiles, MageControl will cancel Missiles at the last tick before Arcane Surge becomes inactive. You can set a minimum number of missiles that should be fired before canceling.")
+    missilesSurgeDesc:SetText("If Arcane Surge is ready while channeling Arcane Missiles, MageControl will cancel Missiles at the last tick before Arcane Surge becomes inactive.")
     missilesSurgeDesc:SetTextColor(0.7, 0.8, 0.9, 1)
 
     MC.optionsFrame:Hide()
