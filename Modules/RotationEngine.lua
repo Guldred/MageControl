@@ -38,7 +38,7 @@ local isInterruptionRequiredAfterNextMissile = function()
     MC.debugPrint("Time until next missile: " .. timeUntilNextMissile)
     MC.debugPrint("Surge cooldown ready for next missile: " .. tostring(surgeCooldownReadyForNextMissile))
 
-    return surgeCooldownReadyForNextMissile
+    return surgeCooldownReadyForNextMissile and not MC.isHighHasteActive()
 end
 
 local isInterruptionRequired = function(spells, buffStates)
