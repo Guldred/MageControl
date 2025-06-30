@@ -1,8 +1,8 @@
-MC.createPriorityFrame = function(parent, yOffset)
+MC.createPriorityFrame = function(parent, relativeToFrame, yOffset)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetWidth(280)
     frame:SetHeight(130)
-    frame:SetPoint("TOP", parent, "TOP", 0, yOffset)
+    frame:SetPoint("TOP", relativeToFrame, "BOTTOM", 0, yOffset)
 
     frame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",

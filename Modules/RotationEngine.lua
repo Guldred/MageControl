@@ -6,7 +6,7 @@ local isInterruptionRequiredAfterNextMissile = function()
         return false
     end
 
-    local EARLIEST_CANCEL_POINT = 2
+    local earliestCancelPoint = MageControlDB.minMissilesForSurgeCancel or 4
 
     if not MC.isInLastPossibleMissileWindow() then
         return false
@@ -22,7 +22,7 @@ local isInterruptionRequiredAfterNextMissile = function()
         end
     end
 
-    if currentMissileIndex < EARLIEST_CANCEL_POINT then
+    if currentMissileIndex < earliestCancelPoint then
         return false
     end
 

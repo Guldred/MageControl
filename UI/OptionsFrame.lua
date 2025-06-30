@@ -119,8 +119,8 @@ MC.optionsCreateFrame = function()
     if MC.optionsFrame then return end
 
     MC.optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
-    MC.optionsFrame:SetWidth(380)
-    MC.optionsFrame:SetHeight(520)
+    MC.optionsFrame:SetWidth(400)
+    MC.optionsFrame:SetHeight(620)
     MC.optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 
     MC.optionsFrame:SetBackdrop({
@@ -159,10 +159,10 @@ MC.optionsCreateFrame = function()
     local autoDetectHelp = MC.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 
     local autoDetectButton = CreateFrame("Button", nil, MC.optionsFrame, "GameMenuButtonTemplate")
-    autoDetectButton:SetWidth(220)
+    autoDetectButton:SetWidth(140)
     autoDetectButton:SetHeight(28)
     autoDetectButton:SetPoint("TOP", MC.optionsFrame, "TOP", 0, -75)
-    autoDetectButton:SetText("🔍 Auto-Detect Spell Slots")
+    autoDetectButton:SetText("Detect Spell Slots")
     MC.applyModernButtonStyle(autoDetectButton, {r=0.2, g=0.6, b=0.8})
     autoDetectButton:SetScript("OnClick", function()
         optionsMessage = MC.autoDetectSlots()
@@ -174,7 +174,7 @@ MC.optionsCreateFrame = function()
     autoDetectHelp:SetText("Automatically detects spells in your action bars.\nMake sure required spells are placed first.")
     autoDetectHelp:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    local priorityFrame = MC.createPriorityFrame(MC.optionsFrame, -170)
+    local priorityFrame = MC.createPriorityFrame(MC.optionsFrame, autoDetectHelp, -15)
 
     MC.priorityUiDisplayItems = {
         TRINKET1 = MC.createPriorityItem(priorityFrame, "🔮 TRINKET1", {r=0.3, g=0.8, b=0.3}, 1),
@@ -189,7 +189,7 @@ MC.optionsCreateFrame = function()
     priorityHelpFrame:SetText("Higher priority items are used first with /mc trinket")
     priorityHelpFrame:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    local slider = MC.createSlider(
+    local minimumManaSlider = MC.createSlider(
             MC.optionsFrame,
             priorityHelpFrame,
             "Minimum Mana for Arcane Power Use",
@@ -197,14 +197,37 @@ MC.optionsCreateFrame = function()
             100,
             1,
             MageControlDB.minManaForArcanePowerUse or 50,
-            "minManaForArcanePowerUse"
+            "minManaForArcanePowerUse",
+            -40,
+            "Min Mana: ",
+            "%"
     )
 
+    local missilesSurgeSlider = MC.createSlider(
+            MC.optionsFrame,
+            minimumManaSlider,
+            "Missiles for Surge Cancel",
+            1,
+            6,
+            1,
+            MageControlDB.minMissilesForSurgeCancel or 4,
+            "minMissilesForSurgeCancel",
+            -50,
+            "Min. ",
+            " missiles"
+    )
+
+    local missilesSurgeDesc = MC.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    missilesSurgeDesc:SetPoint("TOP", missilesSurgeSlider, "BOTTOM", 0, -20)
+    missilesSurgeDesc:SetWidth(300)
+    missilesSurgeDesc:SetJustifyH("LEFT")
+    missilesSurgeDesc:SetTextColor(0.7, 0.8, 0.9, 1)
+
     local lockButton = CreateFrame("Button", nil, MC.optionsFrame, "GameMenuButtonTemplate")
-    lockButton:SetWidth(140)
+    lockButton:SetWidth(100)
     lockButton:SetHeight(28)
-    lockButton:SetPoint("BOTTOMLEFT", MC.optionsFrame, "BOTTOMLEFT", 25, 70)
-    lockButton:SetText("🔒 Lock Buff Frames")
+    lockButton:SetPoint("BOTTOMLEFT", MC.optionsFrame, "BOTTOMLEFT", 25, 25)
+    lockButton:SetText("🔒 Lock Frames")
     MC.applyModernButtonStyle(lockButton, {r=0.6, g=0.4, b=0.2})
     lockButton:SetScript("OnClick", function()
         MC.lockFrames()
@@ -212,17 +235,17 @@ MC.optionsCreateFrame = function()
     end)
 
     local unlockButton = CreateFrame("Button", nil, MC.optionsFrame, "GameMenuButtonTemplate")
-    unlockButton:SetWidth(140)
+    unlockButton:SetWidth(100)
     unlockButton:SetHeight(28)
-    unlockButton:SetPoint("BOTTOMRIGHT", MC.optionsFrame, "BOTTOMRIGHT", -25, 70)
-    unlockButton:SetText("🔓 Unlock Buff Frames")
+    unlockButton:SetPoint("BOTTOMRIGHT", MC.optionsFrame, "BOTTOMRIGHT", -25, 25)
+    unlockButton:SetText("🔓 Unlock Frames")
     MC.applyModernButtonStyle(unlockButton, {r=0.2, g=0.6, b=0.4})
     unlockButton:SetScript("OnClick", function()
         MC.unlockFrames()
         MC.unlockActionFrames()
     end)
 
-    local saveButton = CreateFrame("Button", nil, MC.optionsFrame, "GameMenuButtonTemplate")
+    --[[local saveButton = CreateFrame("Button", nil, MC.optionsFrame, "GameMenuButtonTemplate")
     saveButton:SetWidth(90)
     saveButton:SetHeight(30)
     saveButton:SetPoint("BOTTOMLEFT", MC.optionsFrame, "BOTTOMLEFT", 25, 25)
@@ -247,7 +270,7 @@ MC.optionsCreateFrame = function()
     cancelButton:SetPoint("BOTTOMRIGHT", MC.optionsFrame, "BOTTOMRIGHT", -25, 25)
     cancelButton:SetText("❌ Cancel")
     MC.applyModernButtonStyle(cancelButton, {r=0.7, g=0.3, b=0.3})
-    cancelButton:SetScript("OnClick", function() MC.optionsFrame:Hide() end)
+    cancelButton:SetScript("OnClick", function() MC.optionsFrame:Hide() end)]]
 
     MC.optionsFrame:Hide()
 end
@@ -265,6 +288,10 @@ MC.optionsLoadValues = function()
 
     if MC.priorityUiDisplayItems and table.getn(MC.priorityUiDisplayItems) > 0 then
         MC.updatePriorityDisplay()
+    end
+
+    if MageControlDB.minMissilesForSurgeCancel == nil then
+        MageControlDB.minMissilesForSurgeCancel = 4
     end
 end
 
