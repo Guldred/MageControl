@@ -33,10 +33,10 @@ local isInterruptionRequiredAfterNextMissile = function()
     
     local surgeCooldownReadyForNextMissile = arcaneSurgeCooldownRemaining <= timeUntilNextMissile
 
-    MC.printMessage("Current missile: " .. currentMissileIndex)
-    MC.printMessage("Next missile (last possible): " .. nextMissileIndex)
-    MC.printMessage("Time until next missile: " .. timeUntilNextMissile)
-    MC.printMessage("Surge cooldown ready for next missile: " .. tostring(surgeCooldownReadyForNextMissile))
+    MC.debugPrint("Current missile: " .. currentMissileIndex)
+    MC.debugPrint("Next missile (last possible): " .. nextMissileIndex)
+    MC.debugPrint("Time until next missile: " .. timeUntilNextMissile)
+    MC.debugPrint("Surge cooldown ready for next missile: " .. tostring(surgeCooldownReadyForNextMissile))
 
     return surgeCooldownReadyForNextMissile
 end
