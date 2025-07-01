@@ -163,8 +163,8 @@ MC.optionsCreateFrame = function()
 
     local tabSystem = MC.setupTabSystem(MC.optionsFrame, tabContainer, {
         { title = "Setup" },
-        { title = "CD Prios" },
-        { title = "Spell Settings" }
+        { title = "Prioritäten" },
+        { title = "Einstellungen" }
     })
 
     local tabs = tabSystem.tabs
@@ -187,12 +187,32 @@ MC.optionsCreateFrame = function()
     local buttonsWidth = 120 + 20 + 90 + 20 + 90
     local startX = (360 - buttonsWidth) / 2
 
-    local autoDetectButton = CreateFrame("Button", nil, setupPanel, "GameMenuButtonTemplate")
+    local autoDetectButton = CreateFrame("Button", nil, setupPanel)
     autoDetectButton:SetWidth(120)
     autoDetectButton:SetHeight(28)
     autoDetectButton:SetPoint("TOPLEFT", setupPanel, "TOPLEFT", startX, -30)
     autoDetectButton:SetText("Detect Spell Slots")
-    MC.applyModernButtonStyle(autoDetectButton, {r=0.2, g=0.6, b=0.9}) -- Hellblau für Aktionen
+    autoDetectButton:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 8, edgeSize = 12,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    autoDetectButton:SetBackdropColor(0.2, 0.6, 0.9, 0.8)
+    autoDetectButton:SetBackdropBorderColor(0.4, 0.8, 1, 0.8)
+
+    local autoDetectText = autoDetectButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    autoDetectText:SetPoint("CENTER", 0, 0)
+    autoDetectText:SetText("Detect Spell Slots")
+    autoDetectText:SetTextColor(1, 1, 1, 1)
+
+    autoDetectButton:SetScript("OnEnter", function()
+        autoDetectButton:SetBackdropColor(0.3, 0.7, 1, 0.9)
+    end)
+
+    autoDetectButton:SetScript("OnLeave", function()
+        autoDetectButton:SetBackdropColor(0.2, 0.6, 0.9, 0.8)
+    end)
 
     local autoDetectHelp = setupPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -4)
@@ -206,23 +226,65 @@ MC.optionsCreateFrame = function()
         MC.optionsLoadValues()
     end)
 
-    local lockButton = CreateFrame("Button", nil, setupPanel, "GameMenuButtonTemplate")
+    local lockButton = CreateFrame("Button", nil, setupPanel)
     lockButton:SetWidth(90)
     lockButton:SetHeight(28)
     lockButton:SetPoint("LEFT", autoDetectButton, "RIGHT", 20, 0)
     lockButton:SetText("Lock Frames")
-    MC.applyModernButtonStyle(lockButton, {r=0.8, g=0.3, b=0.3}) -- Rot für Sperren
+    lockButton:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 8, edgeSize = 12,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    lockButton:SetBackdropColor(0.8, 0.3, 0.3, 0.8)
+    lockButton:SetBackdropBorderColor(1, 0.4, 0.4, 0.8)
+
+    local lockText = lockButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    lockText:SetPoint("CENTER", 0, 0)
+    lockText:SetText("Lock Frames")
+    lockText:SetTextColor(1, 1, 1, 1)
+
+    lockButton:SetScript("OnEnter", function()
+        lockButton:SetBackdropColor(0.9, 0.4, 0.4, 0.9)
+    end)
+
+    lockButton:SetScript("OnLeave", function()
+        lockButton:SetBackdropColor(0.8, 0.3, 0.3, 0.8)
+    end)
+
     lockButton:SetScript("OnClick", function()
         MC.lockFrames()
         MC.lockActionFrames()
     end)
 
-    local unlockButton = CreateFrame("Button", nil, setupPanel, "GameMenuButtonTemplate")
+    local unlockButton = CreateFrame("Button", nil, setupPanel)
     unlockButton:SetWidth(90)
     unlockButton:SetHeight(28)
     unlockButton:SetPoint("LEFT", lockButton, "RIGHT", 20, 0)
     unlockButton:SetText("Unlock Frames")
-    MC.applyModernButtonStyle(unlockButton, {r=0.3, g=0.8, b=0.4}) -- Grün für Entsperren
+    unlockButton:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 8, edgeSize = 12,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    unlockButton:SetBackdropColor(0.3, 0.8, 0.4, 0.8)
+    unlockButton:SetBackdropBorderColor(0.4, 1, 0.5, 0.8)
+
+    local unlockText = unlockButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    unlockText:SetPoint("CENTER", 0, 0)
+    unlockText:SetText("Unlock Frames")
+    unlockText:SetTextColor(1, 1, 1, 1)
+
+    unlockButton:SetScript("OnEnter", function()
+        unlockButton:SetBackdropColor(0.4, 0.9, 0.5, 0.9)
+    end)
+
+    unlockButton:SetScript("OnLeave", function()
+        unlockButton:SetBackdropColor(0.3, 0.8, 0.4, 0.8)
+    end)
+
     unlockButton:SetScript("OnClick", function()
         MC.unlockFrames()
         MC.unlockActionFrames()
@@ -269,7 +331,7 @@ MC.optionsCreateFrame = function()
     local minimumManaSlider = CreateFrame("Slider", nil, manaGroup, "OptionsSliderTemplate")
     minimumManaSlider:SetWidth(200)
     minimumManaSlider:SetHeight(20)
-    minimumManaSlider:SetPoint("TOP", manaGroup, "TOP", 0, -50)
+    minimumManaSlider:SetPoint("TOP", manaGroup, "TOP", 0, -30)
     minimumManaSlider:SetOrientation("HORIZONTAL")
     minimumManaSlider:SetMinMaxValues(0, 100)
     minimumManaSlider:SetValueStep(1)
@@ -304,7 +366,7 @@ MC.optionsCreateFrame = function()
     local missilesSurgeSlider = CreateFrame("Slider", nil, missileGroup, "OptionsSliderTemplate")
     missilesSurgeSlider:SetWidth(200)
     missilesSurgeSlider:SetHeight(20)
-    missilesSurgeSlider:SetPoint("TOP", missileGroup, "TOP", 0, -50)
+    missilesSurgeSlider:SetPoint("TOP", missileGroup, "TOP", 0, -30)
     missilesSurgeSlider:SetOrientation("HORIZONTAL")
     missilesSurgeSlider:SetMinMaxValues(1, 6)
     missilesSurgeSlider:SetValueStep(1)
