@@ -118,7 +118,7 @@ MC.optionsCreateFrame = function()
 
     MC.optionsFrame = CreateFrame("Frame", "MageControlOptionsFrame", UIParent)
     MC.optionsFrame:SetWidth(400)
-    MC.optionsFrame:SetHeight(740)
+    MC.optionsFrame:SetHeight(440)
     MC.optionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     MC.optionsFrame:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -135,7 +135,6 @@ MC.optionsCreateFrame = function()
     MC.optionsFrame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
     tinsert(UISpecialFrames, "MageControlOptionsFrame")
 
-    -- Header-Bereich
     local title = MC.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
     title:SetPoint("TOP", MC.optionsFrame, "TOP", 0, -20)
     title:SetText("🔮 MageControl Options")
@@ -150,35 +149,50 @@ MC.optionsCreateFrame = function()
     dependencyInfo:SetText("📋 " .. MC.checkDependencies())
     dependencyInfo:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    -- Setup-Bereich erstellen
-    local setupPanel = CreateFrame("Frame", nil, MC.optionsFrame)
-    setupPanel:SetWidth(380)
-    setupPanel:SetHeight(100)
-    setupPanel:SetPoint("TOP", dependencyInfo, "BOTTOM", 0, -15)
-    setupPanel:SetBackdrop({
+    local tabContainer = CreateFrame("Frame", nil, MC.optionsFrame)
+    tabContainer:SetPoint("TOPLEFT", MC.optionsFrame, "TOPLEFT", 10, -120)
+    tabContainer:SetPoint("BOTTOMRIGHT", MC.optionsFrame, "BOTTOMRIGHT", -10, 10)
+    tabContainer:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = true, tileSize = 16, edgeSize = 16,
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
-    setupPanel:SetBackdropColor(0.1, 0.1, 0.15, 0.8)
-    setupPanel:SetBackdropBorderColor(0.4, 0.5, 0.7, 1)
+    tabContainer:SetBackdropColor(0.1, 0.1, 0.15, 0.8)
+    tabContainer:SetBackdropBorderColor(0.3, 0.4, 0.6, 0.7)
+
+    local tabSystem = MC.setupTabSystem(MC.optionsFrame, tabContainer, {
+        { title = "Setup" },
+        { title = "CD Prios" },
+        { title = "Spell Settings" }
+    })
+
+    local tabs = tabSystem.tabs
+    local tabButtons = tabSystem.buttons
+
+    for i = 1, table.getn(tabs) do
+        tabs[i]:SetBackdrop(nil)
+    end
+
+    local setupPanel = CreateFrame("Frame", nil, tabs[1])
+    setupPanel:SetWidth(360)
+    setupPanel:SetHeight(100)
+    setupPanel:SetPoint("TOP", tabs[1], "TOP", 0, -10)
 
     local setupTitle = setupPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    setupTitle:SetPoint("TOPLEFT", setupPanel, "TOPLEFT", 15, -15)
+    setupTitle:SetPoint("TOPLEFT", setupPanel, "TOPLEFT", 15, -5)
     setupTitle:SetText("Setup")
     setupTitle:SetTextColor(0.9, 0.9, 0.3, 1)
 
-    -- Setup-Buttons - horizontal zentriert
     local buttonsWidth = 120 + 20 + 90 + 20 + 90
-    local startX = (380 - buttonsWidth) / 2
+    local startX = (360 - buttonsWidth) / 2
 
     local autoDetectButton = CreateFrame("Button", nil, setupPanel, "GameMenuButtonTemplate")
     autoDetectButton:SetWidth(120)
     autoDetectButton:SetHeight(28)
-    autoDetectButton:SetPoint("TOPLEFT", setupPanel, "TOPLEFT", startX, -40)
+    autoDetectButton:SetPoint("TOPLEFT", setupPanel, "TOPLEFT", startX, -30)
     autoDetectButton:SetText("Detect Spell Slots")
-    MC.applyModernButtonStyle(autoDetectButton, {r=0.2, g=0.6, b=0.9})
+    MC.applyModernButtonStyle(autoDetectButton, {r=0.2, g=0.6, b=0.9}) -- Hellblau für Aktionen
 
     local autoDetectHelp = setupPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     autoDetectHelp:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -4)
@@ -197,7 +211,7 @@ MC.optionsCreateFrame = function()
     lockButton:SetHeight(28)
     lockButton:SetPoint("LEFT", autoDetectButton, "RIGHT", 20, 0)
     lockButton:SetText("Lock Frames")
-    MC.applyModernButtonStyle(lockButton, {r=0.8, g=0.3, b=0.3})
+    MC.applyModernButtonStyle(lockButton, {r=0.8, g=0.3, b=0.3}) -- Rot für Sperren
     lockButton:SetScript("OnClick", function()
         MC.lockFrames()
         MC.lockActionFrames()
@@ -208,52 +222,22 @@ MC.optionsCreateFrame = function()
     unlockButton:SetHeight(28)
     unlockButton:SetPoint("LEFT", lockButton, "RIGHT", 20, 0)
     unlockButton:SetText("Unlock Frames")
-    MC.applyModernButtonStyle(unlockButton, {r=0.3, g=0.8, b=0.4})
+    MC.applyModernButtonStyle(unlockButton, {r=0.3, g=0.8, b=0.4}) -- Grün für Entsperren
     unlockButton:SetScript("OnClick", function()
         MC.unlockFrames()
         MC.unlockActionFrames()
     end)
 
-    -- Hauptkonfigurationspanel
-    local configPanel = CreateFrame("Frame", nil, MC.optionsFrame)
-    configPanel:SetWidth(380)
-    configPanel:SetHeight(530)
-    configPanel:SetPoint("TOP", setupPanel, "BOTTOM", 0, -15)
-    configPanel:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 }
-    })
-    configPanel:SetBackdropColor(0.1, 0.1, 0.15, 0.8)
-    configPanel:SetBackdropBorderColor(0.4, 0.5, 0.7, 1)
-
-    local configTitle = configPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    configTitle:SetPoint("TOPLEFT", configPanel, "TOPLEFT", 15, -15)
-    configTitle:SetText("Configuration")
-    configTitle:SetTextColor(0.9, 0.9, 0.3, 1)
-
-    -- Unterbereich 1: Priority Group
-    local priorityGroup = CreateFrame("Frame", nil, configPanel)
+    local priorityGroup = CreateFrame("Frame", nil, tabs[2])
     priorityGroup:SetWidth(360)
     priorityGroup:SetHeight(200)
-    priorityGroup:SetPoint("TOP", configPanel, "TOP", 0, -40)
-    priorityGroup:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    priorityGroup:SetBackdropColor(0.15, 0.15, 0.2, 0.7)
-    priorityGroup:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
+    priorityGroup:SetPoint("TOP", tabs[2], "TOP", 0, -10)
 
-    -- Unterbereichstitel
-    local priorityTitle = priorityGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    priorityTitle:SetPoint("TOPLEFT", priorityGroup, "TOPLEFT", 10, -10)
+    local priorityTitle = priorityGroup:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    priorityTitle:SetPoint("TOPLEFT", priorityGroup, "TOPLEFT", 15, -5)
     priorityTitle:SetText("Trinket Priority")
     priorityTitle:SetTextColor(0.9, 0.8, 0.5, 1)
 
-    -- Priority Frame
     local priorityFrame = MC.createPriorityFrame(priorityGroup)
     priorityFrame:ClearAllPoints()
     priorityFrame:SetPoint("TOP", priorityGroup, "TOP", 0, -30)
@@ -272,22 +256,13 @@ MC.optionsCreateFrame = function()
     priorityHelpFrame:SetText("Higher priority items are used first with /mc trinket")
     priorityHelpFrame:SetTextColor(0.7, 0.8, 0.9, 1)
 
-    -- Unterbereich 2: Mana Schwellenwert
-    local manaGroup = CreateFrame("Frame", nil, configPanel)
+    local manaGroup = CreateFrame("Frame", nil, tabs[3])
     manaGroup:SetWidth(360)
     manaGroup:SetHeight(100)
-    manaGroup:SetPoint("TOP", priorityGroup, "BOTTOM", 0, -15)
-    manaGroup:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    manaGroup:SetBackdropColor(0.15, 0.15, 0.2, 0.7)
-    manaGroup:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
+    manaGroup:SetPoint("TOP", tabs[3], "TOP", 0, -10)
 
-    local manaTitle = manaGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    manaTitle:SetPoint("TOPLEFT", manaGroup, "TOPLEFT", 10, -10)
+    local manaTitle = manaGroup:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    manaTitle:SetPoint("TOPLEFT", manaGroup, "TOPLEFT", 15, -5)
     manaTitle:SetText("Arcane Power Settings")
     manaTitle:SetTextColor(0.9, 0.8, 0.5, 1)
 
@@ -316,22 +291,13 @@ MC.optionsCreateFrame = function()
         MageControlDB.minManaForArcanePowerUse = v
     end)
 
-    -- Unterbereich 3: Missiles Surge
-    local missileGroup = CreateFrame("Frame", nil, configPanel)
+    local missileGroup = CreateFrame("Frame", nil, tabs[3])
     missileGroup:SetWidth(360)
     missileGroup:SetHeight(150)
-    missileGroup:SetPoint("TOP", manaGroup, "BOTTOM", 0, -15)
-    missileGroup:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    missileGroup:SetBackdropColor(0.15, 0.15, 0.2, 0.7)
-    missileGroup:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
+    missileGroup:SetPoint("TOP", manaGroup, "BOTTOM", 0, -25)
 
-    local missileTitle = missileGroup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    missileTitle:SetPoint("TOPLEFT", missileGroup, "TOPLEFT", 10, -10)
+    local missileTitle = missileGroup:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    missileTitle:SetPoint("TOPLEFT", missileGroup, "TOPLEFT", 15, -5)
     missileTitle:SetText("Arcane Surge Settings")
     missileTitle:SetTextColor(0.9, 0.8, 0.5, 1)
 
