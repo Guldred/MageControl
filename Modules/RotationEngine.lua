@@ -1,8 +1,9 @@
+-----------------------------
 -- HELPERS
 -----------------------------
 
-local isInterruptionRequiredAfterNextMissile = function()
-    if not MC.state.isChanneling then
+local isMissilesInterruptionRequiredAfterNextMissileForSurge = function()
+    if not MC.state.isChanneling or MC.isHighHasteActive() then
         return false
     end
 
@@ -38,10 +39,10 @@ local isInterruptionRequiredAfterNextMissile = function()
     MC.debugPrint("Time until next missile: " .. timeUntilNextMissile)
     MC.debugPrint("Surge cooldown ready for next missile: " .. tostring(surgeCooldownReadyForNextMissile))
 
-    return surgeCooldownReadyForNextMissile and not MC.isHighHasteActive()
+    return surgeCooldownReadyForNextMissile
 end
 
-local isInterruptionRequired = function(spells, buffStates)
+local isMissilesInterruptionRequiredForRuptureRebuff = function(spells, buffStates)
     local shouldCancelWhileHighHaste = MC.isHighHasteActive()
             and MC.state.isChanneling and
             not buffStates.arcaneRupture and
@@ -52,17 +53,25 @@ local isInterruptionRequired = function(spells, buffStates)
             not buffStates.arcaneRupture and
             spells.arcaneRuptureReady and
             not MC.isActionSlotCooldownReadyAndUsableInSeconds(MC.getActionBarSlots().ARCANE_SURGE, 1)
+            -- Last check is to make sure you dont use Rupture and then surge right after, which would reduce effective missiles time
+            -- Ideally, we want to use Surge first, then rupture
 
     return shouldCancelWhileHighHaste or shouldCancelWhileLowHaste
 end
 
-local handleChannelInterruption = function(spells, buffs, buffStates, forcedSurge)
+local handleMissilesInterruptionForRuptureRebuff = function(spells, buffs, buffStates)
     ChannelStopCastingNextTick()
-    if (spells.arcaneSurgeReady or forcedSurge) then
+    if spells.arcaneSurgeReady and not MC.isHighHasteActive() then
         MC.safeQueueSpell("Arcane Surge", buffs, buffStates)
     else
         MC.safeQueueSpell("Arcane Rupture", buffs, buffStates)
     end
+    return true
+end
+
+local handleMissilesInterruptionForSurge = function(buffs, buffStates)
+    ChannelStopCastingNextTick()
+    MC.safeQueueSpell("Arcane Surge", buffs, buffStates)
     return true
 end
 
@@ -74,20 +83,22 @@ MC.arcaneRotationPriority = {
     {
         name = "Channel Interruption for Rebuff",
         condition = function(state)
-            return isInterruptionRequired(state.spells, state.buffStates)
+            return isMissilesInterruptionRequiredForRuptureRebuff(state.spells, state.buffStates)
         end,
         action = function(state)
-            handleChannelInterruption(state.spells, state.buffs, state.buffStates, false)
+            handleMissilesInterruptionForRuptureRebuff(state.spells, state.buffs, state.buffStates)
             return true
         end
     },
-    { --TODO: Get this to work
+    {
         name = "Channel Interruption for Surge at last second",
         condition = function(state)
-            return isInterruptionRequiredAfterNextMissile(state.spells, state.buffStates)
+            return isMissilesInterruptionRequiredAfterNextMissileForSurge(state.spells, state.buffStates)
         end,
         action = function(state)
-            handleChannelInterruption(state.spells, state.buffs, state.buffStates, true)
+            MC.debugPrint("Arcane Missiles need to be interrupted to fire Surge while available")
+            --TODO: This might cause empty channel interrupts if Arcane Surge not available
+            handleMissilesInterruptionForSurge(state.buffs, state.buffStates)
             return true
         end
     },
@@ -268,9 +279,7 @@ MC.executeArcaneRotation = function()
 
     for i, priority in ipairs(MC.arcaneRotationPriority) do
         if priority.condition(state) then
-            if MC.DEBUG then
-                MC.debugPrint("Executing priority: " .. priority.name)
-            end
+            MC.debugPrint("Executing priority: " .. priority.name)
             priority.action(state)
             return
         end
