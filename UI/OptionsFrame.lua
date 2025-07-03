@@ -163,8 +163,8 @@ MC.optionsCreateFrame = function()
 
     local tabSystem = MC.setupTabSystem(MC.optionsFrame, tabContainer, {
         { title = "Setup" },
-        { title = "Prioritäten" },
-        { title = "Einstellungen" }
+        { title = "Priorities" },
+        { title = "Settings" }
     })
 
     local tabs = tabSystem.tabs
@@ -331,7 +331,7 @@ MC.optionsCreateFrame = function()
     local minimumManaSlider = CreateFrame("Slider", nil, manaGroup, "OptionsSliderTemplate")
     minimumManaSlider:SetWidth(200)
     minimumManaSlider:SetHeight(20)
-    minimumManaSlider:SetPoint("TOP", manaGroup, "TOP", 0, -30)
+    minimumManaSlider:SetPoint("TOP", manaGroup, "TOP", 0, -50)
     minimumManaSlider:SetOrientation("HORIZONTAL")
     minimumManaSlider:SetMinMaxValues(0, 100)
     minimumManaSlider:SetValueStep(1)
@@ -366,7 +366,7 @@ MC.optionsCreateFrame = function()
     local missilesSurgeSlider = CreateFrame("Slider", nil, missileGroup, "OptionsSliderTemplate")
     missilesSurgeSlider:SetWidth(200)
     missilesSurgeSlider:SetHeight(20)
-    missilesSurgeSlider:SetPoint("TOP", missileGroup, "TOP", 0, -30)
+    missilesSurgeSlider:SetPoint("TOP", missileGroup, "TOP", 0, -50)
     missilesSurgeSlider:SetOrientation("HORIZONTAL")
     missilesSurgeSlider:SetMinMaxValues(1, 6)
     missilesSurgeSlider:SetValueStep(1)
