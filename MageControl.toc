@@ -2,9 +2,33 @@
 ## Title: MageControl
 ## Notes: Optimize Arcane Damage
 ## Author: Guldred, Nolin7777
-## Version: 1.7.4
+## Version: 1.8.0
 ## SavedVariables: MageControlDB
 
+# Main file
 MageControl.lua
-MageControlOptions.lua
-MageControlBuffDisplay.lua
+
+# Core files
+Core\Constants.lua
+Core\Utils.lua
+Core\Core.lua
+Core\Events.lua
+
+# Data files
+Data\SpellData.lua
+Data\BuffData.lua
+Data\ImmunityData.lua
+
+# UI Components
+UI\Components\Button.lua
+UI\Components\Slider.lua
+UI\Components\PriorityList.lua
+
+# UI
+UI\BuffDisplay.lua
+UI\ActionDisplay.lua
+UI\OptionsFrame.lua
+
+# Modules
+Modules\BuffTracker.lua
+Modules\RotationEngine.lua
