@@ -54,77 +54,7 @@ MC.applyModernButtonStyle = function(button, color)
     end)
 end
 
--- In Button.lua hinzufügen
-MC.createTabButton = function(parent, id, text, tabContainer, width, height)
-    local tabButton = CreateFrame("Button", "MageControlTab"..id, parent)
-    tabButton:SetID(id)
-    tabButton:SetWidth(width or 100)
-    tabButton:SetHeight(height or 25)
-
-    -- Hintergrund und Rahmen
-    tabButton:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 8, edgeSize = 12,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
-    })
-
-    -- Standardfarben explizit setzen (inaktiv)
-    tabButton:SetBackdropColor(0.1, 0.1, 0.2, 0.8)
-    tabButton:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
-
-    -- Text hinzufügen
-    local tabText = tabButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    tabButton.text = tabText
-    tabText:SetPoint("CENTER", 0, 0)
-    tabText:SetText(text)
-    tabText:SetTextColor(0.8, 0.8, 0.8, 1)
-
-    -- Aktiv/Inaktiv-Status-Funktionen
-    function tabButton:SetActive()
-        self:SetBackdropColor(0.2, 0.2, 0.3, 1.0)
-        self:SetBackdropBorderColor(0.6, 0.7, 0.9, 1.0)
-        self.text:SetTextColor(1, 1, 1, 1)
-
-        -- Den unteren Rahmen entfernen (mit tabContainer verbinden)
-        self:SetBackdrop({
-            bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            tile = true, tileSize = 8, edgeSize = 12,
-            insets = { left = 2, right = 2, top = 2, bottom = 0 }
-        })
-    end
-
-    function tabButton:SetInactive()
-        self:SetBackdropColor(0.1, 0.1, 0.2, 0.8)
-        self:SetBackdropBorderColor(0.4, 0.5, 0.7, 0.7)
-        self.text:SetTextColor(0.8, 0.8, 0.8, 1)
-
-        -- Mit vollständigem Rahmen
-        self:SetBackdrop({
-            bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            tile = true, tileSize = 8, edgeSize = 12,
-            insets = { left = 2, right = 2, top = 2, bottom = 2 }
-        })
-    end
-
-    tabButton:SetScript("OnEnter", function()
-        if this.isActive ~= true then
-            this:SetBackdropColor(0.15, 0.15, 0.25, 0.9)
-        end
-    end)
-
-    tabButton:SetScript("OnLeave", function()
-        if this.isActive ~= true then
-            this:SetBackdropColor(0.1, 0.1, 0.2, 0.8)
-        end
-    end)
-
-    return tabButton
-end
-
-MC.createTabButton = function(parent, id, text, tabContainer, width, height)
+MC.createTabButton = function(parent, id, text, width, height)
     local tabButton = CreateFrame("Button", "MageControlTab"..id, parent)
     tabButton:SetID(id)
     tabButton:SetWidth(width or 100)
@@ -197,7 +127,7 @@ MC.setupTabSystem = function(parent, tabContainer, tabInfo)
         tabs[i]:SetPoint("BOTTOMRIGHT", tabContainer, "BOTTOMRIGHT", -10, 10)
         tabs[i]:Hide()
 
-        local tabButton = MC.createTabButton(parent, i, info.title, tabContainer)
+        local tabButton = MC.createTabButton(parent, i, info.title)
 
         if i == 1 then
             tabButton:SetPoint("BOTTOMLEFT", tabContainer, "TOPLEFT", 6, 0)
