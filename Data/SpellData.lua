@@ -53,8 +53,8 @@ MC.SPELL_MODIFIERS = {
 }
 
 MC.INCANTAGOS_SPELL_MAP = {
-    ["Heroic Training Dummy"] = "Fireball",
-    ["Expert Training Dummy"] = "Frostbolt",
+    --["Heroic Training Dummy"] = "Fireball", -- Uncomment if you want to use this for testing
+    --["Expert Training Dummy"] = "Frostbolt",
     ["Red Affinity"] = "Fireball",
     ["Blue Affinity"] = "Frostbolt"
 }

@@ -31,8 +31,10 @@ local isMissilesInterruptionRequiredAfterNextMissileForSurge = function()
 
     local nextMissileIndex = currentMissileIndex + 1
     local timeUntilNextMissile = MC.ARCANE_MISSILES_FIRE_TIMES[nextMissileIndex] - currentTime
-    
-    local surgeCooldownReadyForNextMissile = arcaneSurgeCooldownRemaining <= timeUntilNextMissile
+
+    local BUFFER_WINDOW = 0.1 -- Buffer window to account for lag and timing issues
+
+    local surgeCooldownReadyForNextMissile = arcaneSurgeCooldownRemaining + BUFFER_WINDOW <= timeUntilNextMissile
 
     MC.debugPrint("Current missile: " .. currentMissileIndex)
     MC.debugPrint("Next missile (last possible): " .. nextMissileIndex)
@@ -331,3 +333,4 @@ MC.activateTrinketAndAP = function()
     
     return false
 end
+
