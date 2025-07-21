@@ -8,7 +8,14 @@
 # Main file
 MageControl.lua
 
-# Core files
+# Core files - Module System (load first)
+Core\Logger.lua
+Core\ErrorHandler.lua
+Core\ConfigManager.lua
+Core\ModuleSystem.lua
+Core\Initialization.lua
+
+# Core files - Legacy
 Core\Constants.lua
 Core\Utils.lua
 Core\Core.lua
