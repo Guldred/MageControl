@@ -3,60 +3,74 @@
 -----------------------------
 
 local isMissilesInterruptionRequiredAfterNextMissileForSurge = function()
+    -- Early exits for better performance
     if not MC.state.isChanneling or MC.isHighHasteActive() then
         return false
     end
 
     local earliestCancelPoint = MageControlDB.minMissilesForSurgeCancel or 4
-
     if not MC.isInLastPossibleMissileWindow() then
         return false
     end
 
     local currentTime = GetTime()
+    local missileTimes = MC.ARCANE_MISSILES_FIRE_TIMES
+    local missileCount = table.getn(missileTimes)
+    
+    -- Optimized missile index calculation using binary search
     local currentMissileIndex = 0
-    for i = 1, table.getn(MC.ARCANE_MISSILES_FIRE_TIMES) do
-        if currentTime >= MC.ARCANE_MISSILES_FIRE_TIMES[i] then
-            currentMissileIndex = i
+    local low, high = 1, missileCount
+    
+    while low <= high do
+        local mid = math.floor((low + high) / 2)
+        if currentTime >= missileTimes[mid] then
+            currentMissileIndex = mid
+            low = mid + 1
         else
-            break
+            high = mid - 1
         end
     end
 
+    -- Early exit if not enough missiles fired
     if currentMissileIndex < earliestCancelPoint then
         return false
     end
 
-    local arcaneSurgeCooldownRemaining = MC.getActionSlotCooldownInSeconds(MC.getActionBarSlots().ARCANE_SURGE)
+    -- Use action bar slots from ConfigManager
+    local actionBarSlots = MC.getActionBarSlots()
+    local arcaneSurgeCooldownRemaining = MC.getActionSlotCooldownInSeconds(actionBarSlots.ARCANE_SURGE)
 
     local nextMissileIndex = currentMissileIndex + 1
-    local timeUntilNextMissile = MC.ARCANE_MISSILES_FIRE_TIMES[nextMissileIndex] - currentTime
+    if nextMissileIndex > missileCount then
+        return false -- No next missile
+    end
 
-    local BUFFER_WINDOW = 0.1 -- Buffer window to account for lag and timing issues
+    local nextMissileTime = missileTimes[nextMissileIndex]
+    local timeToNextMissile = nextMissileTime - currentTime
 
-    local surgeCooldownReadyForNextMissile = arcaneSurgeCooldownRemaining + BUFFER_WINDOW <= timeUntilNextMissile
-
-    MC.debugPrint("Current missile: " .. currentMissileIndex)
-    MC.debugPrint("Next missile (last possible): " .. nextMissileIndex)
-    MC.debugPrint("Time until next missile: " .. timeUntilNextMissile)
-    MC.debugPrint("Surge cooldown ready for next missile: " .. tostring(surgeCooldownReadyForNextMissile))
-
-    return surgeCooldownReadyForNextMissile
+    return timeToNextMissile >= arcaneSurgeCooldownRemaining
 end
 
+-- Restored original rebuff interruption logic
 local isMissilesInterruptionRequiredForRuptureRebuff = function(spells, buffStates)
-    local shouldCancelWhileHighHaste = MC.isHighHasteActive()
-            and MC.state.isChanneling and
-            not buffStates.arcaneRupture and
-            spells.arcaneRuptureReady
+    -- Must be channeling missiles to interrupt
+    if not MC.state.isChanneling then
+        return false
+    end
 
+    -- Check for high haste condition - cancel while high haste if no rupture buff and rupture is ready
+    local shouldCancelWhileHighHaste = MC.isHighHasteActive()
+            and not buffStates.arcaneRupture
+            and spells.arcaneRuptureReady
+
+    -- Check for low haste condition - cancel while low haste if no rupture buff, rupture is ready,
+    -- and surge is not ready soon (to avoid using rupture right before surge)
     local shouldCancelWhileLowHaste = not MC.isHighHasteActive()
-            and MC.state.isChanneling and
-            not buffStates.arcaneRupture and
-            spells.arcaneRuptureReady and
-            not MC.isActionSlotCooldownReadyAndUsableInSeconds(MC.getActionBarSlots().ARCANE_SURGE, 1)
-            -- Last check is to make sure you dont use Rupture and then surge right after, which would reduce effective missiles time
-            -- Ideally, we want to use Surge first, then rupture
+            and not buffStates.arcaneRupture
+            and spells.arcaneRuptureReady
+            and not MC.isActionSlotCooldownReadyAndUsableInSeconds(MC.getActionBarSlots().ARCANE_SURGE, 1)
+            -- Last check ensures we don't use Rupture right before Surge becomes available
+            -- Ideally, we want to use Surge first, then rupture for maximum missile time
 
     return shouldCancelWhileHighHaste or shouldCancelWhileLowHaste
 end
@@ -78,6 +92,25 @@ local handleMissilesInterruptionForSurge = function(buffs, buffStates)
 end
 
 -----------------------------
+-- PERFORMANCE OPTIMIZED HELPERS
+-----------------------------
+
+-- Cache for frequently accessed values
+local _actionBarSlotsCache = nil
+local _lastActionBarUpdate = 0
+local ACTION_BAR_CACHE_DURATION = 5 -- Cache action bar slots for 5 seconds
+
+-- Optimized action bar slots caching
+local function getCachedActionBarSlots()
+    local currentTime = GetTime()
+    if not _actionBarSlotsCache or (currentTime - _lastActionBarUpdate) > ACTION_BAR_CACHE_DURATION then
+        _actionBarSlotsCache = MageControlDB.actionBarSlots or {}
+        _lastActionBarUpdate = currentTime
+    end
+    return _actionBarSlotsCache
+end
+
+-----------------------------
 -- MAIN PRIO LOGIC
 -----------------------------
 
@@ -95,7 +128,7 @@ MC.arcaneRotationPriority = {
     {
         name = "Channel Interruption for Surge at last second",
         condition = function(state)
-            return isMissilesInterruptionRequiredAfterNextMissileForSurge(state.spells, state.buffStates)
+            return isMissilesInterruptionRequiredAfterNextMissileForSurge()
         end,
         action = function(state)
             MC.debugPrint("Arcane Missiles need to be interrupted to fire Surge while available")
@@ -317,20 +350,3 @@ MC.arcaneIncantagos = function()
         MC.arcaneRotation()
     end
 end
-
--- Legacy function removed - now handled by RotationManager and CooldownSystem modules
--- MC.activateTrinketAndAP = function()
---     if not MageControlDB.cooldownPriorityMap then
---         MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER" }
---     end
--- 
---     for i, priorityKey in ipairs(MageControlDB.cooldownPriorityMap) do
---         local cooldownAction = MC.cooldownActions[priorityKey]
---         if cooldownAction and cooldownAction.isAvailable() then
---             cooldownAction.execute()
---             return true
---         end
---     end
---     
---     return false
--- end

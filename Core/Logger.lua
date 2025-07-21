@@ -12,46 +12,50 @@ MageControl.Logger = {
         ERROR = 4
     },
     
+    -- Log level names
+    LEVEL_NAMES = {"DEBUG", "INFO", "WARN", "ERROR"},
+    
     -- Current log level (can be configured)
     currentLevel = 2, -- INFO by default
     
     -- Enable/disable debug mode
     debugEnabled = false,
     
-    -- Log message with level
+    -- Performance optimized logging with reduced overhead
     log = function(level, message, module)
+        -- Early exit for debug messages when debug is disabled
+        if level == MageControl.Logger.LEVELS.DEBUG and not MageControl.Logger.debugEnabled then
+            return
+        end
+        
+        -- Early exit if level is below current threshold
         if level < MageControl.Logger.currentLevel then
             return
         end
         
-        local levelNames = {"DEBUG", "INFO", "WARN", "ERROR"}
-        local levelName = levelNames[level] or "UNKNOWN"
-        local modulePrefix = module and ("[" .. module .. "] ") or ""
-        local timestamp = date("%H:%M:%S")
+        -- Optimized message formatting with minimal string operations
+        local prefix = MageControl.Logger.LEVEL_NAMES[level] or "UNKNOWN"
+        local moduleText = module and (" [" .. module .. "]") or ""
+        local fullMessage = "[MageControl] " .. prefix .. moduleText .. ": " .. tostring(message)
         
-        local fullMessage = "[" .. timestamp .. "] [MageControl:" .. levelName .. "] " .. modulePrefix .. message
-        
-        -- Output to appropriate channel based on level
+        -- Optimized color selection and output
         if level >= MageControl.Logger.LEVELS.ERROR then
-            -- Errors always show
             DEFAULT_CHAT_FRAME:AddMessage(fullMessage, 1.0, 0.3, 0.3)
         elseif level >= MageControl.Logger.LEVELS.WARN then
-            -- Warnings show in yellow
             DEFAULT_CHAT_FRAME:AddMessage(fullMessage, 1.0, 1.0, 0.3)
         elseif level >= MageControl.Logger.LEVELS.INFO then
-            -- Info messages in white
             DEFAULT_CHAT_FRAME:AddMessage(fullMessage, 1.0, 1.0, 1.0)
         else
-            -- Debug messages only if debug is enabled
-            if MageControl.Logger.debugEnabled then
-                DEFAULT_CHAT_FRAME:AddMessage(fullMessage, 0.7, 0.7, 1.0)
-            end
+            -- Debug messages - already checked above, so just output
+            DEFAULT_CHAT_FRAME:AddMessage(fullMessage, 0.7, 0.7, 1.0)
         end
     end,
     
-    -- Convenience methods
+    -- Optimized convenience methods with early exits
     debug = function(message, module)
-        MageControl.Logger.log(MageControl.Logger.LEVELS.DEBUG, message, module)
+        if MageControl.Logger.debugEnabled then
+            MageControl.Logger.log(MageControl.Logger.LEVELS.DEBUG, message, module)
+        end
     end,
     
     info = function(message, module)
@@ -64,6 +68,11 @@ MageControl.Logger = {
     
     error = function(message, module)
         MageControl.Logger.log(MageControl.Logger.LEVELS.ERROR, message, module)
+    end,
+    
+    -- Optimized debug state check
+    isDebugEnabled = function()
+        return MageControl.Logger.debugEnabled
     end,
     
     -- Toggle debug mode

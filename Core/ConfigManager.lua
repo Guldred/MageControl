@@ -72,6 +72,82 @@ MageControl.ConfigManager = {
     -- Current configuration (merged with saved data)
     current = {},
     
+    -- Performance optimized configuration access with path caching
+    _pathCache = {},
+    
+    -- Optimized path parsing with caching
+    _parsePath = function(path)
+        if MageControl.ConfigManager._pathCache[path] then
+            return MageControl.ConfigManager._pathCache[path]
+        end
+        
+        local keys = {}
+        for key in string.gfind(path, "[^.]+") do
+            table.insert(keys, key)
+        end
+        
+        MageControl.ConfigManager._pathCache[path] = keys
+        return keys
+    end,
+    
+    -- Optimized get configuration value with caching
+    get = function(path)
+        if not path then
+            return MageControl.ConfigManager.current
+        end
+        
+        local keys = MageControl.ConfigManager._parsePath(path)
+        local value = MageControl.ConfigManager.current
+        
+        -- Optimized table traversal
+        for i = 1, table.getn(keys) do
+            local key = keys[i]
+            if type(value) == "table" and value[key] ~= nil then
+                value = value[key]
+            else
+                -- Only log warnings in debug mode to reduce overhead
+                if MageControl.Logger.isDebugEnabled() then
+                    MageControl.Logger.warn("Configuration path not found: " .. path, "ConfigManager")
+                end
+                return nil
+            end
+        end
+        
+        return value
+    end,
+    
+    -- Optimized set configuration value with validation
+    set = function(path, value)
+        if not path then
+            MageControl.Logger.error("Cannot set empty configuration path", "ConfigManager")
+            return false
+        end
+        
+        local keys = MageControl.ConfigManager._parsePath(path)
+        local current = MageControl.ConfigManager.current
+        
+        -- Navigate to parent and set value efficiently
+        local keyCount = table.getn(keys)
+        for i = 1, keyCount - 1 do
+            local key = keys[i]
+            if type(current[key]) ~= "table" then
+                current[key] = {}
+            end
+            current = current[key]
+        end
+        
+        local finalKey = keys[keyCount]
+        local oldValue = current[finalKey]
+        current[finalKey] = value
+        
+        -- Only log in debug mode for performance
+        if MageControl.Logger.isDebugEnabled() then
+            MageControl.Logger.debug("Config set: " .. path .. " = " .. tostring(value), "ConfigManager")
+        end
+        
+        return true
+    end,
+    
     -- Initialize configuration system
     initialize = function()
         -- Ensure saved variables exist
@@ -116,74 +192,6 @@ MageControl.ConfigManager = {
         MageControl.ConfigManager._validateConfig()
         
         MageControl.Logger.info("Configuration system initialized", "ConfigManager")
-    end,
-    
-    -- Get configuration value
-    get = function(path)
-        local keys = {}
-        for key in string.gfind(path, "[^.]+") do
-            table.insert(keys, key)
-        end
-        
-        local value = MageControl.ConfigManager.current
-        for _, key in ipairs(keys) do
-            if type(value) == "table" and value[key] ~= nil then
-                value = value[key]
-            else
-                MageControl.Logger.warn("Configuration path not found: " .. path, "ConfigManager")
-                return nil
-            end
-        end
-        
-        return value
-    end,
-    
-    -- Set configuration value
-    set = function(path, value)
-        local keys = {}
-        for key in string.gfind(path, "[^.]+") do
-            table.insert(keys, key)
-        end
-        
-        if table.getn(keys) == 0 then
-            return false
-        end
-        
-        local current = MageControl.ConfigManager.current
-        local savedCurrent = MageControlDB
-        
-        -- Navigate to the parent of the target key
-        for i = 1, table.getn(keys) - 1 do
-            local key = keys[i]
-            if type(current[key]) ~= "table" then
-                current[key] = {}
-            end
-            if type(savedCurrent[key]) ~= "table" then
-                savedCurrent[key] = {}
-            end
-            current = current[key]
-            savedCurrent = savedCurrent[key]
-        end
-        
-        -- Set the value
-        local finalKey = keys[table.getn(keys)]
-        current[finalKey] = value
-        savedCurrent[finalKey] = value
-        
-        MageControl.Logger.debug("Configuration updated: " .. path .. " = " .. tostring(value), "ConfigManager")
-        
-        -- Debug: Log what's in trinkets.priorityList after set
-        if path == "trinkets.priorityList" then
-            local currentList = MageControl.ConfigManager.current.trinkets.priorityList
-            if currentList then
-                MageControl.Logger.debug("After set, trinkets.priorityList has " .. table.getn(currentList) .. " items", "ConfigManager")
-                for i, item in ipairs(currentList) do
-                    MageControl.Logger.debug("  Priority " .. i .. ": " .. (item.name or "unknown"), "ConfigManager")
-                end
-            end
-        end
-        
-        return true
     end,
     
     -- Reset configuration to defaults

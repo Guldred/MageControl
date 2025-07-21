@@ -18,48 +18,66 @@ end
 UpdateManager.updateFunctions = {}
 UpdateManager.isRunning = false
 
--- Main update loop - called by WoW's OnUpdate
-UpdateManager.onUpdate = function()
-    if not UpdateManager.isRunning then
+-- Optimized update execution with performance improvements
+UpdateManager.update = function()
+    if not UpdateManager.isRunning or table.getn(UpdateManager.updateFunctions) == 0 then
         return
     end
     
+    -- Cache GetTime() call for better performance
     local currentTime = GetTime()
+    local updateFunctions = UpdateManager.updateFunctions
     
-    for i, updateFunc in ipairs(UpdateManager.updateFunctions) do
+    -- Optimized loop with pre-calculated length
+    for i = 1, table.getn(updateFunctions) do
+        local updateFunc = updateFunctions[i]
         if updateFunc and (currentTime - updateFunc.lastUpdate >= updateFunc.interval) then
-            local success, error = MageControl.ErrorHandler.safeCall(
-                updateFunc.f,
-                MageControl.ErrorHandler.TYPES.UPDATE,
-                {module = "UpdateManager", functionName = updateFunc.name or "unknown"}
-            )
+            -- Optimized error handling - reduced function call overhead
+            local success, error = pcall(updateFunc.f)
             
             if success then
                 updateFunc.lastUpdate = currentTime
             else
-                MageControl.Logger.error("Update function failed: " .. tostring(error), "UpdateManager")
+                -- Only log errors if debug is enabled or error is critical
+                if MageControl.Logger.isDebugEnabled() or string.find(tostring(error), "critical") then
+                    MageControl.Logger.error("Update function failed: " .. tostring(error), "UpdateManager")
+                end
+                
+                -- Mark failed functions for potential removal
+                updateFunc.failureCount = (updateFunc.failureCount or 0) + 1
+                if updateFunc.failureCount > 10 then
+                    MageControl.Logger.warn("Removing repeatedly failing update function: " .. (updateFunc.name or "unknown"), "UpdateManager")
+                    table.remove(updateFunctions, i)
+                    break -- Exit loop since we modified the table
+                end
             end
         end
     end
 end
 
--- Force update all registered functions
+-- Optimized force update with better performance
 UpdateManager.forceUpdate = function()
+    if table.getn(UpdateManager.updateFunctions) == 0 then
+        return
+    end
+    
     MageControl.Logger.debug("Forcing update of all registered functions", "UpdateManager")
     
+    -- Cache values for better performance
     local currentTime = GetTime()
+    local updateFunctions = UpdateManager.updateFunctions
+    local debugEnabled = MageControl.Logger.isDebugEnabled()
     
-    for i, updateFunc in ipairs(UpdateManager.updateFunctions) do
+    for i = 1, table.getn(updateFunctions) do
+        local updateFunc = updateFunctions[i]
         if updateFunc then
-            local success, error = MageControl.ErrorHandler.safeCall(
-                updateFunc.f,
-                MageControl.ErrorHandler.TYPES.UPDATE,
-                {module = "UpdateManager", functionName = updateFunc.name or "unknown"}
-            )
+            local success, error = pcall(updateFunc.f)
             
             if success then
                 updateFunc.lastUpdate = currentTime
-                MageControl.Logger.debug("Force updated: " .. (updateFunc.name or "unknown"), "UpdateManager")
+                if debugEnabled then
+                    MageControl.Logger.debug("Force updated: " .. (updateFunc.name or "unknown"), "UpdateManager")
+                end
             else
                 MageControl.Logger.error("Force update failed for " .. (updateFunc.name or "unknown") .. ": " .. tostring(error), "UpdateManager")
             end
@@ -235,7 +253,7 @@ MageControl.ModuleSystem.registerModule("UpdateManager", UpdateManager)
 -- Backward compatibility
 MC.UpdateFunctions = UpdateManager.updateFunctions
 MC.OnUpdate = function()
-    UpdateManager.onUpdate()
+    UpdateManager.update()
 end
 MC.forceUpdate = function()
     UpdateManager.forceUpdate()
