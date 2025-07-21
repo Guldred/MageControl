@@ -16,6 +16,14 @@ Core\ModuleSystem.lua
 Core\ModuleRegistration.lua
 Core\Initialization.lua
 
+# Core files - Service Layer Architecture (Phase 3)
+Core\Services\ServiceRegistry.lua
+Core\Services\WoWApiService.lua
+Core\Services\DataRepository.lua
+Core\Services\EventService.lua
+Core\Services\RotationService.lua
+Core\Services\ServiceInitializer.lua
+
 # Core files - New Modular Structure
 Core\StateManager.lua
 Core\UpdateManager.lua
