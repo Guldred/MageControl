@@ -200,6 +200,7 @@ UIFramework.createSlider = function(parent, min, max, step, width, height)
     })
     
     slider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+    slider:SetOrientation("HORIZONTAL")  
     slider:SetMinMaxValues(min or 0, max or 100)
     slider:SetValueStep(step or 1)
     slider:SetValue(min or 0)

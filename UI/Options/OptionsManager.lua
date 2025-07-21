@@ -363,14 +363,16 @@ OptionsManager._createSettingsPanel = function(panel)
     apTitle:SetPoint("TOP", apFrame, "TOP", 0, -5)
     
     -- Minimum mana slider
-    local manaSlider = uiFramework.createSlider(apFrame, 0, 100, 1, 200, 16)
-    manaSlider:SetPoint("TOP", apTitle, "BOTTOM", 0, -15)
-    
     local manaLabel = uiFramework.createText(apFrame, "Minimum Mana:", uiFramework.STYLES.FONTS.SMALL)
-    manaLabel:SetPoint("RIGHT", manaSlider, "LEFT", -10, 0)
+    manaLabel:SetPoint("TOP", apTitle, "BOTTOM", 0, -10)
+    manaLabel:SetJustifyH("CENTER")
+    
+    local manaSlider = uiFramework.createSlider(apFrame, 0, 100, 1, 200, 16)
+    manaSlider:SetPoint("TOP", manaLabel, "BOTTOM", 0, -5)
     
     local manaValue = uiFramework.createText(apFrame, "50%", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TITLE)
-    manaValue:SetPoint("LEFT", manaSlider, "RIGHT", 10, 0)
+    manaValue:SetPoint("TOP", manaSlider, "BOTTOM", 0, -5)
+    manaValue:SetJustifyH("CENTER")
     
     -- Slider functionality
     manaSlider:SetScript("OnValueChanged", function()
@@ -389,14 +391,16 @@ OptionsManager._createSettingsPanel = function(panel)
     asTitle:SetPoint("TOP", asFrame, "TOP", 0, -5)
     
     -- Minimum missiles slider
-    local missilesSlider = uiFramework.createSlider(asFrame, 1, 6, 1, 200, 16)
-    missilesSlider:SetPoint("TOP", asTitle, "BOTTOM", 0, -15)
-    
     local missilesLabel = uiFramework.createText(asFrame, "Min Missiles for Cancel:", uiFramework.STYLES.FONTS.SMALL)
-    missilesLabel:SetPoint("RIGHT", missilesSlider, "LEFT", -10, 0)
+    missilesLabel:SetPoint("TOP", asTitle, "BOTTOM", 0, -10)
+    missilesLabel:SetJustifyH("CENTER")
+    
+    local missilesSlider = uiFramework.createSlider(asFrame, 1, 6, 1, 200, 16)
+    missilesSlider:SetPoint("TOP", missilesLabel, "BOTTOM", 0, -5)
     
     local missilesValue = uiFramework.createText(asFrame, "4", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TITLE)
-    missilesValue:SetPoint("LEFT", missilesSlider, "RIGHT", 10, 0)
+    missilesValue:SetPoint("TOP", missilesSlider, "BOTTOM", 0, -5)
+    missilesValue:SetJustifyH("CENTER")
     
     -- Missiles slider functionality
     missilesSlider:SetScript("OnValueChanged", function()
@@ -431,7 +435,7 @@ OptionsManager._createInfoPanel = function(panel)
     local depsText = uiFramework.createText(panel, "", uiFramework.STYLES.FONTS.SMALL)
     depsText:SetPoint("TOP", depsTitle, "BOTTOM", 0, -10)
     depsText:SetWidth(340)
-    depsText:SetJustifyH("LEFT")
+    depsText:SetJustifyH("CENTER")  -- Center align instead of left align
     
     -- Update dependencies info
     local depsInfo = OptionsManager._checkDependencies()
