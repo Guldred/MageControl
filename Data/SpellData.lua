@@ -1,4 +1,3 @@
-
 MC.SPELL_INFO = {
     FIREBLAST = {
         id = 10199,
@@ -53,10 +52,14 @@ MC.SPELL_MODIFIERS = {
 }
 
 MC.INCANTAGOS_SPELL_MAP = {
-    --["Heroic Training Dummy"] = "Fireball", -- Uncomment if you want to use this for testing
-    --["Expert Training Dummy"] = "Frostbolt",
     ["Red Affinity"] = "Fireball",
     ["Blue Affinity"] = "Frostbolt"
+}
+
+MC.TRAINING_DUMMY_SPELL_MAP = {
+    ["Heroic Training Dummy"] = "Fireball",
+    ["Expert Training Dummy"] = "Frostbolt",
+    ["Apprentice Training Dummy"] = "Arcane Missiles"
 }
 
 MC.ARCANE_MISSILES_FIRE_TIMES = {}

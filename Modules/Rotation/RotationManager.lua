@@ -69,7 +69,18 @@ RotationManager.arcaneIncantagos = function()
         return
     end
     
-    local spellToQueue = MC.INCANTAGOS_SPELL_MAP[targetName]
+    local spellToQueue = nil
+    
+    -- Check for Incantagos encounter spells first
+    if MageControlDB.bossEncounters and MageControlDB.bossEncounters.incantagos and MageControlDB.bossEncounters.incantagos.enabled then
+        spellToQueue = MC.INCANTAGOS_SPELL_MAP[targetName]
+    end
+    
+    -- Check for training dummy spells if enabled and no Incantagos spell found
+    if not spellToQueue and MageControlDB.bossEncounters and MageControlDB.bossEncounters.enableTrainingDummies then
+        spellToQueue = MC.TRAINING_DUMMY_SPELL_MAP[targetName]
+    end
+    
     if spellToQueue then
         local castId, visId, autoId, casting, channeling, onswing, autoattack = GetCurrentCastingInfo()
         local isArcaneSpell = channeling == 1 or castId == MC.SPELL_INFO.ARCANE_RUPTURE.id

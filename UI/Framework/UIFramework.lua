@@ -35,22 +35,22 @@ UIFramework.STYLES = {
     
     -- Dimensions
     DIMENSIONS = {
-        FRAME_WIDTH = 400,
-        FRAME_HEIGHT = 440,
-        TAB_WIDTH = 80,
-        TAB_HEIGHT = 28,
-        BUTTON_WIDTH = 90,
-        BUTTON_HEIGHT = 28,
-        SLIDER_WIDTH = 200,
-        SLIDER_HEIGHT = 16,
-        PADDING = 10,
-        SPACING = 5
+        FRAME_WIDTH = 480,
+        FRAME_HEIGHT = 520,
+        TAB_WIDTH = 75,
+        TAB_HEIGHT = 26,
+        BUTTON_WIDTH = 85,
+        BUTTON_HEIGHT = 26,
+        SLIDER_WIDTH = 180,
+        SLIDER_HEIGHT = 14,
+        PADDING = 8,
+        SPACING = 4
     },
     
     -- Fonts
     FONTS = {
-        TITLE = "GameFontNormalLarge",
-        NORMAL = "GameFontNormal",
+        TITLE = "GameFontNormal",
+        NORMAL = "GameFontNormalSmall",
         SMALL = "GameFontNormalSmall",
         HIGHLIGHT = "GameFontHighlight"
     }
@@ -111,10 +111,28 @@ UIFramework.createFrame = function(name, parent, width, height)
 end
 
 -- Create a styled button
-UIFramework.createButton = function(parent, text, width, height)
+UIFramework.createButton = function(parent, text, param3, param4)
     local button = CreateFrame("Button", nil, parent)
-    button:SetWidth(width or UIFramework.STYLES.DIMENSIONS.BUTTON_WIDTH)
-    button:SetHeight(height or UIFramework.STYLES.DIMENSIONS.BUTTON_HEIGHT)
+    
+    -- Handle different parameter signatures
+    local width, height, callback
+    if type(param3) == "function" then
+        -- Signature: createButton(parent, text, callback)
+        callback = param3
+        width = UIFramework.STYLES.DIMENSIONS.BUTTON_WIDTH
+        height = UIFramework.STYLES.DIMENSIONS.BUTTON_HEIGHT
+    elseif type(param3) == "number" then
+        -- Signature: createButton(parent, text, width, height)
+        width = param3
+        height = param4 or UIFramework.STYLES.DIMENSIONS.BUTTON_HEIGHT
+    else
+        -- Default signature: createButton(parent, text)
+        width = UIFramework.STYLES.DIMENSIONS.BUTTON_WIDTH
+        height = UIFramework.STYLES.DIMENSIONS.BUTTON_HEIGHT
+    end
+    
+    button:SetWidth(width)
+    button:SetHeight(height)
     
     -- Apply styling
     button:SetBackdrop(UIFramework.BACKDROPS.BUTTON)
@@ -144,6 +162,11 @@ UIFramework.createButton = function(parent, text, width, height)
     button:SetScript("OnMouseUp", function()
         this:SetBackdropColor(unpack(UIFramework.STYLES.COLORS.BUTTON_HIGHLIGHT))
     end)
+    
+    -- Set callback if provided
+    if callback then
+        button:SetScript("OnClick", callback)
+    end
     
     return button
 end

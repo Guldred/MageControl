@@ -57,8 +57,8 @@ OptionsManager._createInterface = function()
     OptionsManager.frame = MageControl.UI.Framework.UIFramework.createFrame(
         "MageControlOptionsFrame", 
         UIParent, 
-        400, 
-        440
+        480, 
+        520
     )
     OptionsManager.frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     
@@ -78,7 +78,7 @@ OptionsManager._createInterface = function()
         {
             tabWidth = 80,
             tabHeight = 28,
-            contentHeight = 350,
+            contentHeight = 450,
             startY = -40
         }
     )
@@ -105,6 +105,13 @@ OptionsManager._createTabs = function()
         OptionsManager._createPriorityPanel
     )
     
+    -- Boss Encounters tab
+    OptionsManager.tabManager:addTab(
+        "encounters",
+        "Encounters",
+        OptionsManager._createBossEncountersPanel
+    )
+    
     -- Settings tab
     OptionsManager.tabManager:addTab(
         "settings",
@@ -128,38 +135,52 @@ OptionsManager._createSetupPanel = function(panel)
     local title = uiFramework.createText(panel, "Spell Slot Configuration", uiFramework.STYLES.FONTS.TITLE, uiFramework.STYLES.COLORS.TITLE)
     title:SetPoint("TOP", panel, "TOP", 0, -10)
     
-    -- Auto-detect section
+    -- Auto-detect frame
     local autoDetectFrame = CreateFrame("Frame", nil, panel)
-    autoDetectFrame:SetWidth(360)
-    autoDetectFrame:SetHeight(80)
-    autoDetectFrame:SetPoint("TOP", title, "BOTTOM", 0, -20)
+    autoDetectFrame:SetWidth(440)
+    autoDetectFrame:SetHeight(50)
+    autoDetectFrame:SetPoint("TOP", panel, "TOP", 0, -40)
+    
+    -- Auto-detect description
+    local autoDetectDesc = uiFramework.createText(autoDetectFrame, "Click to automatically scan all action bars and configure spell slots", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.SUBTEXT)
+    autoDetectDesc:SetPoint("TOP", autoDetectFrame, "TOP", 0, -5)
+    autoDetectDesc:SetWidth(420)
+    autoDetectDesc:SetJustifyH("CENTER")
     
     -- Auto-detect button
-    local autoDetectButton = uiFramework.createButton(autoDetectFrame, "Auto-Detect Spells", 140, 28)
-    autoDetectButton:SetPoint("TOP", autoDetectFrame, "TOP", 0, -10)
+    local autoDetectButton = uiFramework.createButton(autoDetectFrame, "Auto-Detect", function()
+        OptionsManager._performAutoDetection(panel)
+    end)
+    autoDetectButton:SetPoint("TOP", autoDetectDesc, "BOTTOM", 0, -8)
     
     -- Auto-detect result text
-    local autoDetectResult = uiFramework.createText(autoDetectFrame, "", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TEXT_MUTED)
+    local autoDetectResult = uiFramework.createText(autoDetectFrame, "", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.SUCCESS)
     autoDetectResult:SetPoint("TOP", autoDetectButton, "BOTTOM", 0, -5)
-    autoDetectResult:SetWidth(340)
+    autoDetectResult:SetWidth(420)
     autoDetectResult:SetJustifyH("CENTER")
     
-    -- Auto-detect functionality
-    autoDetectButton:SetScript("OnClick", function()
-        local result = OptionsManager._autoDetectSpells()
-        autoDetectResult:SetText(result.message)
-        if result.success then
-            autoDetectResult:SetTextColor(unpack(uiFramework.STYLES.COLORS.SUCCESS))
-        else
-            autoDetectResult:SetTextColor(unpack(uiFramework.STYLES.COLORS.WARNING))
-        end
-    end)
+    -- Details frame for additional feedback
+    local detailsFrame = CreateFrame("Frame", nil, panel)
+    detailsFrame:SetWidth(440)
+    detailsFrame:SetHeight(40)
+    detailsFrame:SetPoint("TOPLEFT", autoDetectFrame, "BOTTOMLEFT", 0, -10)
+    
+    -- Details text
+    local detailsText = uiFramework.createText(detailsFrame, "", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TEXT_MUTED)
+    detailsText:SetPoint("TOPLEFT", detailsFrame, "TOPLEFT", 0, -10)
+    detailsText:SetWidth(420)
+    detailsText:SetJustifyH("CENTER")
+    
+    -- Store references for auto-detect functionality
+    panel.autoDetectButton = autoDetectButton
+    panel.autoDetectResult = autoDetectResult
+    panel.detailsText = detailsText
     
     -- Frame control section
     local frameControlFrame = CreateFrame("Frame", nil, panel)
-    frameControlFrame:SetWidth(360)
+    frameControlFrame:SetWidth(440)
     frameControlFrame:SetHeight(60)
-    frameControlFrame:SetPoint("TOP", autoDetectFrame, "BOTTOM", 0, -10)
+    frameControlFrame:SetPoint("TOPLEFT", detailsFrame, "BOTTOMLEFT", 0, -10)
     
     local frameTitle = uiFramework.createText(frameControlFrame, "Frame Controls", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TITLE)
     frameTitle:SetPoint("TOP", frameControlFrame, "TOP", 0, -5)
@@ -183,42 +204,48 @@ OptionsManager._createSetupPanel = function(panel)
         end
     end)
     
-    -- Spell slot status section
+    -- Spell status section
     local statusFrame = CreateFrame("Frame", nil, panel)
-    statusFrame:SetWidth(360)
+    statusFrame:SetWidth(440)
     statusFrame:SetHeight(120)
-    statusFrame:SetPoint("TOP", frameControlFrame, "BOTTOM", 0, -10)
+    statusFrame:SetPoint("TOPLEFT", frameControlFrame, "BOTTOMLEFT", 0, -10)
     
-    local statusTitle = uiFramework.createText(statusFrame, "Current Spell Slots", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TITLE)
-    statusTitle:SetPoint("TOP", statusFrame, "TOP", 0, -5)
+    -- Create status display
+    OptionsManager._createSpellSlotStatus(statusFrame)
     
     -- Store references for updating
     panel.autoDetectResult = autoDetectResult
     panel.statusFrame = statusFrame
     
-    -- Create status display
-    OptionsManager._createSpellSlotStatus(statusFrame)
+    --[[-- Create hide and reload buttons
+    local hideButton = uiFramework.createButton(frameControlFrame, "Hide Frame", function()
+        OptionsManager.hide()
+    end)
+    hideButton:SetPoint("LEFT", frameControlFrame, "LEFT", 20, -20)
+    
+    local reloadButton = uiFramework.createButton(frameControlFrame, "Reload UI", function()
+        ReloadUI()
+    end)
+    reloadButton:SetPoint("LEFT", hideButton, "RIGHT", 10, 0)]]
 end
 
 -- Create Priority Panel
 OptionsManager._createPriorityPanel = function(panel)
     local uiFramework = MageControl.UI.Framework.UIFramework
     
-    -- Title
-    local title = uiFramework.createText(panel, "Trinket Priority Configuration", uiFramework.STYLES.FONTS.TITLE, uiFramework.STYLES.COLORS.TITLE)
+    local title = uiFramework.createText(panel, "Trinket & Cooldown Priority", uiFramework.STYLES.FONTS.TITLE, uiFramework.STYLES.COLORS.TITLE)
     title:SetPoint("TOP", panel, "TOP", 0, -10)
     
-    -- Description
-    local desc = uiFramework.createText(panel, "Choose the activation order for your cooldowns (highest priority first)", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TEXT_MUTED)
-    desc:SetPoint("TOP", title, "BOTTOM", 0, -10)
-    desc:SetWidth(360)
+    local desc = uiFramework.createText(panel, "Configure the activation order for trinkets and Arcane Power", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TEXT)
+    desc:SetPoint("TOP", title, "BOTTOM", 0, -8)
+    desc:SetWidth(440)
     desc:SetJustifyH("CENTER")
     
     -- Priority list frame
     local listFrame = CreateFrame("Frame", nil, panel)
-    listFrame:SetWidth(360)
+    listFrame:SetWidth(440)
     listFrame:SetHeight(200)
-    listFrame:SetPoint("TOP", desc, "BOTTOM", 0, -20)
+    listFrame:SetPoint("TOP", desc, "BOTTOM", 0, -15)
     listFrame:SetBackdrop(uiFramework.BACKDROPS.FRAME)
     listFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.8)
     listFrame:SetBackdropBorderColor(unpack(uiFramework.STYLES.COLORS.BORDER))
@@ -345,6 +372,102 @@ OptionsManager._createPriorityPanel = function(panel)
     refreshPriorityList()
 end
 
+-- Create Boss Encounters Panel
+OptionsManager._createBossEncountersPanel = function(panel)
+    local uiFramework = MageControl.UI.Framework.UIFramework
+    
+    -- Title
+    local title = uiFramework.createText(panel, "Boss Encounter Settings", uiFramework.STYLES.FONTS.TITLE, uiFramework.STYLES.COLORS.TITLE)
+    title:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, -20)
+    
+    -- Description
+    local description = uiFramework.createText(panel, "Configure automatic spell selection for specific boss encounters and testing", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TEXT)
+    description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
+    
+    -- Incantagos Setting
+    local incantagosFrame = CreateFrame("Frame", nil, panel)
+    incantagosFrame:SetWidth(400)
+    incantagosFrame:SetHeight(60)
+    incantagosFrame:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -20)
+    
+    -- Incantagos checkbox
+    local incantagosCheckbox = CreateFrame("CheckButton", nil, incantagosFrame, "UICheckButtonTemplate")
+    incantagosCheckbox:SetWidth(24)
+    incantagosCheckbox:SetHeight(24)
+    incantagosCheckbox:SetPoint("TOPLEFT", incantagosFrame, "TOPLEFT", 0, 0)
+    
+    -- Incantagos label
+    local incantagosLabel = uiFramework.createText(incantagosFrame, "Automatically pick correct spell for adds on Incantagos", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TEXT)
+    incantagosLabel:SetPoint("LEFT", incantagosCheckbox, "RIGHT", 8, 0)
+    
+    -- Incantagos help text
+    local incantagosHelp = uiFramework.createText(incantagosFrame, "When enabled, /mc arcane will automatically cast Fireball on \nRed Affinity and Frostbolt on Blue Affinity", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.SUBTEXT)
+    incantagosHelp:SetPoint("TOPLEFT", incantagosLabel, "BOTTOMLEFT", 0, -5)
+    
+    -- Load current value
+    local currentValue = MageControlDB.bossEncounters and MageControlDB.bossEncounters.incantagos and MageControlDB.bossEncounters.incantagos.enabled or false
+    incantagosCheckbox:SetChecked(currentValue)
+    
+    -- Save on change
+    incantagosCheckbox:SetScript("OnClick", function()
+        local isChecked = incantagosCheckbox:GetChecked()
+        
+        -- Ensure the structure exists
+        MageControlDB.bossEncounters = MageControlDB.bossEncounters or {}
+        MageControlDB.bossEncounters.incantagos = MageControlDB.bossEncounters.incantagos or {}
+        MageControlDB.bossEncounters.incantagos.enabled = isChecked
+        
+        MageControl.Logger.info("Incantagos encounter setting " .. (isChecked and "enabled" or "disabled"))
+    end)
+    
+    -- Store reference for loading values
+    panel.incantagosCheckbox = incantagosCheckbox
+    
+    -- Training Dummy Settings Section
+    local dummyTitle = uiFramework.createText(panel, "Training Dummy Testing", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TITLE)
+    dummyTitle:SetPoint("TOPLEFT", incantagosFrame, "BOTTOMLEFT", 0, -30)
+    
+    local dummyDescription = uiFramework.createText(panel, "Enable training dummy spell selection for testing the boss encounter system", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.SUBTEXT)
+    dummyDescription:SetPoint("TOPLEFT", dummyTitle, "BOTTOMLEFT", 0, -5)
+    
+    -- Training Dummy Enable Setting
+    local dummyFrame = CreateFrame("Frame", nil, panel)
+    dummyFrame:SetWidth(400)
+    dummyFrame:SetHeight(60)
+    dummyFrame:SetPoint("TOPLEFT", dummyDescription, "BOTTOMLEFT", 0, -15)
+    
+    -- Training dummy checkbox
+    local dummyCheckbox = CreateFrame("CheckButton", nil, dummyFrame, "UICheckButtonTemplate")
+    dummyCheckbox:SetWidth(24)
+    dummyCheckbox:SetHeight(24)
+    dummyCheckbox:SetPoint("TOPLEFT", dummyFrame, "TOPLEFT", 0, 0)
+    
+    -- Training dummy label
+    local dummyLabel = uiFramework.createText(dummyFrame, "Enable training dummy spell selection", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TEXT)
+    dummyLabel:SetPoint("LEFT", dummyCheckbox, "RIGHT", 8, 0)
+    
+    -- Training dummy description
+    local dummyDesc = uiFramework.createText(dummyFrame, "Heroic Training Dummy → Fireball, Expert Training Dummy → Frostbolt", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.SUBTEXT)
+    dummyDesc:SetPoint("TOPLEFT", dummyLabel, "BOTTOMLEFT", 0, -5)
+    
+    -- Training dummy checkbox event handling
+    dummyCheckbox:SetScript("OnClick", function()
+        local isChecked = dummyCheckbox:GetChecked()
+        MageControlDB.bossEncounters = MageControlDB.bossEncounters or {}
+        MageControlDB.bossEncounters.enableTrainingDummies = isChecked
+        
+        if isChecked then
+            MC.printMessage("Training dummy spell selection enabled for testing")
+        else
+            MC.printMessage("Training dummy spell selection disabled")
+        end
+    end)
+    
+    -- Store reference for loading values
+    panel.incantagosCheckbox = incantagosCheckbox
+    panel.dummyCheckbox = dummyCheckbox
+end
+
 -- Create Settings Panel
 OptionsManager._createSettingsPanel = function(panel)
     local uiFramework = MageControl.UI.Framework.UIFramework
@@ -452,80 +575,358 @@ OptionsManager._createInfoPanel = function(panel)
     panel.depsText = depsText
 end
 
--- Auto-detect spells functionality
+-- Enhanced Smart Spell Detection System
 OptionsManager._autoDetectSpells = function()
     local foundSlots = {}
+    local duplicateSlots = {} -- Track multiple instances of same spell
     local spellIds = {
         FIREBLAST = 10199,
         ARCANE_RUPTURE = 51954,
         ARCANE_SURGE = 51936,
         ARCANE_POWER = 12042
     }
+    
+    local spellNames = {
+        FIREBLAST = "Fire Blast",
+        ARCANE_RUPTURE = "Arcane Rupture", 
+        ARCANE_SURGE = "Arcane Surge",
+        ARCANE_POWER = "Arcane Power"
+    }
 
+    -- Comprehensive action bar scanning
+    MageControl.Logger.info("Scanning all 120 action bar slots for spells...")
+    
     for slot = 1, 120 do
         if HasAction(slot) then
             local text, type, id = GetActionText(slot)
             text = text or ""
             type = type or ""
             id = id or 0
+            
             for spellKey, targetId in pairs(spellIds) do
-                if id == targetId and not foundSlots[spellKey] then
-                    foundSlots[spellKey] = slot
+                if id == targetId then
+                    if not foundSlots[spellKey] then
+                        foundSlots[spellKey] = slot
+                        MageControl.Logger.debug("Found " .. spellNames[spellKey] .. " at slot " .. slot, "SmartDetection")
+                    else
+                        -- Track duplicates for smart selection
+                        if not duplicateSlots[spellKey] then
+                            duplicateSlots[spellKey] = {foundSlots[spellKey]}
+                        end
+                        table.insert(duplicateSlots[spellKey], slot)
+                        MageControl.Logger.debug("Found duplicate " .. spellNames[spellKey] .. " at slot " .. slot, "SmartDetection")
+                    end
                 end
             end
         end
     end
 
+    -- Smart conflict resolution - prefer easily accessible slots
+    for spellKey, slots in pairs(duplicateSlots) do
+        local bestSlot = OptionsManager._selectOptimalSlot(slots, spellKey)
+        foundSlots[spellKey] = bestSlot
+        MageControl.Logger.info("Selected optimal slot " .. bestSlot .. " for " .. spellNames[spellKey] .. " (had " .. table.getn(slots) .. " options)")
+    end
+
+    -- Update configuration
     local updated = false
     if not MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots = {}
     end
 
+    local changedSpells = {}
     for spellKey, slot in pairs(foundSlots) do
-        MageControlDB.actionBarSlots[spellKey] = slot
-        updated = true
-    end
-
-    local requiredSpells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE", "ARCANE_POWER"}
-    local missingSpells = {}
-    for _, spellKey in ipairs(requiredSpells) do
-        if not foundSlots[spellKey] then
-            table.insert(missingSpells, spellKey)
+        if MageControlDB.actionBarSlots[spellKey] ~= slot then
+            MageControlDB.actionBarSlots[spellKey] = slot
+            table.insert(changedSpells, spellNames[spellKey] .. " → Slot " .. slot)
+            updated = true
         end
     end
 
-    if updated and table.getn(missingSpells) == 0 then
-        return {success = true, message = "All required spells found and configured!"}
-    elseif table.getn(missingSpells) > 0 then
-        return {success = false, message = "Missing spells: " .. table.concat(missingSpells, ", ")}
-    else
-        return {success = true, message = "All spells already configured."}
+    -- Generate detailed feedback
+    local requiredSpells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE"}
+    local optionalSpells = {"ARCANE_POWER"}
+    local missingRequired = {}
+    local missingOptional = {}
+    
+    for _, spellKey in ipairs(requiredSpells) do
+        if not foundSlots[spellKey] then
+            table.insert(missingRequired, spellNames[spellKey])
+        end
     end
+    
+    for _, spellKey in ipairs(optionalSpells) do
+        if not foundSlots[spellKey] then
+            table.insert(missingOptional, spellNames[spellKey])
+        end
+    end
+
+    -- Return comprehensive results
+    local result = {
+        success = table.getn(missingRequired) == 0,
+        foundCount = 0,
+        totalRequired = table.getn(requiredSpells),
+        changedSpells = changedSpells,
+        missingRequired = missingRequired,
+        missingOptional = missingOptional,
+        duplicatesResolved = 0
+    }
+    
+    -- Count found spells and duplicates resolved
+    for spellKey, _ in pairs(foundSlots) do
+        result.foundCount = result.foundCount + 1
+    end
+    
+    for spellKey, slots in pairs(duplicateSlots) do
+        result.duplicatesResolved = result.duplicatesResolved + (table.getn(slots) - 1)
+    end
+
+    -- Generate user-friendly message
+    if result.success and updated then
+        result.message = "✓ Auto-detection complete! Found " .. result.foundCount .. " spells."
+        if result.duplicatesResolved > 0 then
+            result.message = result.message .. " Resolved " .. result.duplicatesResolved .. " duplicates."
+        end
+    elseif result.success and not updated then
+        result.message = "✓ All spells already configured correctly."
+    else
+        result.message = "⚠ Missing required spells: " .. table.concat(missingRequired, ", ")
+        if table.getn(missingOptional) > 0 then
+            result.message = result.message .. " (Optional: " .. table.concat(missingOptional, ", ") .. ")"
+        end
+    end
+
+    return result
 end
 
--- Create spell slot status display
+-- Smart slot selection algorithm
+OptionsManager._selectOptimalSlot = function(slots, spellKey)
+    -- Preference order: 1-12 (main bars) > 13-24 (shift bar) > 25-36 (ctrl bar) > others
+    local preferences = {
+        {min = 1, max = 12, priority = 1},   -- Main action bar
+        {min = 13, max = 24, priority = 2},  -- Shift action bar  
+        {min = 25, max = 36, priority = 3},  -- Ctrl action bar
+        {min = 37, max = 48, priority = 4},  -- Alt action bar
+        {min = 49, max = 120, priority = 5}  -- Other bars
+    }
+    
+    local bestSlot = slots[1]
+    local bestPriority = 999
+    
+    for _, slot in ipairs(slots) do
+        for _, pref in ipairs(preferences) do
+            if slot >= pref.min and slot <= pref.max then
+                if pref.priority < bestPriority then
+                    bestSlot = slot
+                    bestPriority = pref.priority
+                elseif pref.priority == bestPriority and slot < bestSlot then
+                    -- Within same priority, prefer lower slot numbers
+                    bestSlot = slot
+                end
+                break
+            end
+        end
+    end
+    
+    return bestSlot
+end
+
+-- Perform auto-detection with enhanced feedback
+OptionsManager._performAutoDetection = function(panel)
+    if not panel.autoDetectButton or not panel.autoDetectResult or not panel.detailsText then
+        return
+    end
+    
+    -- Show scanning state
+    panel.autoDetectButton:SetText("🔄 Scanning...")
+    panel.autoDetectButton:Disable()
+    panel.autoDetectResult:SetText("Scanning all 120 action bar slots...")
+    panel.autoDetectResult:SetTextColor(unpack(MageControl.UI.Framework.UIFramework.STYLES.COLORS.TEXT))
+    
+    -- Perform detection (with slight delay for UI feedback)
+    local function performDetection()
+        local result = OptionsManager._autoDetectSpells()
+        
+        -- Update main result
+        panel.autoDetectResult:SetText(result.message)
+        if result.success then
+            panel.autoDetectResult:SetTextColor(unpack(MageControl.UI.Framework.UIFramework.STYLES.COLORS.SUCCESS))
+        else
+            panel.autoDetectResult:SetTextColor(unpack(MageControl.UI.Framework.UIFramework.STYLES.COLORS.WARNING))
+        end
+        
+        -- Show detailed information
+        local details = {}
+        if table.getn(result.changedSpells) > 0 then
+            table.insert(details, "Updated: " .. table.concat(result.changedSpells, ", "))
+        end
+        if result.duplicatesResolved > 0 then
+            table.insert(details, "Resolved " .. result.duplicatesResolved .. " duplicate(s)")
+        end
+        if table.getn(result.missingOptional) > 0 then
+            table.insert(details, "Optional missing: " .. table.concat(result.missingOptional, ", "))
+        end
+        
+        if table.getn(details) > 0 then
+            panel.detailsText:SetText(table.concat(details, " • "))
+        else
+            panel.detailsText:SetText("")
+        end
+        
+        -- Update spell status display
+        if panel.statusFrame then
+            OptionsManager._updateSpellSlotStatus(panel.statusFrame)
+        end
+        
+        -- Reset button
+        panel.autoDetectButton:SetText("🔍 Smart Auto-Detect")
+        panel.autoDetectButton:Enable()
+    end
+    
+    -- Use a timer for better UX (shows scanning state briefly)
+    local timer = CreateFrame("Frame")
+    timer.elapsed = 0
+    timer:SetScript("OnUpdate", function()
+        timer.elapsed = timer.elapsed + arg1
+        if timer.elapsed >= 0.5 then -- 0.5 second delay
+            performDetection()
+            timer:SetScript("OnUpdate", nil)
+        end
+    end)
+end
+
+-- Enhanced spell slot status display with real-time validation
 OptionsManager._createSpellSlotStatus = function(parent)
     local uiFramework = MageControl.UI.Framework.UIFramework
-    local spells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE", "ARCANE_POWER"}
+    local spells = {
+        {key = "FIREBLAST", name = "Fire Blast", required = true},
+        {key = "ARCANE_RUPTURE", name = "Arcane Rupture", required = true},
+        {key = "ARCANE_SURGE", name = "Arcane Surge", required = true},
+        {key = "ARCANE_POWER", name = "Arcane Power", required = false}
+    }
     local yOffset = -25
     
-    for i, spellKey in ipairs(spells) do
+    -- Status header
+    local statusHeader = uiFramework.createText(parent, "Current Spell Configuration:", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TITLE)
+    statusHeader:SetPoint("TOP", parent, "TOP", 0, -15)
+    
+    for i, spell in ipairs(spells) do
         local spellFrame = CreateFrame("Frame", nil, parent)
         spellFrame:SetWidth(340)
-        spellFrame:SetHeight(20)
+        spellFrame:SetHeight(22)
         spellFrame:SetPoint("TOP", parent, "TOP", 0, yOffset)
         
-        local spellName = uiFramework.createText(spellFrame, spellKey .. ":", uiFramework.STYLES.FONTS.SMALL)
-        spellName:SetPoint("LEFT", spellFrame, "LEFT", 10, 0)
+        -- Status indicator (colored dot)
+        local statusDot = uiFramework.createText(spellFrame, "●", uiFramework.STYLES.FONTS.NORMAL, uiFramework.STYLES.COLORS.TEXT_MUTED)
+        statusDot:SetPoint("LEFT", spellFrame, "LEFT", 10, 0)
         
+        -- Spell name with required indicator
+        local requiredText = spell.required and " *" or ""
+        local spellName = uiFramework.createText(spellFrame, spell.name .. requiredText, uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TEXT)
+        spellName:SetPoint("LEFT", statusDot, "RIGHT", 5, 0)
+        
+        -- Slot information
         local slotText = uiFramework.createText(spellFrame, "Not configured", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.TEXT_MUTED)
         slotText:SetPoint("RIGHT", spellFrame, "RIGHT", -10, 0)
         
-        -- Store reference for updating
-        parent[spellKey .. "_status"] = slotText
+        -- Store references for updating
+        parent[spell.key .. "_status"] = slotText
+        parent[spell.key .. "_dot"] = statusDot
+        parent[spell.key .. "_required"] = spell.required
         
         yOffset = yOffset - 25
     end
+    
+    --[[-- Legend
+    local legendFrame = CreateFrame("Frame", nil, parent)
+    legendFrame:SetWidth(340)
+    legendFrame:SetHeight(20)
+    legendFrame:SetPoint("TOP", parent, "TOP", 0, yOffset - 10)
+    
+    local legendText = uiFramework.createText(legendFrame, "● Configured  ● Missing  * Required", uiFramework.STYLES.FONTS.SMALL, uiFramework.STYLES.COLORS.SUBTEXT)
+    legendText:SetPoint("CENTER", legendFrame, "CENTER", 0, 0)]]
+    
+    return parent
+end
+
+-- Enhanced spell slot status update with validation
+OptionsManager._updateSpellSlotStatus = function(statusFrame)
+    if not statusFrame or not MageControlDB.actionBarSlots then
+        return
+    end
+    
+    local uiFramework = MageControl.UI.Framework.UIFramework
+    local spells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE", "ARCANE_POWER"}
+    local configuredCount = 0
+    local requiredCount = 0
+    local requiredConfigured = 0
+    
+    for _, spellKey in ipairs(spells) do
+        local statusText = statusFrame[spellKey .. "_status"]
+        local statusDot = statusFrame[spellKey .. "_dot"]
+        local isRequired = statusFrame[spellKey .. "_required"]
+        
+        if statusText and statusDot then
+            local slot = MageControlDB.actionBarSlots[spellKey]
+            
+            if isRequired then
+                requiredCount = requiredCount + 1
+            end
+            
+            if slot and slot > 0 then
+                -- Validate that the spell is actually in that slot
+                local isValid = OptionsManager._validateSpellSlot(spellKey, slot)
+                
+                if isValid then
+                    statusText:SetText("Slot " .. slot .. " ✓")
+                    statusText:SetTextColor(unpack(uiFramework.STYLES.COLORS.SUCCESS))
+                    statusDot:SetTextColor(unpack(uiFramework.STYLES.COLORS.SUCCESS))
+                    configuredCount = configuredCount + 1
+                    if isRequired then
+                        requiredConfigured = requiredConfigured + 1
+                    end
+                else
+                    statusText:SetText("Slot " .. slot .. " ⚠ (Invalid)")
+                    statusText:SetTextColor(unpack(uiFramework.STYLES.COLORS.WARNING))
+                    statusDot:SetTextColor(unpack(uiFramework.STYLES.COLORS.WARNING))
+                end
+            else
+                local statusColor = isRequired and uiFramework.STYLES.COLORS.ERROR or uiFramework.STYLES.COLORS.TEXT_MUTED
+                statusText:SetText(isRequired and "Missing (Required)" or "Not configured")
+                statusText:SetTextColor(unpack(statusColor))
+                statusDot:SetTextColor(unpack(statusColor))
+            end
+        end
+    end
+    
+    -- Update overall status if there's a summary element
+    if statusFrame.summaryText then
+        local summaryColor = (requiredConfigured == requiredCount) and uiFramework.STYLES.COLORS.SUCCESS or uiFramework.STYLES.COLORS.WARNING
+        statusFrame.summaryText:SetText(configuredCount .. "/4 spells configured (" .. requiredConfigured .. "/" .. requiredCount .. " required)")
+        statusFrame.summaryText:SetTextColor(unpack(summaryColor))
+    end
+end
+
+-- Validate that a spell is actually in the specified slot
+OptionsManager._validateSpellSlot = function(spellKey, slot)
+    if not HasAction(slot) then
+        return false
+    end
+    
+    local spellIds = {
+        FIREBLAST = 10199,
+        ARCANE_RUPTURE = 51954,
+        ARCANE_SURGE = 51936,
+        ARCANE_POWER = 12042
+    }
+    
+    local targetId = spellIds[spellKey]
+    if not targetId then
+        return false
+    end
+    
+    local text, type, id = GetActionText(slot)
+    return id == targetId
 end
 
 -- Check dependencies
@@ -581,29 +982,17 @@ OptionsManager._loadCurrentValues = function()
     if setupPanel and setupPanel.statusFrame then
         OptionsManager._updateSpellSlotStatus(setupPanel.statusFrame)
     end
-end
-
--- Update spell slot status display
-OptionsManager._updateSpellSlotStatus = function(statusFrame)
-    if not statusFrame or not MageControlDB.actionBarSlots then
-        return
+    
+    -- Load boss encounters panel values
+    local encountersPanel = OptionsManager.tabManager:getPanel("encounters")
+    if encountersPanel and encountersPanel.incantagosCheckbox then
+        local currentValue = MageControlDB.bossEncounters and MageControlDB.bossEncounters.incantagos and MageControlDB.bossEncounters.incantagos.enabled or false
+        encountersPanel.incantagosCheckbox:SetChecked(currentValue)
     end
     
-    local spells = {"FIREBLAST", "ARCANE_RUPTURE", "ARCANE_SURGE", "ARCANE_POWER"}
-    local uiFramework = MageControl.UI.Framework.UIFramework
-    
-    for _, spellKey in ipairs(spells) do
-        local statusText = statusFrame[spellKey .. "_status"]
-        if statusText then
-            local slot = MageControlDB.actionBarSlots[spellKey]
-            if slot then
-                statusText:SetText("Slot " .. slot)
-                statusText:SetTextColor(unpack(uiFramework.STYLES.COLORS.SUCCESS))
-            else
-                statusText:SetText("Not configured")
-                statusText:SetTextColor(unpack(uiFramework.STYLES.COLORS.TEXT_MUTED))
-            end
-        end
+    if encountersPanel and encountersPanel.dummyCheckbox then
+        local currentValue = MageControlDB.bossEncounters and MageControlDB.bossEncounters.enableTrainingDummies or false
+        encountersPanel.dummyCheckbox:SetChecked(currentValue)
     end
 end
 
@@ -611,6 +1000,11 @@ end
 MageControl.ModuleSystem.registerModule("OptionsManager", OptionsManager)
 
 -- Backward compatibility
+OptionsManager.showOptionsMenu = function()
+    OptionsManager.toggle()
+end
+
+-- Global backward compatibility for MC.showOptionsMenu
 MC.showOptionsMenu = function()
     OptionsManager.toggle()
 end

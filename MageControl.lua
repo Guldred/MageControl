@@ -46,7 +46,6 @@ local COMMAND_HANDLERS = {
     end,
     options = function() MC.showOptionsMenu() end,
     config = function() MC.showOptionsMenu() end,
-    arcaneinc = function() MC.arcaneIncantagos() end,
     
     -- New properly named cooldown command
     cooldown = function() MC.activateTrinketAndAP() end,
@@ -117,7 +116,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
             if not MageControl._helpText then
                 MageControl._helpText = {
                     "MageControl Commands:",
-                    "  /mc arcane - Cast arcane attack sequence",
+                    "  /mc arcane - Cast arcane attack sequence (intelligent boss detection)",
                     "  /mc explosion - Queue arcane explosion",
                     "  /mc options - Show options menu",
                     "  /mc reset - Reset to default configuration",
@@ -125,7 +124,7 @@ SlashCmdList["MAGECONTROL"] = function(msg)
                     "  /mc status - Show initialization status",
                     "  /mc errors - Show recent errors",
                     "  /mc cooldown - Activate trinkets and Arcane Power",
-                    "  /mc cd - Activate trinkets and Arcane Power",
+                    "  /mc cd - Activate trinkets and Arcane Power"
                 }
             end
             for i, line in ipairs(MageControl._helpText) do

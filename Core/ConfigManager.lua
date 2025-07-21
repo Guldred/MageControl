@@ -40,7 +40,17 @@ MageControl.ConfigManager = {
         rotation = {
             minMissilesForSurgeCancel = 4,
             minManaForArcanePowerUse = 50,
-            enableAutoRotation = true
+            enableAutoRotation = true,
+            enableAutoTarget = true,
+            preferredSpells = {"Arcane Missiles", "Arcane Rupture"}
+        },
+        
+        -- Boss encounters configuration
+        bossEncounters = {
+            incantagos = {
+                enabled = false,
+                description = "Automatically pick correct spell for adds on Incantagos"
+            }
         },
         
         -- Trinket and cooldown settings
