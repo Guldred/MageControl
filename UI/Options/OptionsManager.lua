@@ -779,7 +779,7 @@ OptionsManager._performAutoDetection = function(panel)
         end
         
         -- Reset button
-        panel.autoDetectButton:SetText("🔍 Smart Auto-Detect")
+        panel.autoDetectButton:SetText("Auto-Detect")
         panel.autoDetectButton:Enable()
     end
     
