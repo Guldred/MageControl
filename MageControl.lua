@@ -47,7 +47,18 @@ local COMMAND_HANDLERS = {
     options = function() MC.showOptionsMenu() end,
     config = function() MC.showOptionsMenu() end,
     arcaneinc = function() MC.arcaneIncantagos() end,
-    trinket = function() MC.activateTrinketAndAP() end,
+    
+    -- New properly named cooldown command
+    cooldown = function() MC.activateTrinketAndAP() end,
+    cooldowns = function() MC.activateTrinketAndAP() end,
+    cd = function() MC.activateTrinketAndAP() end,
+    
+    -- Deprecated trinket command with warning
+    trinket = function() 
+        MageControl.Logger.warn("'/mc trinket' is deprecated. Use '/mc cooldown' or '/mc cd' instead.")
+        MageControl.Logger.info("The new command activates trinkets AND Arcane Power based on your priority settings.")
+        MC.activateTrinketAndAP() 
+    end,
     reset = function()
         MageControl.ConfigManager.reset()
         if MC.BuffDisplay_ResetPositions then
@@ -112,7 +123,9 @@ SlashCmdList["MAGECONTROL"] = function(msg)
                     "  /mc reset - Reset to default configuration",
                     "  /mc debug - Toggle debug mode",
                     "  /mc status - Show initialization status",
-                    "  /mc errors - Show recent errors"
+                    "  /mc errors - Show recent errors",
+                    "  /mc cooldown - Activate trinkets and Arcane Power",
+                    "  /mc cd - Activate trinkets and Arcane Power",
                 }
             end
             for i, line in ipairs(MageControl._helpText) do
