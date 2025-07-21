@@ -38,7 +38,7 @@ MageControl.ModuleSystem = {
         end
         
         local module = modules[name]
-        
+
         -- Load dependencies first
         if module.dependencies then
             for _, dependency in ipairs(module.dependencies) do

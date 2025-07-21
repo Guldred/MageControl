@@ -13,6 +13,7 @@ Core\Logger.lua
 Core\ErrorHandler.lua
 Core\ConfigManager.lua
 Core\ModuleSystem.lua
+Core\ModuleRegistration.lua
 Core\Initialization.lua
 
 # Core files - Legacy
@@ -34,6 +35,15 @@ UI\Components\PriorityList.lua
 # UI
 UI\BuffDisplay.lua
 UI\ActionDisplay.lua
+
+# UI Options (new modular structure)
+UI\Options\SpellSlotDetector.lua
+UI\Options\SetupPanel.lua
+UI\Options\PriorityPanel.lua
+UI\Options\SettingsPanel.lua
+UI\Options\OptionsManager.lua
+
+# UI Legacy
 UI\OptionsFrame.lua
 
 # Modules

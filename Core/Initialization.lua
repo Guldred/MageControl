@@ -26,8 +26,8 @@ MageControl.Initialization = {
         
         MageControl.Logger.info("Starting MageControl initialization...", "Initialization")
         
-        -- Step 1: Initialize core systems
-        MageControl.ConfigManager.initialize()
+        -- Step 1: Core systems are initialized automatically by the module system
+        -- (ConfigManager.initialize() is called when the module is loaded)
         
         -- Step 2: Execute initialization steps in dependency order
         MageControl.Initialization._executeSteps()
