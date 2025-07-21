@@ -106,3 +106,24 @@ SlashCmdList["MAGECONTROL"] = function(msg)
         MageControl.Logger.error("Command execution failed: " .. command)
     end
 end
+
+-- Utility function to get inventory item cooldown in seconds (WoW 1.12.1 compatible)
+MC.getInventoryItemCooldownInSeconds = function(slot)
+    if not slot then
+        return 0
+    end
+    
+    local start, cooldown, enabled = GetInventoryItemCooldown("player", slot)
+    
+    -- If item is not enabled or no cooldown, return 0
+    if not enabled or enabled ~= 1 or not cooldown or cooldown == 0 then
+        return 0
+    end
+    
+    -- Calculate remaining cooldown time
+    local currentTime = GetTime()
+    local remainingTime = (start + cooldown) - currentTime
+    
+    -- Return remaining time or 0 if cooldown has expired
+    return math.max(0, remainingTime)
+end

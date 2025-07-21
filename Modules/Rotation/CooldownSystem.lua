@@ -14,19 +14,34 @@ end
 
 -- Activate priority action (trinkets and Arcane Power)
 CooldownSystem.activatePriorityAction = function()
-    local priorityList = MageControl.ConfigManager.get("trinkets.priorityList") or {}
+    -- Read priority list from MageControlDB (where Priority Panel saves it)
+    local priorityList = MageControlDB.trinkets and MageControlDB.trinkets.priorityList or {}
     
     if table.getn(priorityList) == 0 then
-        MageControl.Logger.debug("No trinket priority list configured", "CooldownSystem")
-        return false
+        -- Initialize with default priority if none exists
+        priorityList = {
+            {name = "Trinket Slot 1", type = "trinket", slot = 13},
+            {name = "Trinket Slot 2", type = "trinket", slot = 14},
+            {name = "Arcane Power", type = "spell", spellName = "Arcane Power"}
+        }
+        MageControl.Logger.debug("Using default trinket priority list", "CooldownSystem")
     end
 
+    -- Map priority list items to MC.cooldownActions keys
     for i, priorityItem in ipairs(priorityList) do
-        if CooldownSystem._shouldActivateItem(priorityItem) then
-            local success = CooldownSystem._activateItem(priorityItem)
-            if success then
-                MageControl.Logger.debug("Activated priority item: " .. priorityItem.name, "CooldownSystem")
+        local actionKey = CooldownSystem._getActionKey(priorityItem)
+        if actionKey then
+            local cooldownAction = MC.cooldownActions[actionKey]
+            if cooldownAction and cooldownAction.isAvailable() then
+                MageControl.Logger.debug("Activating priority item: " .. priorityItem.name, "CooldownSystem")
+                cooldownAction.execute()
                 return true
+            else
+                if cooldownAction then
+                    MageControl.Logger.debug("Priority item not available: " .. priorityItem.name, "CooldownSystem")
+                else
+                    MageControl.Logger.debug("No action defined for: " .. priorityItem.name, "CooldownSystem")
+                end
             end
         end
     end
@@ -35,82 +50,23 @@ CooldownSystem.activatePriorityAction = function()
     return false
 end
 
--- Check if an item should be activated
-CooldownSystem._shouldActivateItem = function(item)
-    if not item or not item.slot then
-        return false
+-- Map priority list item to MC.cooldownActions key
+CooldownSystem._getActionKey = function(item)
+    if not item or not item.type then
+        return nil
     end
-
-    -- Check if item is ready (not on cooldown)
-    local cooldownRemaining = MC.getInventoryItemCooldownInSeconds(item.slot)
-    if cooldownRemaining > 0 then
-        MageControl.Logger.debug("Item " .. (item.name or "unknown") .. " on cooldown: " .. cooldownRemaining .. "s", "CooldownSystem")
-        return false
-    end
-
-    -- Check mana threshold if configured
-    if item.manaThreshold then
-        local currentMana = UnitMana("player")
-        local maxMana = UnitManaMax("player")
-        local manaPercent = (currentMana / maxMana) * 100
-        
-        if manaPercent < item.manaThreshold then
-            MageControl.Logger.debug("Mana too low for " .. (item.name or "unknown") .. ": " .. manaPercent .. "%", "CooldownSystem")
-            return false
+    
+    if item.type == "trinket" then
+        if item.slot == 13 then
+            return "TRINKET1"
+        elseif item.slot == 14 then
+            return "TRINKET2"
         end
+    elseif item.type == "spell" and item.name == "Arcane Power" then
+        return "ARCANE_POWER"
     end
-
-    -- Check health threshold if configured
-    if item.healthThreshold then
-        local currentHealth = UnitHealth("player")
-        local maxHealth = UnitHealthMax("player")
-        local healthPercent = (currentHealth / maxHealth) * 100
-        
-        if healthPercent < item.healthThreshold then
-            MageControl.Logger.debug("Health too low for " .. (item.name or "unknown") .. ": " .. healthPercent .. "%", "CooldownSystem")
-            return false
-        end
-    end
-
-    -- Check combat state if required
-    if item.combatOnly and not UnitAffectingCombat("player") then
-        MageControl.Logger.debug("Not in combat for combat-only item: " .. (item.name or "unknown"), "CooldownSystem")
-        return false
-    end
-
-    return true
-end
-
--- Activate an item
-CooldownSystem._activateItem = function(item)
-    if not item then
-        return false
-    end
-
-    local success, error = MageControl.ErrorHandler.safeCall(
-        function()
-            if item.type == "trinket" and item.slot then
-                UseInventoryItem(item.slot)
-                MageControl.Logger.info("Used trinket: " .. (item.name or "slot " .. item.slot), "CooldownSystem")
-            elseif item.type == "spell" and item.spellName then
-                QueueSpellByName(item.spellName)
-                MageControl.Logger.info("Cast spell: " .. item.spellName, "CooldownSystem")
-            else
-                MageControl.Logger.warn("Unknown item type or missing data: " .. (item.name or "unknown"), "CooldownSystem")
-                return false
-            end
-            return true
-        end,
-        MageControl.ErrorHandler.TYPES.ITEM,
-        {module = "CooldownSystem", item = item.name or "unknown"}
-    )
-
-    if not success then
-        MageControl.Logger.error("Failed to activate item: " .. tostring(error), "CooldownSystem")
-        return false
-    end
-
-    return true
+    
+    return nil
 end
 
 -- Get trinket cooldown information
@@ -153,8 +109,12 @@ CooldownSystem.hasPriorityItemsReady = function()
     local priorityList = MageControl.ConfigManager.get("trinkets.priorityList") or {}
     
     for i, item in ipairs(priorityList) do
-        if CooldownSystem._shouldActivateItem(item) then
-            return true
+        local actionKey = CooldownSystem._getActionKey(item)
+        if actionKey then
+            local cooldownAction = MC.cooldownActions[actionKey]
+            if cooldownAction and cooldownAction.isAvailable() then
+                return true
+            end
         end
     end
     
@@ -167,8 +127,12 @@ CooldownSystem.getStats = function()
     local readyCount = 0
     
     for i, item in ipairs(priorityList) do
-        if CooldownSystem._shouldActivateItem(item) then
-            readyCount = readyCount + 1
+        local actionKey = CooldownSystem._getActionKey(item)
+        if actionKey then
+            local cooldownAction = MC.cooldownActions[actionKey]
+            if cooldownAction and cooldownAction.isAvailable() then
+                readyCount = readyCount + 1
+            end
         end
     end
     

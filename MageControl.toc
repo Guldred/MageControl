@@ -32,6 +32,10 @@ Data\SpellData.lua
 Data\BuffData.lua
 Data\ImmunityData.lua
 
+# UI Framework (new optimized structure)
+UI\Framework\UIFramework.lua
+UI\Framework\TabManager.lua
+
 # UI Components
 UI\Components\Button.lua
 UI\Components\Slider.lua
@@ -41,15 +45,8 @@ UI\Components\PriorityList.lua
 UI\BuffDisplay.lua
 UI\ActionDisplay.lua
 
-# UI Options (new modular structure)
-UI\Options\SpellSlotDetector.lua
-UI\Options\SetupPanel.lua
-UI\Options\PriorityPanel.lua
-UI\Options\SettingsPanel.lua
+# UI Options (optimized structure)
 UI\Options\OptionsManager.lua
-
-# UI Legacy
-UI\OptionsFrame.lua
 
 # Modules
 Modules\BuffTracker.lua

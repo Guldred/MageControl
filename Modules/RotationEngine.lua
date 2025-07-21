@@ -318,19 +318,19 @@ MC.arcaneIncantagos = function()
     end
 end
 
-MC.activateTrinketAndAP = function()
-    if not MageControlDB.cooldownPriorityMap then
-        MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER" }
-    end
-
-    for i, priorityKey in ipairs(MageControlDB.cooldownPriorityMap) do
-        local cooldownAction = MC.cooldownActions[priorityKey]
-        if cooldownAction and cooldownAction.isAvailable() then
-            cooldownAction.execute()
-            return true
-        end
-    end
-    
-    return false
-end
-
+-- Legacy function removed - now handled by RotationManager and CooldownSystem modules
+-- MC.activateTrinketAndAP = function()
+--     if not MageControlDB.cooldownPriorityMap then
+--         MageControlDB.cooldownPriorityMap = { "TRINKET1", "TRINKET2", "ARCANE_POWER" }
+--     end
+-- 
+--     for i, priorityKey in ipairs(MageControlDB.cooldownPriorityMap) do
+--         local cooldownAction = MC.cooldownActions[priorityKey]
+--         if cooldownAction and cooldownAction.isAvailable() then
+--             cooldownAction.execute()
+--             return true
+--         end
+--     end
+--     
+--     return false
+-- end

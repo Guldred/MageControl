@@ -45,7 +45,11 @@ MageControl.ConfigManager = {
         
         -- Trinket and cooldown settings
         trinkets = {
-            priorityList = {}
+            priorityList = {
+                {type = "trinket", slot = 13, name = "Trinket Slot 1", id = "trinket1"},
+                {type = "trinket", slot = 14, name = "Trinket Slot 2", id = "trinket2"},
+                {type = "spell", name = "Arcane Power", spellId = 12042, id = "arcane_power"}
+            }
         },
         
         -- Missile settings
@@ -73,11 +77,40 @@ MageControl.ConfigManager = {
         -- Ensure saved variables exist
         MageControlDB = MageControlDB or {}
         
+        -- Debug: Log what's in MageControlDB before merge
+        if MageControlDB.trinkets and MageControlDB.trinkets.priorityList then
+            MageControl.Logger.debug("Found saved trinkets.priorityList with " .. table.getn(MageControlDB.trinkets.priorityList) .. " items", "ConfigManager")
+        else
+            MageControl.Logger.debug("No saved trinkets.priorityList found, will use defaults", "ConfigManager")
+        end
+        
+        -- Special handling for trinkets.priorityList to preserve user settings
+        local savedTrinketList = nil
+        if MageControlDB.trinkets and MageControlDB.trinkets.priorityList and table.getn(MageControlDB.trinkets.priorityList) > 0 then
+            savedTrinketList = MageControlDB.trinkets.priorityList
+            MageControl.Logger.debug("Preserving user's saved trinket priority list", "ConfigManager")
+        end
+        
         -- Merge defaults with saved configuration
         MageControl.ConfigManager.current = MageControl.ConfigManager._deepMerge(
             MageControl.ConfigManager.defaults,
             MageControlDB
         )
+        
+        -- Restore saved trinket list if it existed (prevent overwrite by defaults)
+        if savedTrinketList then
+            MageControl.ConfigManager.current.trinkets.priorityList = savedTrinketList
+            MageControl.Logger.debug("Restored user's trinket priority list", "ConfigManager")
+        end
+        
+        -- Debug: Log what's in current after merge
+        local currentList = MageControl.ConfigManager.current.trinkets.priorityList
+        if currentList then
+            MageControl.Logger.debug("After merge, trinkets.priorityList has " .. table.getn(currentList) .. " items", "ConfigManager")
+            for i, item in ipairs(currentList) do
+                MageControl.Logger.debug("  Priority " .. i .. ": " .. (item.name or "unknown"), "ConfigManager")
+            end
+        end
         
         -- Validate configuration
         MageControl.ConfigManager._validateConfig()
@@ -138,6 +171,18 @@ MageControl.ConfigManager = {
         savedCurrent[finalKey] = value
         
         MageControl.Logger.debug("Configuration updated: " .. path .. " = " .. tostring(value), "ConfigManager")
+        
+        -- Debug: Log what's in trinkets.priorityList after set
+        if path == "trinkets.priorityList" then
+            local currentList = MageControl.ConfigManager.current.trinkets.priorityList
+            if currentList then
+                MageControl.Logger.debug("After set, trinkets.priorityList has " .. table.getn(currentList) .. " items", "ConfigManager")
+                for i, item in ipairs(currentList) do
+                    MageControl.Logger.debug("  Priority " .. i .. ": " .. (item.name or "unknown"), "ConfigManager")
+                end
+            end
+        end
+        
         return true
     end,
     
