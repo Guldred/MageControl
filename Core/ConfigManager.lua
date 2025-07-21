@@ -43,6 +43,22 @@ MageControl.ConfigManager = {
             enableAutoRotation = true
         },
         
+        -- Trinket and cooldown settings
+        trinkets = {
+            priorityList = {}
+        },
+        
+        -- Missile settings
+        missiles = {
+            count = 6,
+            lagBuffer = 0.05
+        },
+        
+        -- Buff settings
+        buffs = {
+            cacheMaxAge = 0.1
+        },
+        
         -- Constants
         constants = {
             GLOBAL_COOLDOWN_IN_SECONDS = 1.5

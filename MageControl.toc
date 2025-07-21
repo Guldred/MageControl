@@ -16,6 +16,11 @@ Core\ModuleSystem.lua
 Core\ModuleRegistration.lua
 Core\Initialization.lua
 
+# Core files - New Modular Structure
+Core\StateManager.lua
+Core\UpdateManager.lua
+Core\ActionManager.lua
+
 # Core files - Legacy
 Core\Constants.lua
 Core\Utils.lua
@@ -48,4 +53,13 @@ UI\OptionsFrame.lua
 
 # Modules
 Modules\BuffTracker.lua
+
+# Rotation Modules (new modular structure)
+Modules\Rotation\ConditionChecker.lua
+Modules\Rotation\ActionHandler.lua
+Modules\Rotation\CooldownSystem.lua
+Modules\Rotation\PrioritySystem.lua
+Modules\Rotation\RotationManager.lua
+
+# Modules Legacy
 Modules\RotationEngine.lua
