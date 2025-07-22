@@ -112,15 +112,11 @@ end
 -- Queue Arcane Explosion
 ActionHandler.queueArcaneExplosion = function()
     local success, error = MageControl.ErrorHandler.safeCall(
-        function()
-            if MC.queueArcaneExplosion then
-                MC.queueArcaneExplosion()
-            else
+            function()
                 QueueSpellByName("Arcane Explosion")
-            end
-        end,
-        MageControl.ErrorHandler.TYPES.SPELL,
-        {module = "ActionHandler", spell = "Arcane Explosion"}
+            end,
+            MageControl.ErrorHandler.TYPES.SPELL,
+            {module = "ActionHandler", spell = "Arcane Explosion"}
     )
     
     if success then
