@@ -24,8 +24,7 @@ MC.buffDisplay = {
         "Mind Quickening",
         "Enlightened State",
         "Arcane Rupture",
-        "Wisdom of the Mak'aru",
-        "Arcane Surge"
+        "Wisdom of the Mak'aru"
     },
 
     defaultPositions = {
@@ -33,8 +32,7 @@ MC.buffDisplay = {
         ["Mind Quickening"] = { x = 100, y = -140 },
         ["Enlightened State"] = { x = 100, y = -180 },
         ["Arcane Rupture"] = { x = 100, y = -220 },
-        ["Wisdom of the Mak'aru"] = { x = 100, y = -260 },
-        ["Arcane Surge"] = { x = 100, y = -300 }
+        ["Wisdom of the Mak'aru"] = { x = 100, y = -260 }
     }
 }
 

@@ -196,11 +196,17 @@ OptionsManager._createSetupPanel = function(panel)
         if MC.lockFrames then
             MC.lockFrames()
         end
+        if MC.lockActionFrames then
+            MC.lockActionFrames()
+        end
     end)
     
     unlockButton:SetScript("OnClick", function()
         if MC.unlockFrames then
             MC.unlockFrames()
+        end
+        if MC.unlockActionFrames then
+            MC.unlockActionFrames()
         end
     end)
     
