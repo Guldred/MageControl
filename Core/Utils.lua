@@ -298,10 +298,19 @@ MC.getCurrentHasteValue = function()
         [MC.BUFF_INFO.SULFURON_BLAZE.name] = 5
     }
 
+    local activeBuffs = {}
     for buffName, buffHaste in pairs(hasteBuffs) do
-        if MC.findBuff(MC.CURRENT_BUFFS, buffName) ~= nil then
+        local buff = MC.findBuff(MC.CURRENT_BUFFS, buffName)
+        if buff ~= nil then
             hastePercent = hastePercent + buffHaste
+            table.insert(activeBuffs, buffName .. " (+" .. buffHaste .. "%)")
         end
+    end
+
+    if table.getn(activeBuffs) > 0 then
+        MC.debugPrint("Active haste buffs: " .. table.concat(activeBuffs, ", ") .. " | Total haste: " .. hastePercent .. "%")
+    else
+        MC.debugPrint("No haste buffs active | Base haste: " .. hastePercent .. "%")
     end
 
     return hastePercent
@@ -313,7 +322,12 @@ end
     @return boolean: True if high haste is active
 ]]
 MC.isHighHasteActive = function()
-    local isAboveHasteThreshold = MC.getCurrentHasteValue() > MageControlDB.haste.HASTE_THRESHOLD
+    local currentHaste = MC.getCurrentHasteValue()
+    local threshold = MageControlDB.haste.HASTE_THRESHOLD
+    local isAboveHasteThreshold = currentHaste >= threshold
+    
+    MC.debugPrint("High haste check: " .. currentHaste .. "% >= " .. threshold .. "% = " .. (isAboveHasteThreshold and "YES" or "NO"))
+    
     return isAboveHasteThreshold
 end
 
