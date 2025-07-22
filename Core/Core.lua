@@ -146,11 +146,18 @@ MC.safeQueueSpell = function(spellName, buffs, buffStates)
 end
 
 MC.queueArcaneExplosion = function()
-    local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - MC.state.globalCooldownStart)
-    if(gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD) then
-        local buffs = MC.CURRENT_BUFFS
-        local buffStates = MC.getCurrentBuffs(buffs)
-        MC.safeQueueSpell("Arcane Explosion", buffs, buffStates)
+    -- Delegate to ActionManager for proper timing logic
+    local actionManager = MageControl.ModuleSystem.getModule("ActionManager")
+    if actionManager then
+        return actionManager.queueArcaneExplosion()
+    else
+        -- Fallback to old logic if ActionManager not available
+        local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - MC.state.globalCooldownStart)
+        if(gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD) then
+            local buffs = MC.CURRENT_BUFFS
+            local buffStates = MC.getCurrentBuffs(buffs)
+            MC.safeQueueSpell("Arcane Explosion", buffs, buffStates)
+        end
     end
 end
 

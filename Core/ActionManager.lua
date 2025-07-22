@@ -7,6 +7,11 @@ MageControl.Core = MageControl.Core or {}
 -- Create the ActionManager module
 local ActionManager = MageControl.createModule("ActionManager", {"StateManager", "ConfigManager", "Logger"})
 
+-- Track last Arcane Explosion cast time for proper GCD timing
+local lastArcaneExplosionCastTime = 0
+local ARCANE_EXPLOSION_GCD = 1.5 -- GCD duration for Arcane Explosion
+local ARCANE_EXPLOSION_QUEUE_THRESHOLD = 0.75 -- Can queue when this much time remains on GCD
+
 -- Initialize the action manager
 ActionManager.initialize = function()
     ActionManager._initializeSettings()
@@ -128,14 +133,35 @@ ActionManager.queueArcaneExplosion = function()
         return false
     end
     
-    local gcdRemaining = MC.GLOBAL_COOLDOWN_IN_SECONDS - (GetTime() - stateManager.state.globalCooldownStart)
-    if gcdRemaining < MC.TIMING.GCD_REMAINING_THRESHOLD then
-        local buffs = stateManager.currentBuffs
-        local buffStates = MC.getCurrentBuffs(buffs)
-        return ActionManager.safeQueueSpell("Arcane Explosion", buffs, buffStates)
+    local currentTime = GetTime()
+    local timeSinceLastCast = currentTime - lastArcaneExplosionCastTime
+    local gcdRemaining = ARCANE_EXPLOSION_GCD - timeSinceLastCast
+    
+    MageControl.Logger.debug(string.format(
+        "Arcane Explosion queue attempt: currentTime=%.3f, lastCastTime=%.3f, timeSince=%.3f, gcdRemaining=%.3f, threshold=%.3f",
+        currentTime, lastArcaneExplosionCastTime, timeSinceLastCast, gcdRemaining, ARCANE_EXPLOSION_QUEUE_THRESHOLD
+    ), "ActionManager")
+    
+    if timeSinceLastCast < ARCANE_EXPLOSION_GCD - ARCANE_EXPLOSION_QUEUE_THRESHOLD then
+        MageControl.Logger.debug(string.format(
+            "Arcane Explosion blocked: GCD remaining %.3fs > threshold %.3fs", 
+            gcdRemaining, ARCANE_EXPLOSION_QUEUE_THRESHOLD
+        ), "ActionManager")
+        return false
     end
     
-    MageControl.Logger.debug("GCD remaining too high for Arcane Explosion: " .. gcdRemaining, "ActionManager")
+    local buffs = stateManager.currentBuffs
+    local buffStates = MC.getCurrentBuffs(buffs)
+    if ActionManager.safeQueueSpell("Arcane Explosion", buffs, buffStates) then
+        lastArcaneExplosionCastTime = currentTime
+        MageControl.Logger.debug(string.format(
+            "Arcane Explosion queued successfully at time %.3f", 
+            currentTime
+        ), "ActionManager")
+        return true
+    end
+    
+    MageControl.Logger.debug("Arcane Explosion failed to queue (safeQueueSpell returned false)", "ActionManager")
     return false
 end
 

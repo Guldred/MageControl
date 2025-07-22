@@ -169,7 +169,14 @@ MageControl.ModuleSystem.registerModule("ActionHandler", ActionHandler)
 
 -- Backward compatibility
 MC.queueArcaneExplosion = function()
-    return ActionHandler.queueArcaneExplosion()
+    -- Delegate to ActionManager for proper timing logic
+    local actionManager = MageControl.ModuleSystem.getModule("ActionManager")
+    if actionManager then
+        return actionManager.queueArcaneExplosion()
+    else
+        -- Fallback to ActionHandler if ActionManager not available
+        return ActionHandler.queueArcaneExplosion()
+    end
 end
 
 -- Export for other modules
