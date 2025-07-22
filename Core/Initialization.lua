@@ -139,6 +139,16 @@ MageControl.Initialization = {
             MageControl.UI.initialize()
         end
         
+        -- Initialize buff frames (legacy compatibility)
+        if MC.initBuffFrames then
+            MC.initBuffFrames()
+        end
+        
+        -- Initialize action frames (legacy compatibility)
+        if MC.initActionFrames then
+            MC.initActionFrames()
+        end
+        
         -- Start update cycle
         if MageControl.UpdateManager and MageControl.UpdateManager.start then
             MageControl.UpdateManager.start()
