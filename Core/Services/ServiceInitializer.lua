@@ -9,10 +9,10 @@ local ServiceInitializer = {}
 
 -- Service initialization order (dependencies first)
 ServiceInitializer.INITIALIZATION_ORDER = {
-    "WoWApiService",    -- No dependencies
     "DataRepository",   -- No dependencies  
     "EventService"      -- Depends on UpdateManager (optional)
     -- RotationService removed - was dead code, replaced by direct RotationEngine.lua
+    -- WoWApiService removed - redundant with Core/WoWApi.lua direct access module
 }
 
 -- Initialize all services in proper dependency order
@@ -56,9 +56,7 @@ end
 
 -- Helper function to get services directly (no registry lookup needed)
 ServiceInitializer._getServiceDirectly = function(serviceName)
-    if serviceName == "WoWApiService" then
-        return MageControl.Services.WoWApi
-    elseif serviceName == "DataRepository" then
+    if serviceName == "DataRepository" then
         return MageControl.Services.Data
     elseif serviceName == "EventService" then
         return MageControl.Services.Events
@@ -71,9 +69,7 @@ ServiceInitializer._initializeService = function(serviceName)
     local service = nil
     
     -- Direct access to services instead of registry lookup to avoid circular dependency
-    if serviceName == "WoWApiService" then
-        service = MageControl.Services.WoWApi
-    elseif serviceName == "DataRepository" then
+    if serviceName == "DataRepository" then
         service = MageControl.Services.Data
     elseif serviceName == "EventService" then
         service = MageControl.Services.Events
@@ -134,18 +130,8 @@ end
 
 -- Validate that services implement their required interfaces
 ServiceInitializer._validateServiceInterfaces = function(results)
-    -- Validate WoW API Service
-    local wowApiService = MageControl.Services.WoWApi
-    if wowApiService then
-        local requiredMethods = {"getPlayerMana", "getPlayerMaxMana", "castSpellByName", "useAction", "getCurrentTime"}
-        for i, method in ipairs(requiredMethods) do
-            if not wowApiService[method] then
-                results.WoWApiService.missingMethods = results.WoWApiService.missingMethods or {}
-                table.insert(results.WoWApiService.missingMethods, method)
-                MageControl.Logger.error("WoWApiService missing required method: " .. method, "ServiceInitializer")
-            end
-        end
-    end
+    -- WoWApiService validation removed - now using Core/WoWApi.lua direct access module
+    -- Validation for WoW API access moved to direct MageControl.WoWApi module
     
     -- Validate Data Repository
     local dataRepo = MageControl.Services.Data

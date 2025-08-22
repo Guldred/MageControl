@@ -21,8 +21,7 @@ Core\WoWApi.lua
 Core\ConfigData.lua
 Core\RotationLogic.lua
 
-# Core files - Remaining Services (Simplified - ServiceRegistry.lua eliminated)
-Core\Services\WoWApiService.lua
+# Core files - Remaining Services (Simplified - ServiceRegistry.lua & WoWApiService.lua eliminated)
 Core\Services\DataRepository.lua
 Core\Services\EventService.lua
 Core\Services\ServiceInitializer.lua
