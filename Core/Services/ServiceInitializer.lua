@@ -11,8 +11,8 @@ local ServiceInitializer = {}
 ServiceInitializer.INITIALIZATION_ORDER = {
     "WoWApiService",    -- No dependencies
     "DataRepository",   -- No dependencies  
-    "EventService",     -- Depends on UpdateManager (optional)
-    "RotationService"   -- Depends on all above services
+    "EventService"      -- Depends on UpdateManager (optional)
+    -- RotationService removed - was dead code, replaced by direct RotationEngine.lua
 }
 
 -- Initialize all services in proper dependency order
@@ -42,7 +42,7 @@ ServiceInitializer.initializeAll = function()
     MageControl.Logger.info("Service initialization complete: " .. successCount .. "/" .. totalServices .. " services initialized", "ServiceInitializer")
     
     -- Publish initialization complete event
-    local eventService = MageControl.Services.Registry.get("EventService")
+    local eventService = MageControl.Services.Events
     if eventService then
         eventService.publish(eventService.EVENTS.ADDON_INITIALIZED, {
             serviceResults = initializationResults,
@@ -52,6 +52,18 @@ ServiceInitializer.initializeAll = function()
     end
     
     return successCount == totalServices
+end
+
+-- Helper function to get services directly (no registry lookup needed)
+ServiceInitializer._getServiceDirectly = function(serviceName)
+    if serviceName == "WoWApiService" then
+        return MageControl.Services.WoWApi
+    elseif serviceName == "DataRepository" then
+        return MageControl.Services.Data
+    elseif serviceName == "EventService" then
+        return MageControl.Services.Events
+    end
+    return nil
 end
 
 -- Initialize a specific service
@@ -65,8 +77,7 @@ ServiceInitializer._initializeService = function(serviceName)
         service = MageControl.Services.Data
     elseif serviceName == "EventService" then
         service = MageControl.Services.Events
-    elseif serviceName == "RotationService" then
-        service = MageControl.Services.Rotation
+    -- RotationService removed - was dead code
     end
     
     if not service then
@@ -101,7 +112,7 @@ ServiceInitializer.validateDependencies = function()
     
     -- Check that all required services are registered
     for i, serviceName in ipairs(ServiceInitializer.INITIALIZATION_ORDER) do
-        local service = MageControl.Services.Registry.get(serviceName)
+        local service = ServiceInitializer._getServiceDirectly(serviceName)
         local isValid = service ~= nil
         
         validationResults[serviceName] = {
@@ -124,7 +135,7 @@ end
 -- Validate that services implement their required interfaces
 ServiceInitializer._validateServiceInterfaces = function(results)
     -- Validate WoW API Service
-    local wowApiService = MageControl.Services.Registry.get("WoWApiService")
+    local wowApiService = MageControl.Services.WoWApi
     if wowApiService then
         local requiredMethods = {"getPlayerMana", "getPlayerMaxMana", "castSpellByName", "useAction", "getCurrentTime"}
         for i, method in ipairs(requiredMethods) do
@@ -137,7 +148,7 @@ ServiceInitializer._validateServiceInterfaces = function(results)
     end
     
     -- Validate Data Repository
-    local dataRepo = MageControl.Services.Registry.get("DataRepository")
+    local dataRepo = MageControl.Services.Data
     if dataRepo then
         local requiredMethods = {"getConfig", "setConfig", "getTrinketPriority", "getMinManaForArcanePower"}
         for i, method in ipairs(requiredMethods) do
@@ -150,7 +161,7 @@ ServiceInitializer._validateServiceInterfaces = function(results)
     end
     
     -- Validate Event Service
-    local eventService = MageControl.Services.Registry.get("EventService")
+    local eventService = MageControl.Services.Events
     if eventService then
         local requiredMethods = {"subscribe", "publish", "EVENTS"}
         for i, method in ipairs(requiredMethods) do
@@ -168,7 +179,7 @@ ServiceInitializer.getInitializationStatus = function()
     local status = {}
     
     for i, serviceName in ipairs(ServiceInitializer.INITIALIZATION_ORDER) do
-        local service = MageControl.Services.Registry.get(serviceName)
+        local service = ServiceInitializer._getServiceDirectly(serviceName)
         status[serviceName] = {
             registered = service ~= nil,
             initialized = service and service._initialized == true
@@ -185,7 +196,7 @@ ServiceInitializer.shutdownAll = function()
     -- Shutdown in reverse order
     for i = table.getn(ServiceInitializer.INITIALIZATION_ORDER), 1, -1 do
         local serviceName = ServiceInitializer.INITIALIZATION_ORDER[i]
-        local service = MageControl.Services.Registry.get(serviceName)
+        local service = ServiceInitializer._getServiceDirectly(serviceName)
         
         if service and service.shutdown then
             local success, errorMsg = pcall(service.shutdown)
@@ -202,17 +213,17 @@ end
 ServiceInitializer.createServiceFacade = function()
     local facade = {}
     
-    -- WoW API shortcuts
-    facade.api = MageControl.Services.Registry.get("WoWApiService")
+    -- Direct access shortcuts (no service registry needed)
+    facade.api = MageControl.Services.WoWApi
     
     -- Data access shortcuts
-    facade.data = MageControl.Services.Registry.get("DataRepository")
+    facade.data = MageControl.Services.Data
     
     -- Event system shortcuts
-    facade.events = MageControl.Services.Registry.get("EventService")
+    facade.events = MageControl.Services.Events
     
-    -- Business logic shortcuts
-    facade.rotation = MageControl.Services.Registry.get("RotationService")
+    -- Business logic shortcuts (removed dead RotationService)
+    -- facade.rotation = removed - was dead code
     
     -- Convenience methods
     facade.getPlayerManaPercent = function()
