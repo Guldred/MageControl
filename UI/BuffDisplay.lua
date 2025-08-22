@@ -1,5 +1,3 @@
-
-
 local initializeBuffPositions = function()
     if not MageControlDB.buffPositions then
         MageControlDB.buffPositions = {}
@@ -124,7 +122,19 @@ local initializeBuffFrames = function()
 end
 
 local updateBuffDisplay = function(buffName, frame)
-    if not MC or not MC.CURRENT_BUFFS or not MC.buffDisplay.isLocked then return end
+    -- Debug: Check what's preventing updates
+    if not MC then
+        MageControl.Logger.debug("MC not available for buff display", "BuffDisplay")
+        return
+    end
+    if not MC.CURRENT_BUFFS then
+        MageControl.Logger.debug("MC.CURRENT_BUFFS not available for buff display", "BuffDisplay")
+        return
+    end
+    if not MC.buffDisplay.isLocked then
+        -- Frames are unlocked (config mode), don't show real buff data
+        return
+    end
 
     local buff = nil
     for _, buffData in ipairs(MC.CURRENT_BUFFS) do
@@ -210,7 +220,7 @@ MC.BuffDisplay_ToggleLock = function()
 end
 
 MC.BuffDisplay_ResetPositions = function()
-    for buffName, defaultPos in pairs(buffDisplay.defaultPositions) do
+    for buffName, defaultPos in pairs(MC.buffDisplay.defaultPositions) do
         MageControlDB.buffPositions[buffName] = { x = defaultPos.x, y = defaultPos.y }
         if MC.buffDisplay.frames[buffName] then
             MC.buffDisplay.frames[buffName]:ClearAllPoints()

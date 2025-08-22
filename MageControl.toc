@@ -1,14 +1,35 @@
 ## Interface: 11200
-## Title: MageControl
-## Notes: Optimize Arcane Damage
+## Title: |cff7F00FFMageControl|r
+## Notes: |rOptimize |cff7F00FFArcane|r Mage Damage
 ## Author: Guldred, Nolin7777
-## Version: 1.8.1
+## Version: 2.0.0
 ## SavedVariables: MageControlDB
 
 # Main file
 MageControl.lua
 
-# Core files
+# Core files - Module System (load first)
+Core\Logger.lua
+Core\ErrorHandler.lua
+Core\ConfigManager.lua
+Core\ModuleSystem.lua
+Core\ModuleRegistration.lua
+Core\Initialization.lua
+
+# Core files - Service Layer Architecture (Phase 3)
+Core\Services\ServiceRegistry.lua
+Core\Services\WoWApiService.lua
+Core\Services\DataRepository.lua
+Core\Services\EventService.lua
+Core\Services\RotationService.lua
+Core\Services\ServiceInitializer.lua
+
+# Core files - New Modular Structure
+Core\StateManager.lua
+Core\UpdateManager.lua
+Core\ActionManager.lua
+
+# Core files - Legacy
 Core\Constants.lua
 Core\Utils.lua
 Core\Core.lua
@@ -19,6 +40,10 @@ Data\SpellData.lua
 Data\BuffData.lua
 Data\ImmunityData.lua
 
+# UI Framework (new optimized structure)
+UI\Framework\UIFramework.lua
+UI\Framework\TabManager.lua
+
 # UI Components
 UI\Components\Button.lua
 UI\Components\Slider.lua
@@ -27,8 +52,19 @@ UI\Components\PriorityList.lua
 # UI
 UI\BuffDisplay.lua
 UI\ActionDisplay.lua
-UI\OptionsFrame.lua
+
+# UI Options (optimized structure)
+UI\Options\OptionsManager.lua
 
 # Modules
 Modules\BuffTracker.lua
+
+# Rotation Modules (new modular structure)
+Modules\Rotation\ConditionChecker.lua
+Modules\Rotation\ActionHandler.lua
+Modules\Rotation\CooldownSystem.lua
+Modules\Rotation\PrioritySystem.lua
+Modules\Rotation\RotationManager.lua
+
+# Modules Legacy
 Modules\RotationEngine.lua

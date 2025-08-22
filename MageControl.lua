@@ -1,53 +1,160 @@
+-- MageControl Main Entry Point
+-- Updated to use the new module system
+
 SLASH_MAGECONTROL1 = "/magecontrol"
 SLASH_MAGECONTROL2 = "/mc"
 
+-- Initialize saved variables
 MageControlDB = MageControlDB or {}
+
+-- Legacy global namespace (will be phased out)
 MC = MC or {}
 
-SlashCmdList["MAGECONTROL"] = function(msg)
-    local args = {}
-    for word in string.gfind(msg, "%S+") do
-        table.insert(args, string.lower(word))
-    end
+-- Event frame for initialization
+local initFrame = CreateFrame("Frame")
+initFrame:RegisterEvent("ADDON_LOADED")
+initFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-    local command = args[1] or ""
+local addonLoaded = false
+local playerEntered = false
 
-    if command == "explosion" then
-        MC.queueArcaneExplosion()
-    elseif command == "arcane" then
-        MC.arcaneRotation()
-    elseif command == "surge" then
-        MC.stopChannelAndCastSurge()
-    elseif command == "debug" then
-        MC.DEBUG = not MC.DEBUG
-        MC.printMessage("MageControl Debug: " .. (MC.DEBUG and "enabled" or "disabled"))
-    elseif command == "options" or command == "config" then
-        MC.showOptionsMenu()
-    elseif command == "arcaneinc" then
-        MC.arcaneIncantagos()
-    elseif command == "trinket" then
-        MC.activateTrinketAndAP()
-    elseif command == "reset" then
-        MageControlDB.actionBarSlots = {
-            FIREBLAST = MC.DEFAULT_ACTIONBAR_SLOT.FIREBLAST,
-            ARCANE_RUPTURE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_RUPTURE,
-            ARCANE_SURGE = MC.DEFAULT_ACTIONBAR_SLOT.ARCANE_SURGE,
-        }
-        MageControlDB.haste = {
-            BASE_VALUE = MC.HASTE.BASE_VALUE,
-            HASTE_THRESHOLD = MC.HASTE.HASTE_THRESHOLD
-        }
-        MC.BuffDisplay_ResetPositions()
-        MC.printMessage("MageControl: Configuration reset to defaults")
-    else
-        MC.printMessage("MageControl Commands:")
-        MC.printMessage("  /mc arcane - Cast arcane attack sequence")
-        MC.printMessage("  /mc explosion - Queue arcane explosion")
-        MC.printMessage("  /mc options - Show options menu")
-        MC.printMessage("  /mc set <spell> <slot> - Set actionbar slot")
-        MC.printMessage("  /mc show - Show current configuration")
-        MC.printMessage("  /mc reset - Reset to default slots")
-        MC.printMessage("  /mc debug - Toggle debug mode")
+-- Initialize when both events have fired
+local function tryInitialize()
+    if addonLoaded and playerEntered and not MageControl.Initialization.isInitialized() then
+        MageControl.Initialization.initialize()
     end
 end
 
+initFrame:SetScript("OnEvent", function()
+    if event == "ADDON_LOADED" and arg1 == "MageControl" then
+        addonLoaded = true
+        tryInitialize()
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        playerEntered = true
+        tryInitialize()
+    end
+end)
+
+-- Optimized command lookup table for better performance
+local COMMAND_HANDLERS = {
+    explosion = function() MC.queueArcaneExplosion() end,
+    arcane = function() MC.arcaneRotation() end,
+    surge = function() MC.stopChannelAndCastSurge() end,
+    debug = function()
+        local debugEnabled = MageControl.Logger.toggleDebug()
+        MageControl.ConfigManager.set("ui.debugEnabled", debugEnabled)
+    end,
+    options = function() MC.showOptionsMenu() end,
+    config = function() MC.showOptionsMenu() end,
+    
+    -- New properly named cooldown command
+    cooldown = function() MC.activateTrinketAndAP() end,
+    cooldowns = function() MC.activateTrinketAndAP() end,
+    cd = function() MC.activateTrinketAndAP() end,
+    
+    -- Deprecated trinket command with warning
+    trinket = function() 
+        MageControl.Logger.warn("'/mc trinket' is deprecated. Use '/mc cooldown' or '/mc cd' instead.")
+        MageControl.Logger.info("The new command activates trinkets AND Arcane Power based on your priority settings.")
+        MC.activateTrinketAndAP() 
+    end,
+    reset = function()
+        MageControl.ConfigManager.reset()
+        if MC.BuffDisplay_ResetPositions then
+            MC.BuffDisplay_ResetPositions()
+        end
+        MageControl.Logger.info("Configuration reset to defaults")
+    end,
+    status = function()
+        local status = MageControl.Initialization.getStatus()
+        MageControl.Logger.info(string.format("Initialization: %d/%d steps completed (%.1f%%)", 
+            status.completed, status.total, status.percentage))
+        MageControl.Logger.info("Modules loaded: " .. table.getn(MageControl.ModuleSystem.getModuleList()))
+    end,
+    errors = function()
+        local errors = MageControl.ErrorHandler.getErrorHistory()
+        local errorCount = table.getn(errors)
+        if errorCount == 0 then
+            MageControl.Logger.info("No recent errors")
+        else
+            MageControl.Logger.info("Recent errors (" .. errorCount .. "):")
+            local startIndex = math.max(1, errorCount - 5)
+            for i = startIndex, errorCount do
+                local err = errors[i]
+                MageControl.Logger.info("  " .. err.type .. ": " .. err.message)
+            end
+        end
+    end
+}
+
+-- Pre-compiled pattern for better performance
+local WORD_PATTERN = "%S+"
+
+-- Optimized slash command handler
+SlashCmdList["MAGECONTROL"] = function(msg)
+    -- Early exit for uninitialized addon
+    if not MageControl.Initialization.isInitialized() then
+        MageControl.Logger.error("MageControl is not yet initialized. Please wait a moment and try again.")
+        return
+    end
+    
+    -- Optimized argument parsing - only parse first word for command lookup using Lua 5.0 compatible function
+    local command = ""
+    local iterator = string.gfind(msg, WORD_PATTERN)
+    if iterator then
+        command = iterator() or ""
+        command = string.lower(command)
+    end
+
+    -- Use error handling for command execution
+    local success, error = MageControl.ErrorHandler.safeCall(function()
+        local handler = COMMAND_HANDLERS[command]
+        if handler then
+            handler()
+        else
+            -- Show help - cached help text for better performance
+            if not MageControl._helpText then
+                MageControl._helpText = {
+                    "MageControl Commands:",
+                    "  /mc arcane - Cast arcane attack sequence (intelligent boss detection)",
+                    "  /mc explosion - Queue arcane explosion",
+                    "  /mc options - Show options menu",
+                    "  /mc reset - Reset to default configuration",
+                    "  /mc debug - Toggle debug mode",
+                    "  /mc status - Show initialization status",
+                    "  /mc errors - Show recent errors",
+                    "  /mc cooldown - Activate trinkets and Arcane Power",
+                    "  /mc cd - Activate trinkets and Arcane Power"
+                }
+            end
+            for i, line in ipairs(MageControl._helpText) do
+                MageControl.Logger.info(line)
+            end
+        end
+    end, MageControl.ErrorHandler.TYPES.SLASH_COMMAND)
+
+    if not success then
+        MageControl.Logger.error("Command execution failed: " .. tostring(error))
+    end
+end
+
+-- Utility function to get inventory item cooldown in seconds (WoW 1.12.1 compatible)
+MC.getInventoryItemCooldownInSeconds = function(slot)
+    if not slot then
+        return 0
+    end
+    
+    local start, cooldown, enabled = GetInventoryItemCooldown("player", slot)
+    
+    -- If item is not enabled or no cooldown, return 0
+    if not enabled or enabled ~= 1 or not cooldown or cooldown == 0 then
+        return 0
+    end
+    
+    -- Calculate remaining cooldown time
+    local currentTime = GetTime()
+    local remainingTime = (start + cooldown) - currentTime
+    
+    -- Return remaining time or 0 if cooldown has expired
+    return math.max(0, remainingTime)
+end
