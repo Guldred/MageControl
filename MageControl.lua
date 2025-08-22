@@ -48,15 +48,41 @@ local COMMAND_HANDLERS = {
     config = function() MC.showOptionsMenu() end,
     
     -- New properly named cooldown command
-    cooldown = function() MC.activateTrinketAndAP() end,
-    cooldowns = function() MC.activateTrinketAndAP() end,
-    cd = function() MC.activateTrinketAndAP() end,
+    cooldown = function() 
+        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem")
+        if cooldownSystem then
+            cooldownSystem.activatePriorityAction()
+        else
+            MageControl.Logger.error("CooldownSystem module not found")
+        end
+    end,
+    cooldowns = function() 
+        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem")
+        if cooldownSystem then
+            cooldownSystem.activatePriorityAction()
+        else
+            MageControl.Logger.error("CooldownSystem module not found")
+        end
+    end,
+    cd = function() 
+        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem")
+        if cooldownSystem then
+            cooldownSystem.activatePriorityAction()
+        else
+            MageControl.Logger.error("CooldownSystem module not found")
+        end
+    end,
     
     -- Deprecated trinket command with warning
     trinket = function() 
         MageControl.Logger.warn("'/mc trinket' is deprecated. Use '/mc cooldown' or '/mc cd' instead.")
         MageControl.Logger.info("The new command activates trinkets AND Arcane Power based on your priority settings.")
-        MC.activateTrinketAndAP() 
+        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem") 
+        if cooldownSystem then
+            cooldownSystem.activatePriorityAction()
+        else
+            MageControl.Logger.error("CooldownSystem module not found")
+        end
     end,
     reset = function()
         MageControl.ConfigManager.reset()
