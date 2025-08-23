@@ -4,27 +4,8 @@
 MageControl = MageControl or {}
 MageControl.Services = MageControl.Services or {}
 
--- Data Repository Interface
-local IDataRepository = {
-    -- Configuration methods
-    getConfig = function(path, defaultValue) end,
-    setConfig = function(path, value) end,
-    hasConfig = function(path) end,
-    removeConfig = function(path) end,
-    
-    -- Bulk operations
-    getConfigSection = function(section) end,
-    setConfigSection = function(section, data) end,
-    
-    -- Validation and defaults
-    validateConfig = function(path, value, validator) end,
-    ensureDefaults = function(defaults) end,
-    
-    -- Persistence operations
-    save = function() end,
-    reload = function() end,
-    reset = function(section) end
-}
+-- NOTE: Service interface removed for simplified architecture
+-- Direct implementation below - no interface stubs needed
 
 -- Data Repository Implementation
 local DataRepository = {}
@@ -252,9 +233,7 @@ DataRepository.initialize = function()
     MageControl.Logger.debug("Data Repository initialized", "DataRepository")
 end
 
--- Register the service interface and implementation
-MageControl.Services.Registry.registerInterface("IDataRepository", IDataRepository)
-MageControl.Services.Registry.register("DataRepository", DataRepository)
+-- Service registration removed - ServiceInitializer now uses direct access
 
 -- Export for direct access if needed
 MageControl.Services.Data = DataRepository

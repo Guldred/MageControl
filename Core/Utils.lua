@@ -62,24 +62,6 @@ MC.getTalentRank = function(tab, num)
     return rank or 0
 end
 
---[[
-    Optimized action bar slots access with null safety
-    
-    @return table: Action bar slots configuration or empty table
-]]
-MC.getActionBarSlots = function()
-    return MageControlDB.actionBarSlots or {}
-end
-
---[[
-    Optimized immunity check with early exits and conditional logging
-    
-    Checks if current target is immune to specified damage type.
-    Uses early exits for performance and conditional debug logging.
-    
-    @param type string: Immunity type to check (e.g., "ARCANE", "FIRE")
-    @return boolean: True if target is immune to damage type
-]]
 MC.checkImmunity = function(type)
     -- Early exits for performance
     if not type or not MC.CURRENT_TARGET then
@@ -101,22 +83,10 @@ MC.checkImmunity = function(type)
     return isImmune
 end
 
---[[
-    Validates action slot numbers for WoW 1.12.1 compatibility
-    
-    @param slot number: Action slot to validate
-    @return boolean: True if slot is valid (1-120)
-]]
 MC.isValidActionSlot = function(slot)
     return slot and slot > 0 and slot <= 120
 end
 
---[[
-    Optimized spell name normalization for consistent comparisons
-    
-    @param name string: Spell name to normalize
-    @return string: Lowercase spell name or empty string
-]]
 MC.normSpellName = function(name)
     if not name or name == "" then 
         return "" 
@@ -124,15 +94,6 @@ MC.normSpellName = function(name)
     return string.lower(name)
 end
 
---[[
-    Optimized spell cost lookup with persistent caching
-    
-    Caches spell costs permanently since they don't change during gameplay.
-    Uses optimized iteration and early returns for better performance.
-    
-    @param spellName string: Name of spell to get cost for
-    @return number: Mana cost of spell or 0 if not found
-]]
 MC.getSpellCostByName = function(spellName)
     if not spellName then
         return 0
@@ -159,13 +120,6 @@ MC.getSpellCostByName = function(spellName)
     return 0
 end
 
---[[
-    Calculates modified spell mana cost based on current buffs
-    
-    @param spellName string: Name of spell to calculate cost for
-    @param buffStates table: Current buff states
-    @return number: Modified mana cost of spell
-]]
 MC.getModifiedSpellManaCost = function(spellName, buffStates)
     if buffStates and buffStates.clearcasting then
         return 0
@@ -178,12 +132,6 @@ MC.getModifiedSpellManaCost = function(spellName, buffStates)
     return baseCost
 end
 
---[[
-    Retrieves buff name by ID
-    
-    @param buffID number: ID of buff to retrieve name for
-    @return string: Name of buff or "Untracked Buff" if not found
-]]
 MC.getBuffNameByID = function(buffID)
     for _, info in pairs(MC.BUFF_INFO) do
         if info.id == buffID then
@@ -194,13 +142,6 @@ MC.getBuffNameByID = function(buffID)
     return "Untracked Buff"
 end
 
---[[
-    Calculates spell cost as a percentage of current mana
-    
-    @param spellName string: Name of spell to calculate cost for
-    @param buffStates table: Current buff states
-    @return number: Spell cost as a percentage of current mana
-]]
 MC.getSpellCostPercent = function(spellName, buffStates)
     local manaCost = MC.getModifiedSpellManaCost(spellName, buffStates)
     local maxMana = UnitManaMax("player")
@@ -210,23 +151,12 @@ MC.getSpellCostPercent = function(spellName, buffStates)
     return 0
 end
 
---[[
-    Checks if channeling has finished
-    
-    @return boolean: True if channeling has finished
-]]
 MC.checkChannelFinished = function()
     if (MC.state.channelFinishTime < GetTime()) then
         MC.state.isChanneling = false
     end
 end
 
---[[
-    Retrieves current buffs
-    
-    @param buffs table: Current buffs
-    @return table: Current buffs with additional information
-]]
 MC.getCurrentBuffs = function(buffs)
     return {
         clearcasting = MC.findBuff(buffs, MC.BUFF_INFO.CLEARCASTING.name),
@@ -236,13 +166,6 @@ MC.getCurrentBuffs = function(buffs)
     }
 end
 
---[[
-    Checks if action slot is ready and usable within specified time
-    
-    @param slot number: Action slot to check
-    @param seconds number: Time in seconds to check for
-    @return boolean: True if action slot is ready and usable within specified time
-]]
 MC.isActionSlotCooldownReadyAndUsableInSeconds = function(slot, seconds)
     if not MC.isValidActionSlot(slot) then
         return false
@@ -267,12 +190,6 @@ MC.isActionSlotCooldownReadyAndUsableInSeconds = function(slot, seconds)
     return (remaining + seconds) <= 0 or isJustGlobalCooldown
 end
 
---[[
-    Retrieves action slot cooldown in seconds
-    
-    @param slot number: Action slot to retrieve cooldown for
-    @return number: Cooldown in seconds
-]]
 MC.getActionSlotCooldownInSeconds = function(slot)
     if not MC.isValidActionSlot(slot) then
         return 0
@@ -283,11 +200,6 @@ MC.getActionSlotCooldownInSeconds = function(slot)
     return (start + duration) - currentTime
 end
 
---[[
-    Retrieves current haste value
-    
-    @return number: Current haste value
-]]
 MC.getCurrentHasteValue = function()
     local hastePercent = MageControlDB.haste.BASE_VALUE
 
@@ -316,11 +228,6 @@ MC.getCurrentHasteValue = function()
     return hastePercent
 end
 
---[[
-    Checks if high haste is active
-    
-    @return boolean: True if high haste is active
-]]
 MC.isHighHasteActive = function()
     local currentHaste = MC.getCurrentHasteValue()
     local threshold = MageControlDB.haste.HASTE_THRESHOLD
@@ -331,12 +238,6 @@ MC.isHighHasteActive = function()
     return isAboveHasteThreshold
 end
 
---[[
-    Checks if arcane missiles are worth casting
-    
-    @param buffStates table: Current buff states
-    @return boolean: True if arcane missiles are worth casting
-]]
 MC.isMissilesWorthCasting = function(buffStates)
     local ruptureBuff = buffStates.arcaneRupture
 

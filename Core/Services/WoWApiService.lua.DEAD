@@ -4,44 +4,8 @@
 MageControl = MageControl or {}
 MageControl.Services = MageControl.Services or {}
 
--- WoW API Service Interface
-local IWoWApiService = {
-    -- Player state methods
-    getPlayerMana = function() end,
-    getPlayerMaxMana = function() end,
-    getPlayerHealth = function() end,
-    getPlayerMaxHealth = function() end,
-    isPlayerInCombat = function() end,
-    isPlayerChanneling = function() end,
-    getPlayerCastingInfo = function() end,
-    
-    -- Spell and action methods
-    castSpellByName = function(spellName) end,
-    useAction = function(slot) end,
-    useInventoryItem = function(slot) end,
-    getActionCooldown = function(slot) end,
-    getInventoryItemCooldown = function(slot) end,
-    getSpellCooldown = function(spellName) end,
-    hasAction = function(slot) end,
-    getActionInfo = function(slot) end,
-    
-    -- Buff and debuff methods
-    getPlayerBuffs = function() end,
-    getPlayerDebuffs = function() end,
-    hasPlayerBuff = function(buffName) end,
-    getBuffTimeRemaining = function(buffName) end,
-    
-    -- Target methods
-    hasTarget = function() end,
-    getTargetHealth = function() end,
-    isTargetEnemy = function() end,
-    getTargetDistance = function() end,
-    
-    -- Timing methods
-    getCurrentTime = function() end,
-    getGlobalCooldown = function() end,
-    isGlobalCooldownActive = function() end
-}
+-- NOTE: Service interface removed for simplified architecture
+-- Direct implementation below - no interface stubs needed
 
 -- WoW API Service Implementation
 local WoWApiService = {}
@@ -233,9 +197,7 @@ WoWApiService.initialize = function()
     MageControl.Logger.debug("WoW API Service initialized", "WoWApiService")
 end
 
--- Register the service interface and implementation
-MageControl.Services.Registry.registerInterface("IWoWApiService", IWoWApiService)
-MageControl.Services.Registry.register("WoWApiService", WoWApiService)
+-- Service registration removed - ServiceInitializer now uses direct access
 
 -- Export for direct access if needed
 MageControl.Services.WoWApi = WoWApiService

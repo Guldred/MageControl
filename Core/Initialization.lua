@@ -164,9 +164,7 @@ MageControl.Initialization = {
         -- This allows existing code to work while we refactor
         
         -- Config shortcuts
-        MC.getActionBarSlots = function()
-            return MageControl.ConfigManager.get("actionBarSlots")
-        end
+        -- MC.getActionBarSlots() is defined in ConfigManager.lua as single source of truth
         
         -- Logger shortcuts
         MC.printMessage = function(message)
