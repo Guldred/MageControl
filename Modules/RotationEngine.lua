@@ -290,7 +290,9 @@ local function updateGlobalCooldownState()
 end
 
 local function gatherRotationState()
-    local buffs = MC.CURRENT_BUFFS
+    MageControl.Logger.info("gathering state")
+
+    local buffs = MC.getBuffs()
     local spells = MC.getSpellAvailability()
     local buffStates = MC.getCurrentBuffs(buffs)
     local slots = MC.getActionBarSlots()

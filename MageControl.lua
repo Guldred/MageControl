@@ -86,9 +86,8 @@ local COMMAND_HANDLERS = {
     end,
     reset = function()
         MageControl.ConfigManager.reset()
-        if MC.BuffDisplay_ResetPositions then
-            MC.BuffDisplay_ResetPositions()
-        end
+        MC.BuffDisplay_ResetPositions()
+        MC.ActionDisplay_ResetPositions()
         MageControl.Logger.info("Configuration reset to defaults")
     end,
     status = function()
