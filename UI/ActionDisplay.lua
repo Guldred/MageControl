@@ -22,7 +22,7 @@ MC.actionDisplay = {
     },
 
     defaultPositions = {
-        ["Arcane Surge"] = { x = 100, y = -300 }
+        ["Arcane Surge"] = { x = 160, y = -100 }
     },
 
     icons = {
@@ -192,4 +192,16 @@ MC.ActionDisplay_ToggleLock = function()
     else
         DEFAULT_CHAT_FRAME:AddMessage("MageControl: Action-Frame unlocked - Drag to move", 1.0, 1.0, 0.0)
     end
+end
+
+MC.ActionDisplay_ResetPositions = function()
+    MageControlDB.actionPositions = MageControlDB.actionPositions or {}
+    for buffName, defaultPos in pairs(MC.actionDisplay.defaultPositions) do
+        MageControlDB.actionPositions[buffName] = { x = defaultPos.x, y = defaultPos.y }
+        if MC.actionDisplay.frames[buffName] then
+            MC.actionDisplay.frames[buffName]:ClearAllPoints()
+            MC.actionDisplay.frames[buffName]:SetPoint("CENTER", UIParent, "CENTER", defaultPos.x, defaultPos.y)
+        end
+    end
+    DEFAULT_CHAT_FRAME:AddMessage("MageControl: Action-Position reset", 1.0, 1.0, 0.0)
 end

@@ -311,9 +311,7 @@ EventService.initialize = function()
     MageControl.Logger.debug("Event Service initialized", "EventService")
 end
 
--- Register the service interface and implementation
-MageControl.Services.Registry.registerInterface("IEventService", IEventService)
-MageControl.Services.Registry.register("EventService", EventService)
+-- Service registration removed - ServiceInitializer now uses direct access
 
 -- Export for direct access
 MageControl.Services.Events = EventService

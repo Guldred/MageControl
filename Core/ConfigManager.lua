@@ -285,7 +285,14 @@ MageControl.ConfigManager = {
 
 -- Backward compatibility helpers
 MC.getActionBarSlots = function()
-    return MageControl.ConfigManager.get("actionBarSlots") or MageControl.ConfigManager.defaults.actionBarSlots
+    local configSlots = MageControlDB.actionBarSlots
+
+    if not configSlots then
+        MageControlDB.actionBarSlots = MageControl.ConfigManager.defaults.actionBarSlots
+        MageControl.Logger.info("Missing Slots Configuration. Using defaults.", "ConfigManager")
+    end
+
+    return configSlots
 end
 
 MC.DEFAULT_ACTIONBAR_SLOT = MageControl.ConfigManager.defaults.actionBarSlots

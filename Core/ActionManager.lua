@@ -168,6 +168,9 @@ end
 -- Get spell availability information
 ActionManager.getSpellAvailability = function()
     local slots = MC.getActionBarSlots()
+    MageControl.Logger.info("slots.ARCANE_RUPTURE: " .. slots.ARCANE_RUPTURE)
+    MageControl.Logger.info("slots.ARCANE_SURGE: " .. slots.ARCANE_SURGE)
+    MageControl.Logger.info("slots.FIREBLAST: " .. slots.FIREBLAST)
     return {
         arcaneRuptureReady = MC.isActionSlotCooldownReadyAndUsableInSeconds(slots.ARCANE_RUPTURE, 0),
         arcaneSurgeReady = MC.isActionSlotCooldownReadyAndUsableInSeconds(slots.ARCANE_SURGE, 0),

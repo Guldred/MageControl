@@ -220,6 +220,7 @@ MC.BuffDisplay_ToggleLock = function()
 end
 
 MC.BuffDisplay_ResetPositions = function()
+    MageControlDB.buffPositions = MageControlDB.buffPositions or {}
     for buffName, defaultPos in pairs(MC.buffDisplay.defaultPositions) do
         MageControlDB.buffPositions[buffName] = { x = defaultPos.x, y = defaultPos.y }
         if MC.buffDisplay.frames[buffName] then
