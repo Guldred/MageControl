@@ -88,8 +88,9 @@ end
 
 -- Check if Arcane Rupture maintenance is needed
 ConditionChecker.needsArcaneRuptureMaintenance = function(state)
-    return state.spells.arcaneRuptureReady and 
-           not state.missilesWorthCasting and 
+    return state.spells.arcaneRuptureReady and
+    --TODO: Check if recasting rupture is better here. Might add empty debuff time
+           --not state.missilesWorthCasting and
            not MC.state.isCastingArcaneRupture
 end
 

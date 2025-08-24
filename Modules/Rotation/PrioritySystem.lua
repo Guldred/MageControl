@@ -60,7 +60,7 @@ PrioritySystem.getArcaneRotationPriorities = function()
                 return actionHandler.handleArcaneSurge(state)
             end
         },
-        {
+--[[        {
             name = "Clearcasting Missiles",
             condition = function(state)
                 return conditionChecker.shouldCastClearcastingMissiles(state)
@@ -68,7 +68,7 @@ PrioritySystem.getArcaneRotationPriorities = function()
             action = function(state)
                 return actionHandler.handleClearcastingMissiles(state)
             end
-        },
+        },]]
         {
             name = "Arcane Rupture Maintenance",
             condition = function(state)
