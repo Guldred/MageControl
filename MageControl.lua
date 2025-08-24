@@ -7,7 +7,7 @@ SLASH_MAGECONTROL2 = "/mc"
 -- Initialize saved variables
 MageControlDB = MageControlDB or {}
 
--- Legacy global namespace (will be phased out)
+-- Main namespace (consolidated to MC for simplicity)
 MC = MC or {}
 
 -- Event frame for initialization
@@ -20,8 +20,8 @@ local playerEntered = false
 
 -- Initialize when both events have fired
 local function tryInitialize()
-    if addonLoaded and playerEntered and not MageControl.Initialization.isInitialized() then
-        MageControl.Initialization.initialize()
+    if addonLoaded and playerEntered and not MC.Initialization.isInitialized() then
+        MC.Initialization.initialize()
     end
 end
 
@@ -41,72 +41,72 @@ local COMMAND_HANDLERS = {
     arcane = function() MC.arcaneRotation() end,
     surge = function() MC.stopChannelAndCastSurge() end,
     debug = function()
-        local debugEnabled = MageControl.Logger.toggleDebug()
-        MageControl.ConfigManager.set("ui.debugEnabled", debugEnabled)
+        local debugEnabled = MC.Logger.toggleDebug()
+        MC.ConfigManager.set("ui.debugEnabled", debugEnabled)
     end,
     options = function() MC.showOptionsMenu() end,
     config = function() MC.showOptionsMenu() end,
     
     -- New properly named cooldown command
     cooldown = function() 
-        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem")
+        local cooldownSystem = MC.ModuleSystem.getModule("CooldownSystem")
         if cooldownSystem then
             cooldownSystem.activatePriorityAction()
         else
-            MageControl.Logger.error("CooldownSystem module not found")
+            MC.Logger.error("CooldownSystem module not found")
         end
     end,
     cooldowns = function() 
-        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem")
+        local cooldownSystem = MC.ModuleSystem.getModule("CooldownSystem")
         if cooldownSystem then
             cooldownSystem.activatePriorityAction()
         else
-            MageControl.Logger.error("CooldownSystem module not found")
+            MC.Logger.error("CooldownSystem module not found")
         end
     end,
     cd = function() 
-        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem")
+        local cooldownSystem = MC.ModuleSystem.getModule("CooldownSystem")
         if cooldownSystem then
             cooldownSystem.activatePriorityAction()
         else
-            MageControl.Logger.error("CooldownSystem module not found")
+            MC.Logger.error("CooldownSystem module not found")
         end
     end,
     
     -- Deprecated trinket command with warning
     trinket = function() 
-        MageControl.Logger.warn("'/mc trinket' is deprecated. Use '/mc cooldown' or '/mc cd' instead.")
-        MageControl.Logger.info("The new command activates trinkets AND Arcane Power based on your priority settings.")
-        local cooldownSystem = MageControl.ModuleSystem.getModule("CooldownSystem") 
+        MC.Logger.warn("'/mc trinket' is deprecated. Use '/mc cooldown' or '/mc cd' instead.")
+        MC.Logger.info("The new command activates trinkets AND Arcane Power based on your priority settings.")
+        local cooldownSystem = MC.ModuleSystem.getModule("CooldownSystem") 
         if cooldownSystem then
             cooldownSystem.activatePriorityAction()
         else
-            MageControl.Logger.error("CooldownSystem module not found")
+            MC.Logger.error("CooldownSystem module not found")
         end
     end,
     reset = function()
-        MageControl.ConfigManager.reset()
+        MC.ConfigManager.reset()
         MC.BuffDisplay_ResetPositions()
         MC.ActionDisplay_ResetPositions()
-        MageControl.Logger.info("Configuration reset to defaults")
+        MC.Logger.info("Configuration reset to defaults")
     end,
     status = function()
-        local status = MageControl.Initialization.getStatus()
-        MageControl.Logger.info(string.format("Initialization: %d/%d steps completed (%.1f%%)", 
+        local status = MC.Initialization.getStatus()
+        MC.Logger.info(string.format("Initialization: %d/%d steps completed (%.1f%%)", 
             status.completed, status.total, status.percentage))
-        MageControl.Logger.info("Modules loaded: " .. table.getn(MageControl.ModuleSystem.getModuleList()))
+        MC.Logger.info("Modules loaded: " .. table.getn(MC.ModuleSystem.getModuleList()))
     end,
     errors = function()
-        local errors = MageControl.ErrorHandler.getErrorHistory()
+        local errors = MC.ErrorHandler.getErrorHistory()
         local errorCount = table.getn(errors)
         if errorCount == 0 then
-            MageControl.Logger.info("No recent errors")
+            MC.Logger.info("No recent errors")
         else
-            MageControl.Logger.info("Recent errors (" .. errorCount .. "):")
+            MC.Logger.info("Recent errors (" .. errorCount .. "):")
             local startIndex = math.max(1, errorCount - 5)
             for i = startIndex, errorCount do
                 local err = errors[i]
-                MageControl.Logger.info("  " .. err.type .. ": " .. err.message)
+                MC.Logger.info("  " .. err.type .. ": " .. err.message)
             end
         end
     end
@@ -118,8 +118,8 @@ local WORD_PATTERN = "%S+"
 -- Optimized slash command handler
 SlashCmdList["MAGECONTROL"] = function(msg)
     -- Early exit for uninitialized addon
-    if not MageControl.Initialization.isInitialized() then
-        MageControl.Logger.error("MageControl is not yet initialized. Please wait a moment and try again.")
+    if not MC.Initialization.isInitialized() then
+        MC.Logger.error("MageControl is not yet initialized. Please wait a moment and try again.")
         return
     end
     
@@ -132,14 +132,14 @@ SlashCmdList["MAGECONTROL"] = function(msg)
     end
 
     -- Use error handling for command execution
-    local success, error = MageControl.ErrorHandler.safeCall(function()
+    local success, error = MC.ErrorHandler.safeCall(function()
         local handler = COMMAND_HANDLERS[command]
         if handler then
             handler()
         else
             -- Show help - cached help text for better performance
-            if not MageControl._helpText then
-                MageControl._helpText = {
+            if not MC._helpText then
+                MC._helpText = {
                     "MageControl Commands:",
                     "  /mc arcane - Cast arcane attack sequence (intelligent boss detection)",
                     "  /mc explosion - Queue arcane explosion",
@@ -152,14 +152,14 @@ SlashCmdList["MAGECONTROL"] = function(msg)
                     "  /mc cd - Activate trinkets and Arcane Power"
                 }
             end
-            for i, line in ipairs(MageControl._helpText) do
-                MageControl.Logger.info(line)
+            for i, line in ipairs(MC._helpText) do
+                MC.Logger.info(line)
             end
         end
-    end, MageControl.ErrorHandler.TYPES.SLASH_COMMAND)
+    end, MC.ErrorHandler.TYPES.SLASH_COMMAND)
 
     if not success then
-        MageControl.Logger.error("Command execution failed: " .. tostring(error))
+        MC.Logger.error("Command execution failed: " .. tostring(error))
     end
 end
 

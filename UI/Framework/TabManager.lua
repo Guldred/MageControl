@@ -1,12 +1,13 @@
 -- MageControl Tab Manager
 -- Manages tabbed interface system for options and other UI components
 
-MageControl = MageControl or {}
-MageControl.UI = MageControl.UI or {}
-MageControl.UI.Framework = MageControl.UI.Framework or {}
+-- Initialize MC namespace
+MC = MC or {}
+MC.UI = MC.UI or {}
+MC.UI.Framework = MC.UI.Framework or {}
 
 -- Create the TabManager module
-local TabManager = MageControl.createModule("TabManager", {"UIFramework", "Logger"})
+local TabManager = MC.createModule("TabManager", {"UIFramework", "Logger"})
 
 -- Initialize the tab manager
 TabManager.initialize = function()

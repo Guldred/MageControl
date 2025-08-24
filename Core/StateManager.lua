@@ -1,16 +1,16 @@
 -- MageControl State Manager
 -- Manages all addon state including channeling, cooldowns, buffs, and combat state
 
-MageControl = MageControl or {}
-MageControl.Core = MageControl.Core or {}
+MC = MC or {}
+MC.Core = MC.Core or {}
 
 -- Create the StateManager module
-local StateManager = MageControl.createModule("StateManager", {"ConfigManager", "Logger"})
+local StateManager = MC.createModule("StateManager", {"ConfigManager", "Logger"})
 
 -- Initialize the state manager
 StateManager.initialize = function()
     StateManager._initializeState()
-    MageControl.Logger.debug("State Manager initialized", "StateManager")
+    MC.Logger.debug("State Manager initialized", "StateManager")
 end
 
 -- Core addon state
@@ -63,7 +63,7 @@ StateManager.updateChannelingState = function(isChanneling, finishTime, duration
     StateManager.state.channelFinishTime = finishTime or 0
     StateManager.state.channelDurationInSeconds = duration or 0
     
-    MageControl.Logger.debug("Channeling state updated: " .. tostring(isChanneling), "StateManager")
+    MC.Logger.debug("Channeling state updated: " .. tostring(isChanneling), "StateManager")
 end
 
 -- Update global cooldown state
@@ -72,7 +72,7 @@ StateManager.updateGlobalCooldownState = function(active, startTime)
     StateManager.state.globalCooldownStart = startTime or GetTime()
     
     if active then
-        MageControl.Logger.debug("Global cooldown started", "StateManager")
+        MC.Logger.debug("Global cooldown started", "StateManager")
     end
 end
 
@@ -82,7 +82,7 @@ StateManager.updateCastingState = function(spellName, expectedFinishTime)
     StateManager.state.expectedCastFinishTime = expectedFinishTime or 0
     StateManager.state.isCastingArcaneRupture = (spellName == "Arcane Rupture")
     
-    MageControl.Logger.debug("Casting state updated: " .. tostring(spellName), "StateManager")
+    MC.Logger.debug("Casting state updated: " .. tostring(spellName), "StateManager")
 end
 
 -- Update Arcane Surge state
@@ -90,7 +90,7 @@ StateManager.updateSurgeState = function(activeTill)
     StateManager.state.surgeActiveTill = activeTill or 0
     
     if activeTill and activeTill > GetTime() then
-        MageControl.Logger.debug("Arcane Surge active until: " .. activeTill, "StateManager")
+        MC.Logger.debug("Arcane Surge active until: " .. activeTill, "StateManager")
     end
 end
 
@@ -100,7 +100,7 @@ StateManager.updateBuffCache = function(buffs)
     StateManager.state.buffsCacheTime = GetTime()
     StateManager.currentBuffs = buffs or {}
     
-    MageControl.Logger.debug("Buff cache updated with " .. table.getn(StateManager.currentBuffs) .. " buffs", "StateManager")
+    MC.Logger.debug("Buff cache updated with " .. table.getn(StateManager.currentBuffs) .. " buffs", "StateManager")
 end
 
 -- Update target state
@@ -108,14 +108,14 @@ StateManager.updateTargetState = function(targetName)
     StateManager.currentTarget = targetName or ""
     
     if targetName and targetName ~= "" then
-        MageControl.Logger.debug("Target updated: " .. targetName, "StateManager")
+        MC.Logger.debug("Target updated: " .. targetName, "StateManager")
     end
 end
 
 -- Check if buff cache is valid
 StateManager.isBuffCacheValid = function()
     local cacheAge = GetTime() - StateManager.state.buffsCacheTime
-    local maxCacheAge = MageControl.ConfigManager.get("buffs.cacheMaxAge") or 0.1
+    local maxCacheAge = MC.ConfigManager.get("buffs.cacheMaxAge") or 0.1
     
     return StateManager.state.buffsCache and cacheAge < maxCacheAge
 end
@@ -141,7 +141,7 @@ end
 
 -- Reset state (for testing or reinitialization)
 StateManager.resetState = function()
-    MageControl.Logger.info("Resetting addon state", "StateManager")
+    MC.Logger.info("Resetting addon state", "StateManager")
     StateManager._initializeState()
 end
 
@@ -162,7 +162,7 @@ StateManager.validateState = function()
     end
     
     if table.getn(issues) > 0 then
-        MageControl.Logger.error("State validation failed: " .. table.concat(issues, ", "), "StateManager")
+        MC.Logger.error("State validation failed: " .. table.concat(issues, ", "), "StateManager")
         return false, issues
     end
     
@@ -187,7 +187,7 @@ StateManager.getStats = function()
 end
 
 -- Register the module
-MageControl.ModuleSystem.registerModule("StateManager", StateManager)
+MC.ModuleSystem.registerModule("StateManager", StateManager)
 
 -- Backward compatibility
 MC.state = StateManager.state
@@ -196,4 +196,4 @@ MC.CURRENT_TARGET = StateManager.currentTarget
 MC.DEBUG = StateManager.debugMode
 
 -- Export for other modules
-MageControl.Core.StateManager = StateManager
+MC.Core.StateManager = StateManager

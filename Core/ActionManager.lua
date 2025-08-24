@@ -1,11 +1,11 @@
 -- MageControl Action Manager
 -- Manages spell casting, action coordination, timing calculations, and safety checks
 
-MageControl = MageControl or {}
-MageControl.Core = MageControl.Core or {}
+MC = MC or {}
+MC.Core = MC.Core or {}
 
 -- Create the ActionManager module
-local ActionManager = MageControl.createModule("ActionManager", {"StateManager", "ConfigManager", "Logger"})
+local ActionManager = MC.createModule("ActionManager", {"StateManager", "ConfigManager", "Logger"})
 
 -- Track last Arcane Explosion cast time for proper GCD timing
 local lastArcaneExplosionCastTime = 0
@@ -15,7 +15,7 @@ local ARCANE_EXPLOSION_QUEUE_THRESHOLD = 0.75 -- Can queue when this much time r
 -- Initialize the action manager
 ActionManager.initialize = function()
     ActionManager._initializeSettings()
-    MageControl.Logger.debug("Action Manager initialized", "ActionManager")
+    MC.Logger.debug("Action Manager initialized", "ActionManager")
 end
 
 -- Initialize default settings
@@ -55,7 +55,7 @@ ActionManager._initializeSettings = function()
         [3] = 1.0
     }
     MC.TIMING.GCD_BUFFER_FIREBLAST = timingByRank[MC.getTalentRank(2,5)] or 1.5
-    MageControl.Logger.debug("Set Fireblast Timing to " .. tostring(MC.TIMING.GCD_BUFFER_FIREBLAST) .. " seconds", "ActionManager")
+    MC.Logger.debug("Set Fireblast Timing to " .. tostring(MC.TIMING.GCD_BUFFER_FIREBLAST) .. " seconds", "ActionManager")
 end
 
 -- Check if it's safe to cast a spell (mana safety checks)
@@ -78,7 +78,7 @@ ActionManager._isSafeToCast = function(spellName, buffs, buffStates)
     local safetyThreshold = MC.BUFF_INFO.ARCANE_POWER.death_threshold + MC.BUFF_INFO.ARCANE_POWER.safety_buffer
     
     if projectedManaPercent < safetyThreshold then
-        MageControl.Logger.warn(string.format("Spell %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!", 
+        MC.Logger.warn(string.format("Spell %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!", 
                 spellName, projectedManaPercent), "ActionManager")
         MC.printMessage(string.format("|cffff0000MageControl WARNING: %s could drop mana to %.1f%% (Death at 10%%) - BLOCKED!|r",
                 spellName, projectedManaPercent))
@@ -91,45 +91,45 @@ end
 -- Safely queue a spell with all safety checks
 ActionManager.safeQueueSpell = function(spellName, buffs, buffStates)
     if not spellName or spellName == "" then
-        MageControl.Logger.error("Invalid spell name provided", "ActionManager")
+        MC.Logger.error("Invalid spell name provided", "ActionManager")
         MC.printMessage("MageControl: Invalid spell name")
         return false
     end
 
     -- Debug unknown spells
     if MC.getSpellCostByName(spellName) == 0 then
-        MageControl.Logger.debug("Unknown spell in safeQueueSpell: [" .. tostring(spellName) .. "]", "ActionManager")
+        MC.Logger.debug("Unknown spell in safeQueueSpell: [" .. tostring(spellName) .. "]", "ActionManager")
     end
 
     -- Safety check
     if not ActionManager._isSafeToCast(spellName, buffs, buffStates) then
-        MageControl.Logger.debug("Not safe to cast: " .. spellName, "ActionManager")
+        MC.Logger.debug("Not safe to cast: " .. spellName, "ActionManager")
         return false
     end
 
     -- Queue the spell
-    local success, error = MageControl.ErrorHandler.safeCall(
+    local success, error = MC.ErrorHandler.safeCall(
         function()
             QueueSpellByName(spellName)
         end,
-        MageControl.ErrorHandler.TYPES.SPELL,
+        MC.ErrorHandler.TYPES.SPELL,
         {module = "ActionManager", spell = spellName}
     )
     
     if success then
-        MageControl.Logger.debug("Queueing spell: " .. spellName, "ActionManager")
+        MC.Logger.debug("Queueing spell: " .. spellName, "ActionManager")
         return true
     else
-        MageControl.Logger.error("Failed to queue spell " .. spellName .. ": " .. tostring(error), "ActionManager")
+        MC.Logger.error("Failed to queue spell " .. spellName .. ": " .. tostring(error), "ActionManager")
         return false
     end
 end
 
 -- Queue Arcane Explosion with GCD check
 ActionManager.queueArcaneExplosion = function()
-    local stateManager = MageControl.ModuleSystem.getModule("StateManager")
+    local stateManager = MC.ModuleSystem.getModule("StateManager")
     if not stateManager then
-        MageControl.Logger.error("StateManager not found", "ActionManager")
+        MC.Logger.error("StateManager not found", "ActionManager")
         return false
     end
     
@@ -137,13 +137,13 @@ ActionManager.queueArcaneExplosion = function()
     local timeSinceLastCast = currentTime - lastArcaneExplosionCastTime
     local gcdRemaining = ARCANE_EXPLOSION_GCD - timeSinceLastCast
     
-    MageControl.Logger.debug(string.format(
+    MC.Logger.debug(string.format(
         "Arcane Explosion queue attempt: currentTime=%.3f, lastCastTime=%.3f, timeSince=%.3f, gcdRemaining=%.3f, threshold=%.3f",
         currentTime, lastArcaneExplosionCastTime, timeSinceLastCast, gcdRemaining, ARCANE_EXPLOSION_QUEUE_THRESHOLD
     ), "ActionManager")
     
     if timeSinceLastCast < ARCANE_EXPLOSION_GCD - ARCANE_EXPLOSION_QUEUE_THRESHOLD then
-        MageControl.Logger.debug(string.format(
+        MC.Logger.debug(string.format(
             "Arcane Explosion blocked: GCD remaining %.3fs > threshold %.3fs", 
             gcdRemaining, ARCANE_EXPLOSION_QUEUE_THRESHOLD
         ), "ActionManager")
@@ -154,23 +154,23 @@ ActionManager.queueArcaneExplosion = function()
     local buffStates = MC.getCurrentBuffs(buffs)
     if ActionManager.safeQueueSpell("Arcane Explosion", buffs, buffStates) then
         lastArcaneExplosionCastTime = currentTime
-        MageControl.Logger.debug(string.format(
+        MC.Logger.debug(string.format(
             "Arcane Explosion queued successfully at time %.3f", 
             currentTime
         ), "ActionManager")
         return true
     end
     
-    MageControl.Logger.debug("Arcane Explosion failed to queue (safeQueueSpell returned false)", "ActionManager")
+    MC.Logger.debug("Arcane Explosion failed to queue (safeQueueSpell returned false)", "ActionManager")
     return false
 end
 
 -- Get spell availability information
 ActionManager.getSpellAvailability = function()
     local slots = MC.getActionBarSlots()
-    MageControl.Logger.info("slots.ARCANE_RUPTURE: " .. slots.ARCANE_RUPTURE)
-    MageControl.Logger.info("slots.ARCANE_SURGE: " .. slots.ARCANE_SURGE)
-    MageControl.Logger.info("slots.FIREBLAST: " .. slots.FIREBLAST)
+    MC.Logger.info("slots.ARCANE_RUPTURE: " .. slots.ARCANE_RUPTURE)
+    MC.Logger.info("slots.ARCANE_SURGE: " .. slots.ARCANE_SURGE)
+    MC.Logger.info("slots.FIREBLAST: " .. slots.FIREBLAST)
     return {
         arcaneRuptureReady = MC.isActionSlotCooldownReadyAndUsableInSeconds(slots.ARCANE_RUPTURE, 0),
         arcaneSurgeReady = MC.isActionSlotCooldownReadyAndUsableInSeconds(slots.ARCANE_SURGE, 0),
@@ -194,7 +194,7 @@ end
 
 -- Calculate remaining time after current cast finishes
 ActionManager.calculateRemainingTimeAfterCurrentCast = function(time)
-    local stateManager = MageControl.ModuleSystem.getModule("StateManager")
+    local stateManager = MC.ModuleSystem.getModule("StateManager")
     if not stateManager then
         return time
     end
@@ -209,14 +209,14 @@ ActionManager.calculateRemainingTimeAfterCurrentCast = function(time)
         calculatedCooldownAfterCurrentCast = 0
     end
     
-    MageControl.Logger.debug("Cooldown right now: " .. time .. " --- Cooldown after current cast: " .. calculatedCooldownAfterCurrentCast .. " seconds", "ActionManager")
+    MC.Logger.debug("Cooldown right now: " .. time .. " --- Cooldown after current cast: " .. calculatedCooldownAfterCurrentCast .. " seconds", "ActionManager")
     return calculatedCooldownAfterCurrentCast
 end
 
 -- Calculate Arcane Missile fire times
 ActionManager.calculateArcaneMissileFireTimes = function(duration)
-    local NUM_MISSILES = MageControl.ConfigManager.get("missiles.count") or 6
-    local LAG_BUFFER = MageControl.ConfigManager.get("missiles.lagBuffer") or 0.05
+    local NUM_MISSILES = MC.ConfigManager.get("missiles.count") or 6
+    local LAG_BUFFER = MC.ConfigManager.get("missiles.lagBuffer") or 0.05
     local timeStart = GetTime()
     local fireTimes = {}
 
@@ -227,13 +227,13 @@ ActionManager.calculateArcaneMissileFireTimes = function(duration)
         fireTimes[i] = timeStart + (i * timePerMissile) + LAG_BUFFER
     end
     
-    MageControl.Logger.debug("Calculated " .. NUM_MISSILES .. " missile fire times over " .. durationInSeconds .. "s", "ActionManager")
+    MC.Logger.debug("Calculated " .. NUM_MISSILES .. " missile fire times over " .. durationInSeconds .. "s", "ActionManager")
     return fireTimes
 end
 
 -- Check if we're in the last possible missile window for Surge
 ActionManager.isInLastPossibleMissileWindow = function()
-    local stateManager = MageControl.ModuleSystem.getModule("StateManager")
+    local stateManager = MC.ModuleSystem.getModule("StateManager")
     if not stateManager then
         return false
     end
@@ -313,7 +313,7 @@ ActionManager.getStats = function()
 end
 
 -- Register the module
-MageControl.ModuleSystem.registerModule("ActionManager", ActionManager)
+MC.ModuleSystem.registerModule("ActionManager", ActionManager)
 
 -- Backward compatibility
 MC.initializeSettings = function()
@@ -345,4 +345,4 @@ MC.isInLastPossibleMissileWindow = function()
 end
 
 -- Export for other modules
-MageControl.Core.ActionManager = ActionManager
+MC.Core.ActionManager = ActionManager

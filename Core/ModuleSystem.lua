@@ -1,16 +1,17 @@
 -- MageControl Module System
 -- Provides proper namespace management and module loading
 
--- Create the main namespace (keeping MC for backward compatibility during transition)
-MageControl = MageControl or {}
-MC = MC or {} -- Legacy global, will be phased out
+-- Main namespace (consolidated to MC for simplicity and user familiarity)
+MC = MC or {}
+-- Legacy compatibility during migration
+MageControl = MC -- Backward compatibility alias
 
 -- Module registry
 local modules = {}
 local loadedModules = {}
 
 -- Module system core
-MageControl.ModuleSystem = {
+MC.ModuleSystem = {
     -- Register a new module
     registerModule = function(name, moduleDefinition)
         if modules[name] then
@@ -24,7 +25,7 @@ MageControl.ModuleSystem = {
         modules[name] = moduleDefinition
         loadedModules[name] = false
         
-        MageControl.Logger.debug("Module registered: " .. name)
+        MC.Logger.debug("Module registered: " .. name)
     end,
     
     -- Load a module (with dependency resolution)
@@ -42,7 +43,7 @@ MageControl.ModuleSystem = {
         -- Load dependencies first
         if module.dependencies then
             for _, dependency in ipairs(module.dependencies) do
-                MageControl.ModuleSystem.loadModule(dependency)
+                MC.ModuleSystem.loadModule(dependency)
             end
         end
         
@@ -52,7 +53,7 @@ MageControl.ModuleSystem = {
         end
         
         loadedModules[name] = true
-        MageControl.Logger.debug("Module loaded: " .. name)
+        MC.Logger.debug("Module loaded: " .. name)
         
         return module
     end,
@@ -60,7 +61,7 @@ MageControl.ModuleSystem = {
     -- Get a loaded module
     getModule = function(name)
         if not loadedModules[name] then
-            return MageControl.ModuleSystem.loadModule(name)
+            return MC.ModuleSystem.loadModule(name)
         end
         return modules[name]
     end,
@@ -74,7 +75,7 @@ MageControl.ModuleSystem = {
     loadAllModules = function()
         for name, _ in pairs(modules) do
             if not loadedModules[name] then
-                MageControl.ModuleSystem.loadModule(name)
+                MC.ModuleSystem.loadModule(name)
             end
         end
     end,
@@ -90,7 +91,7 @@ MageControl.ModuleSystem = {
 }
 
 -- Helper function to create a new module
-MageControl.createModule = function(name, dependencies)
+MC.createModule = function(name, dependencies)
     local module = {
         name = name,
         dependencies = dependencies or {},
@@ -107,11 +108,11 @@ MageControl.createModule = function(name, dependencies)
 end
 
 -- Namespace helper for backward compatibility
-MageControl.migrateToModule = function(legacyObject, moduleName)
+MC.migrateToModule = function(legacyObject, moduleName)
     -- Helper to gradually migrate MC.* calls to proper modules
     -- This will help during the transition period
     if legacyObject and moduleName then
-        local module = MageControl.ModuleSystem.getModule(moduleName)
+        local module = MC.ModuleSystem.getModule(moduleName)
         for key, value in pairs(legacyObject) do
             if not module[key] then
                 module[key] = value

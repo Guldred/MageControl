@@ -1,17 +1,17 @@
 -- MageControl UI Framework
 -- Provides reusable UI components and styling for consistent interface design
 
-MageControl = MageControl or {}
-MageControl.UI = MageControl.UI or {}
-MageControl.UI.Framework = MageControl.UI.Framework or {}
+MC = MC or {}
+MC.UI = MC.UI or {}
+MC.UI.Framework = MC.UI.Framework or {}
 
 -- Create the UIFramework module
-local UIFramework = MageControl.createModule("UIFramework", {"Logger"})
+local UIFramework = MC.createModule("UIFramework", {"Logger"})
 
 -- Initialize the UI framework
 UIFramework.initialize = function()
     UIFramework._initializeStyles()
-    MageControl.Logger.debug("UI Framework initialized", "UIFramework")
+    MC.Logger.debug("UI Framework initialized", "UIFramework")
 end
 
 -- UI Style Constants
@@ -309,8 +309,14 @@ UIFramework.showTooltip = function(element, title, text)
     end)
 end
 
--- Register the module
-MageControl.ModuleSystem.registerModule("UIFramework", UIFramework)
+-- Export UIFramework to MC namespace
+MC.UI.Framework.UIFramework = UIFramework
 
--- Export for other modules
+-- Register the module
+MC.ModuleSystem.registerModule("UIFramework", UIFramework)
+
+-- Backward compatibility
+MageControl = MageControl or {}
+MageControl.UI = MageControl.UI or {}
+MageControl.UI.Framework = MageControl.UI.Framework or {}
 MageControl.UI.Framework.UIFramework = UIFramework

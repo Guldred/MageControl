@@ -1,9 +1,9 @@
 -- MageControl Configuration Manager
 -- Centralizes all configuration and provides validation
 
-MageControl = MageControl or {}
+MC = MC or {}
 
-MageControl.ConfigManager = {
+MC.ConfigManager = {
     -- Default configuration values
     defaults = {
         -- Action bar slots
@@ -87,8 +87,8 @@ MageControl.ConfigManager = {
     
     -- Optimized path parsing with caching
     _parsePath = function(path)
-        if MageControl.ConfigManager._pathCache[path] then
-            return MageControl.ConfigManager._pathCache[path]
+        if MC.ConfigManager._pathCache[path] then
+            return MC.ConfigManager._pathCache[path]
         end
         
         local keys = {}
@@ -96,18 +96,18 @@ MageControl.ConfigManager = {
             table.insert(keys, key)
         end
         
-        MageControl.ConfigManager._pathCache[path] = keys
+        MC.ConfigManager._pathCache[path] = keys
         return keys
     end,
     
     -- Optimized get configuration value with caching
     get = function(path)
         if not path then
-            return MageControl.ConfigManager.current
+            return MC.ConfigManager.current
         end
         
-        local keys = MageControl.ConfigManager._parsePath(path)
-        local value = MageControl.ConfigManager.current
+        local keys = MC.ConfigManager._parsePath(path)
+        local value = MC.ConfigManager.current
         
         -- Optimized table traversal
         for i = 1, table.getn(keys) do
@@ -116,8 +116,8 @@ MageControl.ConfigManager = {
                 value = value[key]
             else
                 -- Only log warnings in debug mode to reduce overhead
-                if MageControl.Logger.isDebugEnabled() then
-                    MageControl.Logger.warn("Configuration path not found: " .. path, "ConfigManager")
+                if MC.Logger.isDebugEnabled() then
+                    MC.Logger.warn("Configuration path not found: " .. path, "ConfigManager")
                 end
                 return nil
             end
@@ -129,12 +129,12 @@ MageControl.ConfigManager = {
     -- Optimized set configuration value with validation
     set = function(path, value)
         if not path then
-            MageControl.Logger.error("Cannot set empty configuration path", "ConfigManager")
+            MC.Logger.error("Cannot set empty configuration path", "ConfigManager")
             return false
         end
         
-        local keys = MageControl.ConfigManager._parsePath(path)
-        local current = MageControl.ConfigManager.current
+        local keys = MC.ConfigManager._parsePath(path)
+        local current = MC.ConfigManager.current
         
         -- Navigate to parent and set value efficiently
         local keyCount = table.getn(keys)
@@ -151,8 +151,8 @@ MageControl.ConfigManager = {
         current[finalKey] = value
         
         -- Only log in debug mode for performance
-        if MageControl.Logger.isDebugEnabled() then
-            MageControl.Logger.debug("Config set: " .. path .. " = " .. tostring(value), "ConfigManager")
+        if MC.Logger.isDebugEnabled() then
+            MC.Logger.debug("Config set: " .. path .. " = " .. tostring(value), "ConfigManager")
         end
         
         return true
@@ -165,66 +165,66 @@ MageControl.ConfigManager = {
         
         -- Debug: Log what's in MageControlDB before merge
         if MageControlDB.trinkets and MageControlDB.trinkets.priorityList then
-            MageControl.Logger.debug("Found saved trinkets.priorityList with " .. table.getn(MageControlDB.trinkets.priorityList) .. " items", "ConfigManager")
+            MC.Logger.debug("Found saved trinkets.priorityList with " .. table.getn(MageControlDB.trinkets.priorityList) .. " items", "ConfigManager")
         else
-            MageControl.Logger.debug("No saved trinkets.priorityList found, will use defaults", "ConfigManager")
+            MC.Logger.debug("No saved trinkets.priorityList found, will use defaults", "ConfigManager")
         end
         
         -- Special handling for trinkets.priorityList to preserve user settings
         local savedTrinketList = nil
         if MageControlDB.trinkets and MageControlDB.trinkets.priorityList and table.getn(MageControlDB.trinkets.priorityList) > 0 then
             savedTrinketList = MageControlDB.trinkets.priorityList
-            MageControl.Logger.debug("Preserving user's saved trinket priority list", "ConfigManager")
+            MC.Logger.debug("Preserving user's saved trinket priority list", "ConfigManager")
         end
         
         -- Merge defaults with saved configuration
-        MageControl.ConfigManager.current = MageControl.ConfigManager._deepMerge(
-            MageControl.ConfigManager.defaults,
+        MC.ConfigManager.current = MC.ConfigManager._deepMerge(
+            MC.ConfigManager.defaults,
             MageControlDB
         )
         
         -- Restore saved trinket list if it existed (prevent overwrite by defaults)
         if savedTrinketList then
-            MageControl.ConfigManager.current.trinkets.priorityList = savedTrinketList
-            MageControl.Logger.debug("Restored user's trinket priority list", "ConfigManager")
+            MC.ConfigManager.current.trinkets.priorityList = savedTrinketList
+            MC.Logger.debug("Restored user's trinket priority list", "ConfigManager")
         end
         
         -- Debug: Log what's in current after merge
-        local currentList = MageControl.ConfigManager.current.trinkets.priorityList
+        local currentList = MC.ConfigManager.current.trinkets.priorityList
         if currentList then
-            MageControl.Logger.debug("After merge, trinkets.priorityList has " .. table.getn(currentList) .. " items", "ConfigManager")
+            MC.Logger.debug("After merge, trinkets.priorityList has " .. table.getn(currentList) .. " items", "ConfigManager")
             for i, item in ipairs(currentList) do
-                MageControl.Logger.debug("  Priority " .. i .. ": " .. (item.name or "unknown"), "ConfigManager")
+                MC.Logger.debug("  Priority " .. i .. ": " .. (item.name or "unknown"), "ConfigManager")
             end
         end
         
         -- Validate configuration
-        MageControl.ConfigManager._validateConfig()
+        MC.ConfigManager._validateConfig()
         
-        MageControl.Logger.info("Configuration system initialized", "ConfigManager")
+        MC.Logger.info("Configuration system initialized", "ConfigManager")
     end,
     
     -- Reset configuration to defaults
     reset = function()
-        MageControlDB = MageControl.ConfigManager._deepCopy(MageControl.ConfigManager.defaults)
-        MageControl.ConfigManager.current = MageControl.ConfigManager._deepCopy(MageControl.ConfigManager.defaults)
-        MageControl.Logger.info("Configuration reset to defaults", "ConfigManager")
+        MageControlDB = MC.ConfigManager._deepCopy(MC.ConfigManager.defaults)
+        MC.ConfigManager.current = MC.ConfigManager._deepCopy(MC.ConfigManager.defaults)
+        MC.Logger.info("Configuration reset to defaults", "ConfigManager")
     end,
     
     -- Reset specific section
     resetSection = function(section)
-        if MageControl.ConfigManager.defaults[section] then
-            MageControl.ConfigManager.current[section] = MageControl.ConfigManager._deepCopy(MageControl.ConfigManager.defaults[section])
-            MageControlDB[section] = MageControl.ConfigManager._deepCopy(MageControl.ConfigManager.defaults[section])
-            MageControl.Logger.info("Configuration section reset: " .. section, "ConfigManager")
+        if MC.ConfigManager.defaults[section] then
+            MC.ConfigManager.current[section] = MC.ConfigManager._deepCopy(MC.ConfigManager.defaults[section])
+            MageControlDB[section] = MC.ConfigManager._deepCopy(MC.ConfigManager.defaults[section])
+            MC.Logger.info("Configuration section reset: " .. section, "ConfigManager")
         else
-            MageControl.Logger.error("Unknown configuration section: " .. section, "ConfigManager")
+            MC.Logger.error("Unknown configuration section: " .. section, "ConfigManager")
         end
     end,
     
     -- Get all configuration
     getAll = function()
-        return MageControl.ConfigManager.current
+        return MC.ConfigManager.current
     end,
     
     -- Private helper functions
@@ -232,7 +232,7 @@ MageControl.ConfigManager = {
         local copy = {}
         for key, value in pairs(original) do
             if type(value) == "table" then
-                copy[key] = MageControl.ConfigManager._deepCopy(value)
+                copy[key] = MC.ConfigManager._deepCopy(value)
             else
                 copy[key] = value
             end
@@ -241,7 +241,7 @@ MageControl.ConfigManager = {
     end,
     
     _deepMerge = function(defaults, saved)
-        local result = MageControl.ConfigManager._deepCopy(defaults)
+        local result = MC.ConfigManager._deepCopy(defaults)
         
         if type(saved) ~= "table" then
             return result
@@ -249,7 +249,7 @@ MageControl.ConfigManager = {
         
         for key, value in pairs(saved) do
             if type(value) == "table" and type(result[key]) == "table" then
-                result[key] = MageControl.ConfigManager._deepMerge(result[key], value)
+                result[key] = MC.ConfigManager._deepMerge(result[key], value)
             else
                 result[key] = value
             end
@@ -260,14 +260,14 @@ MageControl.ConfigManager = {
     
     _validateConfig = function()
         -- Add validation logic here as needed
-        local config = MageControl.ConfigManager.current
+        local config = MC.ConfigManager.current
         
         -- Validate action bar slots
         if config.actionBarSlots then
             for spell, slot in pairs(config.actionBarSlots) do
                 if type(slot) ~= "number" or slot < 1 or slot > 120 then
-                    MageControl.Logger.warn("Invalid action bar slot for " .. spell .. ": " .. tostring(slot), "ConfigManager")
-                    config.actionBarSlots[spell] = MageControl.ConfigManager.defaults.actionBarSlots[spell]
+                    MC.Logger.warn("Invalid action bar slot for " .. spell .. ": " .. tostring(slot), "ConfigManager")
+                    config.actionBarSlots[spell] = MC.ConfigManager.defaults.actionBarSlots[spell]
                 end
             end
         end
@@ -276,8 +276,8 @@ MageControl.ConfigManager = {
         if config.rotation and config.rotation.minManaForArcanePowerUse then
             local mana = config.rotation.minManaForArcanePowerUse
             if type(mana) ~= "number" or mana < 0 or mana > 100 then
-                MageControl.Logger.warn("Invalid mana percentage: " .. tostring(mana), "ConfigManager")
-                config.rotation.minManaForArcanePowerUse = MageControl.ConfigManager.defaults.rotation.minManaForArcanePowerUse
+                MC.Logger.warn("Invalid mana percentage: " .. tostring(mana), "ConfigManager")
+                config.rotation.minManaForArcanePowerUse = MC.ConfigManager.defaults.rotation.minManaForArcanePowerUse
             end
         end
     end
@@ -288,14 +288,14 @@ MC.getActionBarSlots = function()
     local configSlots = MageControlDB.actionBarSlots
 
     if not configSlots then
-        MageControlDB.actionBarSlots = MageControl.ConfigManager.defaults.actionBarSlots
-        MageControl.Logger.info("Missing Slots Configuration. Using defaults.", "ConfigManager")
+        MageControlDB.actionBarSlots = MC.ConfigManager.defaults.actionBarSlots
+        MC.Logger.info("Missing Slots Configuration. Using defaults.", "ConfigManager")
     end
 
     return configSlots
 end
 
-MC.DEFAULT_ACTIONBAR_SLOT = MageControl.ConfigManager.defaults.actionBarSlots
-MC.TIMING = MageControl.ConfigManager.defaults.timing
-MC.HASTE = MageControl.ConfigManager.defaults.haste
-MC.GLOBAL_COOLDOWN_IN_SECONDS = MageControl.ConfigManager.defaults.constants.GLOBAL_COOLDOWN_IN_SECONDS
+MC.DEFAULT_ACTIONBAR_SLOT = MC.ConfigManager.defaults.actionBarSlots
+MC.TIMING = MC.ConfigManager.defaults.timing
+MC.HASTE = MC.ConfigManager.defaults.haste
+MC.GLOBAL_COOLDOWN_IN_SECONDS = MC.ConfigManager.defaults.constants.GLOBAL_COOLDOWN_IN_SECONDS

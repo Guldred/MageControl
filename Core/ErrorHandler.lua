@@ -1,9 +1,9 @@
 -- MageControl Error Handling System
 -- Provides consistent error handling and recovery
 
-MageControl = MageControl or {}
+MC = MC or {}
 
-MageControl.ErrorHandler = {
+local ErrorHandler = {
     -- Error types
     TYPES = {
         CONFIG = "CONFIG",
@@ -21,7 +21,7 @@ MageControl.ErrorHandler = {
     handle = function(errorType, message, context, canRecover)
         local timestamp = GetTime()
         local errorInfo = {
-            type = errorType or MageControl.ErrorHandler.TYPES.UNKNOWN,
+            type = errorType or ErrorHandler.TYPES.UNKNOWN,
             message = message or "Unknown error",
             context = context or {},
             timestamp = timestamp,
@@ -29,9 +29,9 @@ MageControl.ErrorHandler = {
         }
         
         -- Add to error history
-        table.insert(MageControl.ErrorHandler.errorHistory, errorInfo)
-        if table.getn(MageControl.ErrorHandler.errorHistory) > MageControl.ErrorHandler.maxHistorySize then
-            table.remove(MageControl.ErrorHandler.errorHistory, 1)
+        table.insert(ErrorHandler.errorHistory, errorInfo)
+        if table.getn(ErrorHandler.errorHistory) > ErrorHandler.maxHistorySize then
+            table.remove(ErrorHandler.errorHistory, 1)
         end
         
         -- Log the error
@@ -40,16 +40,16 @@ MageControl.ErrorHandler = {
             contextStr = " [" .. context.module .. "]"
         end
         
-        MageControl.Logger.error(errorType .. ": " .. message .. contextStr, "ErrorHandler")
+        MC.Logger.error(errorType .. ": " .. message .. contextStr, "ErrorHandler")
         
         -- Attempt recovery if possible
         if canRecover and context and context.recoveryAction then
-            MageControl.Logger.info("Attempting error recovery...", "ErrorHandler")
+            MC.Logger.info("Attempting error recovery...", "ErrorHandler")
             local success, recoveryError = pcall(context.recoveryAction)
             if success then
-                MageControl.Logger.info("Error recovery successful", "ErrorHandler")
+                MC.Logger.info("Error recovery successful", "ErrorHandler")
             else
-                MageControl.Logger.error("Error recovery failed: " .. tostring(recoveryError), "ErrorHandler")
+                MC.Logger.error("Error recovery failed: " .. tostring(recoveryError), "ErrorHandler")
             end
         end
         
@@ -59,8 +59,8 @@ MageControl.ErrorHandler = {
     -- Safe function call wrapper
     safeCall = function(func, errorType, context, arg1, arg2, arg3, arg4, arg5)
         if type(func) ~= "function" then
-            MageControl.ErrorHandler.handle(
-                errorType or MageControl.ErrorHandler.TYPES.UNKNOWN,
+            ErrorHandler.handle(
+                errorType or ErrorHandler.TYPES.UNKNOWN,
                 "Attempted to call non-function",
                 context
             )
@@ -69,8 +69,8 @@ MageControl.ErrorHandler = {
         
         local success, result = pcall(func, arg1, arg2, arg3, arg4, arg5)
         if not success then
-            MageControl.ErrorHandler.handle(
-                errorType or MageControl.ErrorHandler.TYPES.UNKNOWN,
+            ErrorHandler.handle(
+                errorType or ErrorHandler.TYPES.UNKNOWN,
                 "Function call failed: " .. tostring(result),
                 context
             )
@@ -108,11 +108,11 @@ MageControl.ErrorHandler = {
     -- Get error history
     getErrorHistory = function(errorType)
         if not errorType then
-            return MageControl.ErrorHandler.errorHistory
+            return ErrorHandler.errorHistory
         end
         
         local filtered = {}
-        for _, error in ipairs(MageControl.ErrorHandler.errorHistory) do
+        for _, error in ipairs(ErrorHandler.errorHistory) do
             if error.type == errorType then
                 table.insert(filtered, error)
             end
@@ -122,8 +122,8 @@ MageControl.ErrorHandler = {
     
     -- Clear error history
     clearHistory = function()
-        MageControl.ErrorHandler.errorHistory = {}
-        MageControl.Logger.info("Error history cleared", "ErrorHandler")
+        ErrorHandler.errorHistory = {}
+        MC.Logger.info("Error history cleared", "ErrorHandler")
     end,
     
     -- Check if there are recent errors of a specific type
@@ -131,7 +131,7 @@ MageControl.ErrorHandler = {
         local currentTime = GetTime()
         timeWindow = timeWindow or 30 -- Default 30 seconds
         
-        for _, error in ipairs(MageControl.ErrorHandler.errorHistory) do
+        for _, error in ipairs(ErrorHandler.errorHistory) do
             if (not errorType or error.type == errorType) and 
                (currentTime - error.timestamp) <= timeWindow then
                 return true
@@ -141,19 +141,26 @@ MageControl.ErrorHandler = {
     end
 }
 
+-- Export ErrorHandler to MC namespace
+MC.ErrorHandler = ErrorHandler
+
 -- Convenience functions for different error types
-MageControl.ErrorHandler.handleConfigError = function(message, context)
-    return MageControl.ErrorHandler.handle(MageControl.ErrorHandler.TYPES.CONFIG, message, context)
+ErrorHandler.handleConfigError = function(message, context)
+    return ErrorHandler.handle(ErrorHandler.TYPES.CONFIG, message, context)
 end
 
-MageControl.ErrorHandler.handleModuleError = function(message, context)
-    return MageControl.ErrorHandler.handle(MageControl.ErrorHandler.TYPES.MODULE, message, context)
+ErrorHandler.handleModuleError = function(message, context)
+    return ErrorHandler.handle(ErrorHandler.TYPES.MODULE, message, context)
 end
 
-MageControl.ErrorHandler.handleSpellError = function(message, context)
-    return MageControl.ErrorHandler.handle(MageControl.ErrorHandler.TYPES.SPELL, message, context)
+ErrorHandler.handleSpellError = function(message, context)
+    return ErrorHandler.handle(ErrorHandler.TYPES.SPELL, message, context)
 end
 
-MageControl.ErrorHandler.handleUIError = function(message, context)
-    return MageControl.ErrorHandler.handle(MageControl.ErrorHandler.TYPES.UI, message, context)
+ErrorHandler.handleUIError = function(message, context)
+    return ErrorHandler.handle(ErrorHandler.TYPES.UI, message, context)
 end
+
+-- Backward compatibility
+MageControl = MageControl or {}
+MageControl.ErrorHandler = ErrorHandler
