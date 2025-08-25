@@ -5,7 +5,7 @@ MageControl = MageControl or {}
 MageControl.Rotation = MageControl.Rotation or {}
 
 -- Create the CooldownSystem module
-local CooldownSystem = MageControl.createModule("CooldownSystem", {"ConfigManager", "Logger"})
+local CooldownSystem = MageControl.createModule("CooldownSystem", {"ConfigValidation", "Logger"})
 
 -- Initialize the cooldown system
 CooldownSystem.initialize = function()
@@ -72,7 +72,7 @@ end
 -- Get trinket cooldown information
 CooldownSystem.getTrinketCooldowns = function()
     local cooldowns = {}
-    local priorityList = MageControl.ConfigManager.get("trinkets.priorityList") or {}
+    local priorityList = MageControl.ConfigValidation.get("trinkets.priorityList") or {}
     
     for i, item in ipairs(priorityList) do
         if item.type == "trinket" and item.slot then
@@ -106,7 +106,7 @@ end
 
 -- Check if any priority items are ready
 CooldownSystem.hasPriorityItemsReady = function()
-    local priorityList = MageControl.ConfigManager.get("trinkets.priorityList") or {}
+    local priorityList = MageControl.ConfigValidation.get("trinkets.priorityList") or {}
     
     for i, item in ipairs(priorityList) do
         local actionKey = CooldownSystem._getActionKey(item)
@@ -123,7 +123,7 @@ end
 
 -- Get cooldown system statistics
 CooldownSystem.getStats = function()
-    local priorityList = MageControl.ConfigManager.get("trinkets.priorityList") or {}
+    local priorityList = MageControl.ConfigValidation.get("trinkets.priorityList") or {}
     local readyCount = 0
     
     for i, item in ipairs(priorityList) do

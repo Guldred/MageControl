@@ -70,7 +70,7 @@ MageControl.UI.PriorityList.moveItemUp = function(position)
         MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position - 1]
         MageControlDB.cooldownPriorityMap[position - 1] = temp
         MageControl.UI.PriorityList.updatePriorityDisplay()
-        MageControl.ConfigManager.save()
+        -- MageControlDB automatically persists changes
     end
 end
 
@@ -80,7 +80,7 @@ MageControl.UI.PriorityList.moveItemDown = function(position)
         MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position + 1]
         MageControlDB.cooldownPriorityMap[position + 1] = temp
         MageControl.UI.PriorityList.updatePriorityDisplay()
-        MageControl.ConfigManager.save()
+        -- MageControlDB automatically persists changes
     end
 end
 

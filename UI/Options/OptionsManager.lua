@@ -6,7 +6,7 @@ MageControl.UI = MageControl.UI or {}
 MageControl.UI.Options = MageControl.UI.Options or {}
 
 -- Create the OptionsManager module
-local OptionsManager = MageControl.createModule("OptionsManager", {"UIFramework", "TabManager", "ConfigManager", "Logger"})
+local OptionsManager = MageControl.createModule("OptionsManager", {"UIFramework", "TabManager", "ConfigValidation", "Logger"})
 
 -- Module state
 OptionsManager.frame = nil

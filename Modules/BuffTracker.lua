@@ -3,9 +3,9 @@
 
 MageControl.StateManager.getBuffs = function()
     local now = GetTime()
-    if MageControl.StateManager.current.buffsCache and (now - MageControl.StateManager.current.buffsCacheTime < 0.1) then
+    if MageControl.StateManager.state.buffsCache and (now - MageControl.StateManager.state.buffsCacheTime < 0.1) then
         MageControl.Logger.debug("Returning Cached buffs!", "BuffTracker")
-        return MageControl.StateManager.current.buffsCache
+        return MageControl.StateManager.state.buffsCache
     end
     local buffs = {}
     local relevantBuffs = {
@@ -74,8 +74,8 @@ MageControl.StateManager.getBuffs = function()
         end
     end
 
-    MageControl.StateManager.current.buffsCache = buffs
-    MageControl.StateManager.current.buffsCacheTime = now
+    MageControl.StateManager.state.buffsCache = buffs
+    MageControl.StateManager.state.buffsCacheTime = now
     return buffs
 end
 

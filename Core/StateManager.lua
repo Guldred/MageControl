@@ -113,7 +113,7 @@ end
 -- Check if buff cache is valid
 MageControl.StateManager.isBuffCacheValid = function()
     local cacheAge = GetTime() - MageControl.StateManager.state.buffsCacheTime
-    local maxCacheAge = MageControl.ConfigManager.get("buffs.cacheMaxAge") or 0.1
+    local maxCacheAge = MageControl.ConfigValidation.get("buffs.cacheMaxAge") or 0.1
     
     return MageControl.StateManager.state.buffsCache and cacheAge < maxCacheAge
 end
@@ -165,6 +165,25 @@ MageControl.StateManager.validateState = function()
     end
     
     return true, {}
+end
+
+-- Update current target information
+MageControl.StateManager.updateCurrentTarget = function()
+    local targetExists = UnitExists("target")
+    local targetName = targetExists and UnitName("target") or nil
+    local targetHealth = targetExists and UnitHealth("target") or 0
+    local targetMaxHealth = targetExists and UnitHealthMax("target") or 1
+    
+    MageControl.StateManager.currentTarget = {
+        exists = targetExists,
+        name = targetName,
+        health = targetHealth,
+        maxHealth = targetMaxHealth,
+        healthPercent = targetMaxHealth > 0 and (targetHealth / targetMaxHealth) * 100 or 0
+    }
+    
+    MageControl.Logger.debug("Target updated: " .. (targetName or "No Target") .. 
+        (targetExists and (" (" .. MageControl.StateManager.currentTarget.healthPercent .. "% HP)") or ""), "StateManager")
 end
 
 -- Get state statistics

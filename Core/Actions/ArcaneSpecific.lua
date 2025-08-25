@@ -76,17 +76,17 @@ MageControl.ArcaneSpecific.initializeSettings = function()
     -- Initialize action bar slots if not set
     if not MageControlDB.actionBarSlots then
         MageControlDB.actionBarSlots = {
-            FIREBLAST = MageControl.ConfigManager.get("actionBarSlots.FIREBLAST"),
-            ARCANE_RUPTURE = MageControl.ConfigManager.get("actionBarSlots.ARCANE_RUPTURE"),
-            ARCANE_SURGE = MageControl.ConfigManager.get("actionBarSlots.ARCANE_SURGE")
+            FIREBLAST = MageControl.ConfigValidation.get("actionBarSlots.FIREBLAST"),
+            ARCANE_RUPTURE = MageControl.ConfigValidation.get("actionBarSlots.ARCANE_RUPTURE"),
+            ARCANE_SURGE = MageControl.ConfigValidation.get("actionBarSlots.ARCANE_SURGE")
         }
     end
     
     -- Initialize haste settings for Arcane spells
     if not MageControlDB.haste then
         MageControlDB.haste = {
-            BASE_VALUE = MageControl.ConfigManager.get("haste.BASE_VALUE"),
-            HASTE_THRESHOLD = MageControl.ConfigManager.get("haste.HASTE_THRESHOLD")
+            BASE_VALUE = MageControl.ConfigValidation.get("haste.BASE_VALUE"),
+            HASTE_THRESHOLD = MageControl.ConfigValidation.get("haste.HASTE_THRESHOLD")
         }
     end
     
@@ -108,7 +108,7 @@ MageControl.ArcaneSpecific.initializeSettings = function()
         [3] = 1.0
     }
     local fireblastTiming = timingByRank[MageControl.CacheUtils.getTalentRank(2,5)] or 1.5
-    MageControl.ConfigManager.set("timing.GCD_BUFFER_FIREBLAST", fireblastTiming)
+    MageControl.ConfigValidation.set("timing.GCD_BUFFER_FIREBLAST", fireblastTiming)
     MageControl.Logger.debug("Set Fireblast Timing to " .. tostring(fireblastTiming) .. " seconds", "ArcaneSpecific")
 end
 
@@ -119,7 +119,7 @@ MageControl.ArcaneSpecific.getStats = function()
     return {
         arcaneExplosionTiming = timingInfo,
         settingsInitialized = (MageControlDB.actionBarSlots ~= nil),
-        fireblastTiming = MageControl.ConfigManager.get("timing.GCD_BUFFER_FIREBLAST"),
+        fireblastTiming = MageControl.ConfigValidation.get("timing.GCD_BUFFER_FIREBLAST"),
         minManaForAP = MageControlDB.minManaForArcanePowerUse,
         cooldownPriorityCount = table.getn(MageControlDB.cooldownPriorityMap or {})
     }

@@ -42,7 +42,7 @@ local COMMAND_HANDLERS = {
     surge = function() MageControl.SpellCasting.stopChannelAndCastSurge() end,
     debug = function()
         local debugEnabled = MageControl.Logger.toggleDebug()
-        MageControl.ConfigManager.set("ui.debugEnabled", debugEnabled)
+        MageControl.ConfigValidation.set("ui.debugEnabled", debugEnabled)
     end,
     options = function() MageControl.UI.OptionsManager.showOptionsMenu() end,
     config = function() MageControl.UI.OptionsManager.showOptionsMenu() end,
@@ -85,7 +85,7 @@ local COMMAND_HANDLERS = {
         end
     end,
     reset = function()
-        MageControl.ConfigManager.reset()
+        MageControl.ConfigValidation.reset()
         MageControl.UI.BuffDisplay.resetPositions()
         MageControl.UI.ActionDisplay.resetPositions()
         MageControl.Logger.info("Configuration reset to defaults")

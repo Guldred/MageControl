@@ -5,7 +5,7 @@ MageControl = MageControl or {}
 MageControl.Rotation = MageControl.Rotation or {}
 
 -- Create the ConditionChecker module
-local ConditionChecker = MageControl.createModule("ConditionChecker", {"ConfigManager", "Logger"})
+local ConditionChecker = MageControl.createModule("ConditionChecker", {"ConfigValidation", "Logger"})
 
 -- Initialize the condition checker
 ConditionChecker.initialize = function()
@@ -18,7 +18,7 @@ ConditionChecker.isMissilesInterruptionRequiredForSurge = function()
         return false
     end
 
-    local earliestCancelPoint = MageControl.ConfigManager.get("rotation.minMissilesForSurgeCancel") or 4
+    local earliestCancelPoint = MageControl.ConfigValidation.get("rotation.minMissilesForSurgeCancel") or 4
 
     if not MageControl.ArcaneSpecific.isInLastPossibleMissileWindow() then
         return false
@@ -101,7 +101,7 @@ end
 
 -- Check if Arcane Rupture is one GCD away (for Arcane Surge)
 ConditionChecker.isArcaneRuptureOneGCDAwayForSurge = function(state)
-    local timing = MageControl.ConfigManager.get("timing.GCD_BUFFER") or 1.5
+    local timing = MageControl.ConfigValidation.get("timing.GCD_BUFFER") or 1.5
     return MageControl.TimingCalculations.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, timing) and
             state.spells.arcaneSurgeReady and
             not MageControl.StateManager.isHighHasteActive()
@@ -109,7 +109,7 @@ end
 
 -- Check if Arcane Rupture is one GCD away (for Fire Blast)
 ConditionChecker.isArcaneRuptureOneGCDAwayForFireBlast = function(state)
-    local timing = MageControl.ConfigManager.get("timing.GCD_BUFFER_FIREBLAST") or 1.5
+    local timing = MageControl.ConfigValidation.get("timing.GCD_BUFFER_FIREBLAST") or 1.5
     return MageControl.TimingCalculations.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, timing) and
             state.spells.fireblastReady and
             not MageControl.ImmunityData.checkImmunity("fire") and

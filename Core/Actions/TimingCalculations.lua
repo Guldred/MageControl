@@ -41,8 +41,8 @@ end
 
 -- Calculate Arcane Missile fire times
 MageControl.TimingCalculations.calculateArcaneMissileFireTimes = function(duration)
-    local NUM_MISSILES = MageControl.ConfigManager.get("missiles.count") or 6
-    local LAG_BUFFER = MageControl.ConfigManager.get("missiles.lagBuffer") or 0.05
+    local NUM_MISSILES = MageControl.ConfigValidation.get("missiles.count") or 6
+    local LAG_BUFFER = MageControl.ConfigValidation.get("missiles.lagBuffer") or 0.05
     local timeStart = GetTime()
     local fireTimes = {}
 

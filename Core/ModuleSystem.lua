@@ -39,6 +39,15 @@ MageControl.ModuleSystem = {
         end
         
         local module = modules[name]
+        
+        -- Debug: Verify module exists and has proper structure
+        if not module then
+            error("MageControl: Module '" .. name .. "' not found in registry")
+        end
+        
+        if type(module) ~= "table" then
+            error("MageControl: Module '" .. name .. "' is not a valid table")
+        end
 
         -- Load dependencies first
         if module.dependencies then

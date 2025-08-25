@@ -5,7 +5,7 @@ MageControl = MageControl or {}
 MageControl.Rotation = MageControl.Rotation or {}
 
 -- Create the ActionHandler module
-local ActionHandler = MageControl.createModule("ActionHandler", {"ConfigManager", "Logger"})
+local ActionHandler = MageControl.createModule("ActionHandler", {"ConfigValidation", "Logger"})
 
 -- Initialize the action handler
 ActionHandler.initialize = function()
