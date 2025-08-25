@@ -9,6 +9,7 @@
 Core\Logger.lua
 Core\ErrorHandler.lua
 Core\ModuleSystem.lua
+Core\ModuleRegistration.lua
 Core\Initialization.lua
 
 # Core files - Configuration Expert Modules (Direct Access)
@@ -77,6 +78,3 @@ Modules\Rotation\PrioritySystem.lua
 
 # Modules Legacy
 Modules\RotationEngine.lua
-
-# Module Registration (MUST load after all modules it registers)
-Core\ModuleRegistration.lua

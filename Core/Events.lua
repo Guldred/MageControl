@@ -16,12 +16,18 @@ MageControlFrame:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
 
 MageControlFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "MageControl" then
-        -- CRITICAL: Initialize ConfigValidation first to populate current.timing structure
+        -- Step 1: Register all modules now that all files are guaranteed loaded
+        MageControl.ModuleRegistration.registerAllModules()
+        
+        -- Step 2: Initialize ConfigValidation first to populate current.timing structure
         MageControl.ConfigValidation.initialize()
         MageControl.ConfigValidation.initializeSettings()
+        
+        -- Step 3: Initialize UI components
         MageControl.UI.BuffDisplay.initBuffFrames()
         MageControl.UI.ActionDisplay.initActionFrames()
-        MageControl.Logger.info("MageControl loaded.", "Events")
+        
+        MageControl.Logger.info("MageControl loaded with event-driven initialization.", "Events")
 
     elseif event == "SPELLCAST_CHANNEL_START" then
         MageControl.StateManager.state.isChanneling = true
