@@ -5,9 +5,6 @@
 ## Version: 2.0.1
 ## SavedVariables: MageControlDB
 
-# Main file
-MageControl.lua
-
 # Core files - Module System (load first)
 Core\Logger.lua
 Core\ErrorHandler.lua
@@ -19,10 +16,13 @@ Core\Initialization.lua
 Core\Config\ConfigDefaults.lua
 Core\Config\ConfigValidation.lua
 
-# Core files - Utility Expert Modules (Direct Access)
+# Core files - Utility Expert Modules (Direct Access) - MUST load before MageControl.lua
 Core\Utils\ManaUtils.lua
 Core\Utils\StringUtils.lua
 Core\Utils\CacheUtils.lua
+
+# Main file (loads after all dependencies)
+MageControl.lua
 
 # Core files - Action Expert Modules (Direct Access)
 Core\Actions\SpellCasting.lua
