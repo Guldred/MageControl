@@ -7,7 +7,7 @@ MC.UI = MC.UI or {}
 MC.UI.Framework = MC.UI.Framework or {}
 
 -- Create the TabManager module
-local TabManager = MC.createModule("TabManager", {"UIFramework", "Logger"})
+local TabManager = MageControl.createModule("TabManager", {"UIFramework", "Logger"})
 
 -- Initialize the tab manager
 TabManager.initialize = function()

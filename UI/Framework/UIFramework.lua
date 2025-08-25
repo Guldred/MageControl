@@ -6,7 +6,7 @@ MC.UI = MC.UI or {}
 MC.UI.Framework = MC.UI.Framework or {}
 
 -- Create the UIFramework module
-local UIFramework = MC.createModule("UIFramework", {"Logger"})
+local UIFramework = MageControl.createModule("UIFramework", {"Logger"})
 
 -- Initialize the UI framework
 UIFramework.initialize = function()
