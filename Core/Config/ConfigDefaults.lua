@@ -92,12 +92,12 @@ MageControl.ConfigDefaults.get = function(path)
     end
     
     local keys = {}
-    for key in string.gmatch(path, "[^.]+") do  -- Lua 5.1+ compatible
+    for key in string.gfind(path, "[^.]+") do  -- Lua 5.0 compatible
         table.insert(keys, key)
     end
     
     local value = MageControl.ConfigDefaults.values
-    for i = 1, #keys do  -- Lua 5.1+ compatible
+    for i = 1, table.getn(keys) do  -- Lua 5.0 compatible
         local key = keys[i]
         if type(value) == "table" and value[key] ~= nil then
             value = value[key]

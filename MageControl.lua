@@ -6,6 +6,7 @@ SLASH_MAGECONTROL2 = "/mc"
 
 -- Initialize saved variables
 MageControlDB = MageControlDB or {}
+MageControl = MageControl or {}
 
 -- MC global namespace eliminated - using unified MageControl.* expert modules only
 

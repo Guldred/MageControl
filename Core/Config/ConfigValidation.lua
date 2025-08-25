@@ -23,7 +23,7 @@ local function parsePath(path)
     end
     
     local keys = {}
-    for key in string.gmatch(path, "[^.]+") do  -- Lua 5.1+ compatible (was string.gfind)
+    for key in string.gfind(path, "[^.]+") do  -- Lua 5.0 compatible
         table.insert(keys, key)
     end
     
@@ -46,7 +46,7 @@ MageControl.ConfigValidation.get = function(path)
     local value = MageControl.ConfigValidation.current
     
     -- Optimized table traversal (Lua 5.1+ compatible)
-    for i = 1, #keys do  -- Lua 5.1+ compatible (was table.getn)
+    for i = 1, table.getn(keys) do  -- Lua 5.0 compatible
         local key = keys[i]
         if type(value) == "table" and value[key] ~= nil then
             value = value[key]
@@ -81,7 +81,7 @@ MageControl.ConfigValidation.set = function(path, value)
     local current = MageControl.ConfigValidation.current
     
     -- Navigate to parent and set value efficiently (Lua 5.1+ compatible)
-    local keyCount = #keys  -- Lua 5.1+ compatible (was table.getn)
+    local keyCount = table.getn(keys)  -- Lua 5.0 compatible
     for i = 1, keyCount - 1 do
         local key = keys[i]
         if type(current[key]) ~= "table" then
@@ -136,7 +136,7 @@ MageControl.ConfigValidation.initialize = function()
     
     -- Debug: Log what's in MageControlDB before merge (Lua 5.1+ compatible)
     if MageControlDB.trinkets and MageControlDB.trinkets.priorityList then
-        local count = #MageControlDB.trinkets.priorityList  -- Lua 5.1+ compatible
+        local count = table.getn(MageControlDB.trinkets.priorityList)  -- Lua 5.0 compatible
         if MageControl.Logger then
             MageControl.Logger.debug("Found saved trinkets.priorityList with " .. count .. " items", "ConfigValidation")
         end
@@ -148,7 +148,7 @@ MageControl.ConfigValidation.initialize = function()
     
     -- Special handling for trinkets.priorityList to preserve user settings (Lua 5.1+ compatible)
     local savedTrinketList = nil
-    if MageControlDB.trinkets and MageControlDB.trinkets.priorityList and #MageControlDB.trinkets.priorityList > 0 then
+    if MageControlDB.trinkets and MageControlDB.trinkets.priorityList and table.getn(MageControlDB.trinkets.priorityList) > 0 then
         savedTrinketList = MageControlDB.trinkets.priorityList
         if MageControl.Logger then
             MageControl.Logger.debug("Preserving user's saved trinket priority list", "ConfigValidation")
@@ -172,7 +172,7 @@ MageControl.ConfigValidation.initialize = function()
     -- Debug: Log what's in current after merge (Lua 5.1+ compatible)
     local currentList = MageControl.ConfigValidation.current.trinkets.priorityList
     if currentList then
-        local count = #currentList  -- Lua 5.1+ compatible
+        local count = table.getn(currentList)  -- Lua 5.0 compatible
         if MageControl.Logger then
             MageControl.Logger.debug("After merge, trinkets.priorityList has " .. count .. " items", "ConfigValidation")
             for i, item in ipairs(currentList) do

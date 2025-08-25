@@ -86,7 +86,7 @@ MageControl.CacheUtils.getCurrentHasteValue = function()
         end
     end
 
-    if #activeBuffs > 0 then
+    if table.getn(activeBuffs) > 0 then
         MageControl.Logger.debug("Active haste buffs: " .. table.concat(activeBuffs, ", ") .. " | Total haste: " .. hastePercent .. "%", "CacheUtils")
     else
         MageControl.Logger.debug("No haste buffs active | Base haste: " .. hastePercent .. "%", "CacheUtils")

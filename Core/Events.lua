@@ -68,7 +68,7 @@ MageControlFrame:SetScript("OnEvent", function()
     elseif event == "PLAYER_AURAS_CHANGED" then
         MageControl.Logger.debug("Player auras changed, updating buffs", "Events")
         MageControl.StateManager.current.CURRENT_BUFFS = MageControl.StateManager.getBuffs()
-        MageControl.UpdateManager.forceUpdate()
+        MageControl.Core.UpdateManager.forceUpdate()
     elseif event == "PLAYER_TARGET_CHANGED" then
         MageControl.Logger.debug("Player target changed, updating current target", "Events")
         MageControl.StateManager.updateCurrentTarget()
@@ -82,6 +82,6 @@ MageControlFrame:SetScript("OnEvent", function()
     end
 
     MageControlFrame:SetScript("OnUpdate", function()
-        MageControl.UpdateManager.OnUpdate()
+        MageControl.Core.UpdateManager.update()
     end)
 end)
