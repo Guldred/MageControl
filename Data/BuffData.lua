@@ -1,5 +1,11 @@
 
-MC.BUFF_INFO = {
+-- BuffData converted to MageControl.* unified system
+-- All MC.* references converted to MageControl.* expert modules
+
+MageControl = MageControl or {}
+MageControl.BuffData = {}
+
+MageControl.BuffData.BUFF_INFO = {
     CLEARCASTING = {
         id   = 12536,
         name = "Clearcasting",
@@ -37,3 +43,7 @@ MC.BUFF_INFO = {
         name = "Sulfuron Blaze",
     },
 }
+
+-- Backward compatibility for existing MC.BUFF_INFO references
+MC = MC or {}
+MC.BUFF_INFO = MageControl.BuffData.BUFF_INFO

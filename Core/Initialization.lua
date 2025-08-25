@@ -29,8 +29,8 @@ MageControl.Initialization = {
         -- Step 1: Core systems are initialized automatically by the module system
         -- (ConfigValidation.initialize() is called when the module is loaded)
         
-        -- Step 1.5: Initialize Service Layer (Phase 3)
-        MageControl.Initialization._initializeServiceLayer()
+        -- Step 1.5: Service Layer Removed - Legacy service system eliminated for unified MageControl.* architecture
+        -- MageControl.Initialization._initializeServiceLayer() -- DISABLED: No services to initialize
         
         -- Step 2: Execute initialization steps in dependency order
         MageControl.Initialization._executeSteps()
@@ -101,31 +101,7 @@ MageControl.Initialization = {
         end
     end,
     
-    -- Initialize Service Layer
-    _initializeServiceLayer = function()
-        MageControl.Logger.info("Initializing Service Layer (Phase 3)...", "Initialization")
-        
-        -- Validate service dependencies first
-        local isValid, validationResults = MageControl.Services.Initializer.validateDependencies()
-        if not isValid then
-            MageControl.Logger.error("Service layer dependency validation failed", "Initialization")
-            return false
-        end
-        
-        -- Initialize all services
-        local success = MageControl.Services.Initializer.initializeAll()
-        if success then
-            MageControl.Logger.info("✓ Service layer initialization completed successfully", "Initialization")
-            
-            -- Create service facade for easy access
-            MageControl.Services.Facade = MageControl.Services.Initializer.createServiceFacade()
-            MageControl.Logger.debug("Service facade created", "Initialization")
-        else
-            MageControl.Logger.error("✗ Service layer initialization failed", "Initialization")
-        end
-        
-        return success
-    end,
+    -- REMOVED: _initializeServiceLayer function - Legacy service system eliminated for unified MageControl.* architecture
     
     -- Final setup after all modules are loaded
     _finalSetup = function()

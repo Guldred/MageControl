@@ -4,8 +4,9 @@
 MageControl = MageControl or {}
 MageControl.Rotation = MageControl.Rotation or {}
 
--- Create the CooldownSystem module
-local CooldownSystem = MageControl.createModule("CooldownSystem", {"ConfigValidation", "Logger"})
+-- Create the CooldownSystem module  
+-- ConfigValidation is direct unified module, no dependency needed
+local CooldownSystem = MageControl.createModule("CooldownSystem", {"Logger"})
 
 -- Initialize the cooldown system
 CooldownSystem.initialize = function()

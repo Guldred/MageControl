@@ -5,7 +5,8 @@ MageControl = MageControl or {}
 MageControl.Rotation = MageControl.Rotation or {}
 
 -- Create the ConditionChecker module
-local ConditionChecker = MageControl.createModule("ConditionChecker", {"ConfigValidation", "Logger"})
+-- ConfigValidation is direct unified module, no dependency needed
+local ConditionChecker = MageControl.createModule("ConditionChecker", {"Logger"})
 
 -- Initialize the condition checker
 ConditionChecker.initialize = function()

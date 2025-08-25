@@ -5,7 +5,8 @@ MageControl = MageControl or {}
 MageControl.Rotation = MageControl.Rotation or {}
 
 -- Create the ActionHandler module
-local ActionHandler = MageControl.createModule("ActionHandler", {"ConfigValidation", "Logger"})
+-- ConfigValidation is direct unified module, no dependency needed
+local ActionHandler = MageControl.createModule("ActionHandler", {"Logger"})
 
 -- Initialize the action handler
 ActionHandler.initialize = function()

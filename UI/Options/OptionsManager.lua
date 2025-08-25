@@ -6,7 +6,8 @@ MageControl.UI = MageControl.UI or {}
 MageControl.UI.Options = MageControl.UI.Options or {}
 
 -- Create the OptionsManager module
-local OptionsManager = MageControl.createModule("OptionsManager", {"UIFramework", "TabManager", "ConfigValidation", "Logger"})
+-- ConfigValidation is direct unified module, no dependency needed
+local OptionsManager = MageControl.createModule("OptionsManager", {"UIFramework", "TabManager", "Logger"})
 
 -- Module state
 OptionsManager.frame = nil

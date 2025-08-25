@@ -35,8 +35,8 @@ Core\ConfigData.lua
 Core\RotationLogic.lua
 Core\StateManager.lua
 
-# Core files - Services (Simplified - DataRepository.lua & EventService.lua eliminated as dead code)
-Core\Services\ServiceInitializer.lua
+# Core files - Services (ELIMINATED - Legacy service system removed for unified MageControl.* architecture)
+# Core\Services\ServiceInitializer.lua -- REMOVED: No services to initialize
 
 # Core files - System
 Core\UpdateManager.lua

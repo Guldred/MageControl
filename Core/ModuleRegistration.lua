@@ -3,8 +3,8 @@
 
 -- Register core modules that other modules depend on
 MageControl.ModuleSystem.registerModule("Logger", MageControl.Logger)
-MageControl.ModuleSystem.registerModule("ConfigValidation", MageControl.ConfigValidation)
+-- ConfigValidation is a direct unified module, not registered with module system
 MageControl.ModuleSystem.registerModule("ErrorHandler", MageControl.ErrorHandler)
 
 -- Log successful registration
-MageControl.Logger.debug("Core modules registered: Logger, ConfigValidation, ErrorHandler", "ModuleRegistration")
+MageControl.Logger.debug("Core modules registered: Logger, ErrorHandler (ConfigValidation is direct unified module)", "ModuleRegistration")
