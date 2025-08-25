@@ -193,20 +193,20 @@ OptionsManager._createSetupPanel = function(panel)
     unlockButton:SetPoint("LEFT", lockButton, "RIGHT", 10, 0)
     
     lockButton:SetScript("OnClick", function()
-        if MC.lockFrames then
-            MC.lockFrames()
+        if MageControl.UI.BuffDisplay and MageControl.UI.BuffDisplay.lock then
+            MageControl.UI.BuffDisplay.lock()
         end
-        if MC.lockActionFrames then
-            MC.lockActionFrames()
+        if MageControl.UI.ActionDisplay and MageControl.UI.ActionDisplay.lock then
+            MageControl.UI.ActionDisplay.lock()
         end
     end)
     
     unlockButton:SetScript("OnClick", function()
-        if MC.unlockFrames then
-            MC.unlockFrames()
+        if MageControl.UI.BuffDisplay and MageControl.UI.BuffDisplay.unlock then
+            MageControl.UI.BuffDisplay.unlock()
         end
-        if MC.unlockActionFrames then
-            MC.unlockActionFrames()
+        if MageControl.UI.ActionDisplay and MageControl.UI.ActionDisplay.unlock then
+            MageControl.UI.ActionDisplay.unlock()
         end
     end)
     
@@ -463,9 +463,9 @@ OptionsManager._createBossEncountersPanel = function(panel)
         MageControlDB.bossEncounters.enableTrainingDummies = isChecked
         
         if isChecked then
-            MC.printMessage("Training dummy spell selection enabled for testing")
+            MageControl.Logger.info("Training dummy spell selection enabled for testing", "OptionsManager")
         else
-            MC.printMessage("Training dummy spell selection disabled")
+            MageControl.Logger.info("Training dummy spell selection disabled", "OptionsManager")
         end
     end)
     
@@ -1010,10 +1010,8 @@ OptionsManager.showOptionsMenu = function()
     OptionsManager.toggle()
 end
 
--- Global backward compatibility for MC.showOptionsMenu
-MC.showOptionsMenu = function()
-    OptionsManager.toggle()
-end
+-- OptionsManager converted to MageControl.UI.OptionsManager unified system
+-- All MC.* references converted to MageControl.* expert modules
 
 -- Export for other modules
 MageControl.UI.Options.OptionsManager = OptionsManager

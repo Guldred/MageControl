@@ -11,30 +11,38 @@ MageControl.lua
 # Core files - Module System (load first)
 Core\Logger.lua
 Core\ErrorHandler.lua
-Core\ConfigManager.lua
 Core\ModuleSystem.lua
 Core\ModuleRegistration.lua
 Core\Initialization.lua
+
+# Core files - Configuration Expert Modules (Direct Access)
+Core\Config\ConfigDefaults.lua
+Core\Config\ConfigValidation.lua
+
+# Core files - Utility Expert Modules (Direct Access)
+Core\Utils\ManaUtils.lua
+Core\Utils\StringUtils.lua
+Core\Utils\CacheUtils.lua
+
+# Core files - Action Expert Modules (Direct Access)
+Core\Actions\SpellCasting.lua
+Core\Actions\TimingCalculations.lua
+Core\Actions\ArcaneSpecific.lua
 
 # Core files - Direct Access Modules (Simplified Architecture)
 Core\WoWApi.lua
 Core\ConfigData.lua
 Core\RotationLogic.lua
+Core\StateManager.lua
 
-# Core files - Remaining Services (Simplified - ServiceRegistry.lua & WoWApiService.lua eliminated)
-Core\Services\DataRepository.lua
-Core\Services\EventService.lua
+# Core files - Services (Simplified - DataRepository.lua & EventService.lua eliminated as dead code)
 Core\Services\ServiceInitializer.lua
 
-# Core files - New Modular Structure
-Core\StateManager.lua
+# Core files - System
 Core\UpdateManager.lua
-Core\ActionManager.lua
 
 # Core files - Legacy
 Core\Constants.lua
-Core\Utils.lua
-Core\Core.lua
 Core\Events.lua
 
 # Data files

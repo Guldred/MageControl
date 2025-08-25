@@ -1,4 +1,11 @@
-MC.createPriorityFrame = function(parent, relativeToFrame, yOffset)
+-- PriorityList converted to MageControl.UI.PriorityList unified system
+-- All MC.* references converted to MageControl.* expert modules
+
+MageControl = MageControl or {}
+MageControl.UI = MageControl.UI or {}
+MageControl.UI.PriorityList = {}
+
+MageControl.UI.PriorityList.createPriorityFrame = function(parent, relativeToFrame, yOffset)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetWidth(280)
     frame:SetHeight(130)
@@ -21,7 +28,7 @@ MC.createPriorityFrame = function(parent, relativeToFrame, yOffset)
     return frame
 end
 
-MC.reorderPriorityItems = function(priorityItems)
+MageControl.UI.PriorityList.reorderPriorityItems = function(priorityItems)
     local reorderedItems = {}
     for index, key in ipairs(MageControlDB.cooldownPriorityMap) do
         if priorityItems[key] then
@@ -31,8 +38,8 @@ MC.reorderPriorityItems = function(priorityItems)
     return reorderedItems
 end
 
-MC.updatePriorityDisplay = function()
-    local reorderedItems = MC.reorderPriorityItems(MC.priorityUiDisplayItems)
+MageControl.UI.PriorityList.updatePriorityDisplay = function()
+    local reorderedItems = MageControl.UI.PriorityList.reorderPriorityItems(MageControl.UI.PriorityList.priorityUiDisplayItems)
 
     for i, item in ipairs(reorderedItems) do
         item:SetPoint("TOP", item:GetParent(), "TOP", 0, -30 - (i - 1) * 26)
@@ -51,33 +58,33 @@ MC.updatePriorityDisplay = function()
         end
     end
 
-    MC.debugPrint("Priority updated - current order:", 1.0, 1.0, 0.0)
+    MageControl.Logger.debug("Priority updated - current order:", "PriorityList")
     for i, name in ipairs(MageControlDB.cooldownPriorityMap) do
-        MC.debugPrint("  " .. i .. ". " .. name, 0.8, 0.8, 0.8)
+        MageControl.Logger.debug("  " .. i .. ". " .. name, "PriorityList")
     end
 end
 
-MC.moveItemUp = function(position)
+MageControl.UI.PriorityList.moveItemUp = function(position)
     if position > 1 then
         local temp = MageControlDB.cooldownPriorityMap[position]
         MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position - 1]
         MageControlDB.cooldownPriorityMap[position - 1] = temp
-        MC.updatePriorityDisplay()
-        MC.optionsSave()
+        MageControl.UI.PriorityList.updatePriorityDisplay()
+        MageControl.ConfigManager.save()
     end
 end
 
-MC.moveItemDown = function(position)
+MageControl.UI.PriorityList.moveItemDown = function(position)
     if position < table.getn(MageControlDB.cooldownPriorityMap) then
         local temp = MageControlDB.cooldownPriorityMap[position]
         MageControlDB.cooldownPriorityMap[position] = MageControlDB.cooldownPriorityMap[position + 1]
         MageControlDB.cooldownPriorityMap[position + 1] = temp
-        MC.updatePriorityDisplay()
-        MC.optionsSave()
+        MageControl.UI.PriorityList.updatePriorityDisplay()
+        MageControl.ConfigManager.save()
     end
 end
 
-MC.createPriorityItem = function(parent, itemName, color, position)
+MageControl.UI.PriorityList.createPriorityItem = function(parent, itemName, color, position)
     local item = CreateFrame("Frame", nil, parent)
     item.position = position
     item.color = color
@@ -136,13 +143,13 @@ MC.createPriorityItem = function(parent, itemName, color, position)
     end)
 
     upButton:SetScript("OnClick", function()
-        MC.debugPrint("Up button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
-        MC.moveItemUp(item.position)
+        MageControl.Logger.debug("Up button clicked for position: " .. item.position, "PriorityList")
+        MageControl.UI.PriorityList.moveItemUp(item.position)
     end)
 
     downButton:SetScript("OnClick", function()
-        MC.debugPrint("Down button clicked for position: " .. item.position, 0.0, 1.0, 0.0)
-        MC.moveItemDown(item.position)
+        MageControl.Logger.debug("Down button clicked for position: " .. item.position, "PriorityList")
+        MageControl.UI.PriorityList.moveItemDown(item.position)
     end)
 
     item.text = text

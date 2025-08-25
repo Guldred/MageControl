@@ -27,11 +27,11 @@ CooldownSystem.activatePriorityAction = function()
         MageControl.Logger.debug("Using default trinket priority list", "CooldownSystem")
     end
 
-    -- Map priority list items to MC.cooldownActions keys
+    -- Map priority list items to MageControl.CooldownSystem.cooldownActions keys
     for i, priorityItem in ipairs(priorityList) do
         local actionKey = CooldownSystem._getActionKey(priorityItem)
         if actionKey then
-            local cooldownAction = MC.cooldownActions[actionKey]
+            local cooldownAction = MageControl.CooldownSystem.cooldownActions[actionKey]
             if cooldownAction and cooldownAction.isAvailable() then
                 MageControl.Logger.debug("Activating priority item: " .. priorityItem.name, "CooldownSystem")
                 cooldownAction.execute()
@@ -50,7 +50,7 @@ CooldownSystem.activatePriorityAction = function()
     return false
 end
 
--- Map priority list item to MC.cooldownActions key
+-- Map priority list item to MageControl.CooldownSystem.cooldownActions key
 CooldownSystem._getActionKey = function(item)
     if not item or not item.type then
         return nil
@@ -76,7 +76,7 @@ CooldownSystem.getTrinketCooldowns = function()
     
     for i, item in ipairs(priorityList) do
         if item.type == "trinket" and item.slot then
-            local cooldownRemaining = MC.getInventoryItemCooldownInSeconds(item.slot)
+            local cooldownRemaining = MageControl.StateManager.getInventoryItemCooldownInSeconds(item.slot)
             table.insert(cooldowns, {
                 name = item.name or ("Slot " .. item.slot),
                 slot = item.slot,
@@ -91,12 +91,12 @@ end
 
 -- Get Arcane Power cooldown
 CooldownSystem.getArcanePowerCooldown = function()
-    local slots = MC.getActionBarSlots()
+    local slots = MageControl.StateManager.getActionBarSlots()
     if not slots or not slots.ARCANE_POWER then
         return nil
     end
     
-    local cooldownRemaining = MC.getActionSlotCooldownInSeconds(slots.ARCANE_POWER)
+    local cooldownRemaining = MageControl.StateManager.getActionSlotCooldownInSeconds(slots.ARCANE_POWER)
     return {
         slot = slots.ARCANE_POWER,
         cooldownRemaining = cooldownRemaining,
@@ -111,7 +111,7 @@ CooldownSystem.hasPriorityItemsReady = function()
     for i, item in ipairs(priorityList) do
         local actionKey = CooldownSystem._getActionKey(item)
         if actionKey then
-            local cooldownAction = MC.cooldownActions[actionKey]
+            local cooldownAction = MageControl.CooldownSystem.cooldownActions[actionKey]
             if cooldownAction and cooldownAction.isAvailable() then
                 return true
             end
@@ -129,7 +129,7 @@ CooldownSystem.getStats = function()
     for i, item in ipairs(priorityList) do
         local actionKey = CooldownSystem._getActionKey(item)
         if actionKey then
-            local cooldownAction = MC.cooldownActions[actionKey]
+            local cooldownAction = MageControl.CooldownSystem.cooldownActions[actionKey]
             if cooldownAction and cooldownAction.isAvailable() then
                 readyCount = readyCount + 1
             end

@@ -139,14 +139,14 @@ MageControl.Initialization = {
             MageControl.UI.initialize()
         end
         
-        -- Initialize buff frames (legacy compatibility)
-        if MC.initBuffFrames then
-            MC.initBuffFrames()
+        -- Initialize buff frames (MageControl unified system)
+        if MageControl.UI.BuffDisplay and MageControl.UI.BuffDisplay.initialize then
+            MageControl.UI.BuffDisplay.initialize()
         end
         
-        -- Initialize action frames (legacy compatibility)
-        if MC.initActionFrames then
-            MC.initActionFrames()
+        -- Initialize action frames (MageControl unified system)
+        if MageControl.UI.ActionDisplay and MageControl.UI.ActionDisplay.initialize then
+            MageControl.UI.ActionDisplay.initialize()
         end
         
         -- Start update cycle
@@ -154,36 +154,12 @@ MageControl.Initialization = {
             MageControl.UpdateManager.start()
         end
         
-        -- Backward compatibility: ensure MC object has necessary references
-        MageControl.Initialization._setupBackwardCompatibility()
+        -- Initialization complete - using unified MageControl.* system only
+        MageControl.Logger.debug("Unified MageControl.* system initialization complete", "Initialization")
     end,
     
-    -- Set up backward compatibility during transition
-    _setupBackwardCompatibility = function()
-        -- Gradually migrate MC functions to proper modules
-        -- This allows existing code to work while we refactor
-        
-        -- Config shortcuts
-        -- MC.getActionBarSlots() is defined in ConfigManager.lua as single source of truth
-        
-        -- Logger shortcuts
-        MC.printMessage = function(message)
-            MageControl.Logger.info(message)
-        end
-        
-        MC.debugPrint = function(message)
-            MageControl.Logger.debug(message)
-        end
-        
-        -- Debug toggle
-        MC.DEBUG = MageControl.ConfigManager.get("ui.debugEnabled") or false
-        
-        -- Constants (will be phased out)
-        MC.DEFAULT_ACTIONBAR_SLOT = MageControl.ConfigManager.get("actionBarSlots")
-        MC.TIMING = MageControl.ConfigManager.get("timing")
-        MC.HASTE = MageControl.ConfigManager.get("haste")
-        MC.GLOBAL_COOLDOWN_IN_SECONDS = MageControl.ConfigManager.get("constants.GLOBAL_COOLDOWN_IN_SECONDS")
-    end,
+    -- Backward compatibility function eliminated - using unified MageControl.* system only
+    -- All MC.* references converted to MageControl.* expert modules
     
     -- Check if initialization is complete
     isInitialized = function()

@@ -1,3 +1,8 @@
+-- Initialize MageControl.UI.ActionDisplay namespace
+MageControl = MageControl or {}
+MageControl.UI = MageControl.UI or {}
+MageControl.UI.ActionDisplay = MageControl.UI.ActionDisplay or {}
+
 local initializeActionPositions = function()
     if not MageControlDB.actionPositions then
         MageControlDB.actionPositions = {}
@@ -7,10 +12,10 @@ local initializeActionPositions = function()
     if MageControlDB.actionDisplayLocked == nil then
         MageControlDB.actionDisplayLocked = true
     end
-    MC.actionDisplay.isLocked = MageControlDB.actionDisplayLocked
+    MageControl.UI.ActionDisplay.isLocked = MageControlDB.actionDisplayLocked
 end
 
-MC.actionDisplay = {
+MageControl.UI.ActionDisplay = {
     frames = {},
     isLocked = true,
     updateInterval = 0.2,
@@ -42,7 +47,7 @@ local createActionFrame = function(actionName)
     frame.icon:SetWidth(32)
     frame.icon:SetHeight(32)
     frame.icon:SetPoint("CENTER", frame, "CENTER", 0, 0)
-    frame.icon:SetTexture(MC.actionDisplay.icons[actionName])
+    frame.icon:SetTexture(MageControl.UI.ActionDisplay.icons[actionName])
 
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetAllPoints(frame)
@@ -69,13 +74,13 @@ local createActionFrame = function(actionName)
     frame:RegisterForDrag("LeftButton")
 
     frame:SetScript("OnDragStart", function()
-        if not MC.actionDisplay.isLocked then
+        if not MageControl.UI.ActionDisplay.isLocked then
             this:StartMoving()
         end
     end)
 
     frame:SetScript("OnDragStop", function()
-        if not MC.actionDisplay.isLocked then
+        if not MageControl.UI.ActionDisplay.isLocked then
             this:StopMovingOrSizing()
 
             local point, relativeTo, relativePoint, xOfs, yOfs = this:GetPoint()
@@ -86,7 +91,7 @@ local createActionFrame = function(actionName)
     frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
         GameTooltip:SetText(actionName)
-        if not MC.actionDisplay.isLocked then
+        if not MageControl.UI.ActionDisplay.isLocked then
             GameTooltip:AddLine("Drag to move", 0.5, 0.5, 0.5)
         end
         GameTooltip:Show()
@@ -96,7 +101,7 @@ local createActionFrame = function(actionName)
         GameTooltip:Hide()
     end)
 
-    local pos = MageControlDB.actionPositions[actionName] or MC.actionDisplay.defaultPositions[actionName]
+    local pos = MageControlDB.actionPositions[actionName] or MageControl.UI.ActionDisplay.defaultPositions[actionName]
     frame:SetPoint("CENTER", UIParent, "CENTER", pos.x, pos.y)
 
     frame:Hide()
@@ -107,10 +112,10 @@ end
 
 
 local updateSurgeFrame = function(frame)
-    local timeLeft = MC.state.surgeActiveTill - GetTime()
-    if (timeLeft > 0 and IsUsableAction(MC.getActionBarSlots().ARCANE_SURGE) == 1) then
+    local timeLeft = MageControl.StateManager.current.surgeActiveTill - GetTime()
+    if (timeLeft > 0 and IsUsableAction(MageControlDB.actionBarSlots.ARCANE_SURGE) == 1) then
         frame:Show()
-        frame.icon:SetTexture(MC.actionDisplay.icons["Arcane Surge"])
+        frame.icon:SetTexture(MageControl.UI.ActionDisplay.icons["Arcane Surge"])
         frame.timerText:SetText(string.format("%.1f", timeLeft))
 
         if timeLeft <= 1.5 then
@@ -133,36 +138,36 @@ local updateFunctions = {
 }
 
 local updateActionDisplay = function(actionName, frame)
-    if not MC or not MC.actionDisplay.isLocked then return end
+    if not MC or not MageControl.UI.ActionDisplay.isLocked then return end
     updateFunctions[actionName](frame)
 end
 
 local updateAllActionDisplays = function()
-    for actionName, frame in pairs(MC.actionDisplay.frames) do
+    for actionName, frame in pairs(MageControl.UI.ActionDisplay.frames) do
         updateActionDisplay(actionName, frame)
     end
 end
 
 local initializeActionFrames = function()
-    for _, actionName in ipairs(MC.actionDisplay.trackedActions) do
-        if not MC.actionDisplay.frames[actionName] then
-            MC.actionDisplay.frames[actionName] = createActionFrame(actionName)
+    for _, actionName in ipairs(MageControl.UI.ActionDisplay.trackedActions) do
+        if not MageControl.UI.ActionDisplay.frames[actionName] then
+            MageControl.UI.ActionDisplay.frames[actionName] = createActionFrame(actionName)
         end
     end
 end
 
-MC.lockActionFrames = function()
-    MC.actionDisplay.isLocked = true
-    MageControlDB.actionDisplayLocked = MC.actionDisplay.isLocked
-    for actionName, frame in pairs(MC.actionDisplay.frames) do
+MageControl.UI.ActionDisplay.lockFrames = function()
+    MageControl.UI.ActionDisplay.isLocked = true
+    MageControlDB.actionDisplayLocked = MageControl.UI.ActionDisplay.isLocked
+    for actionName, frame in pairs(MageControl.UI.ActionDisplay.frames) do
         frame.nameText:Hide()
     end
 end
 
-MC.unlockActionFrames = function()
-    MC.actionDisplay.isLocked = false
-    MageControlDB.actionDisplayLocked = MC.actionDisplay.isLocked
-    for actionName, frame in pairs(MC.actionDisplay.frames) do
+MageControl.UI.ActionDisplay.unlockFrames = function()
+    MageControl.UI.ActionDisplay.isLocked = false
+    MageControlDB.actionDisplayLocked = MageControl.UI.ActionDisplay.isLocked
+    for actionName, frame in pairs(MageControl.UI.ActionDisplay.frames) do
         frame.nameText:Show()
         frame.icon:SetTexture("Interface\\Icons\\INV_Enchant_EssenceMysticalLarge")
         frame.timerText:SetText("0")
@@ -170,37 +175,37 @@ MC.unlockActionFrames = function()
     end
 end
 
-MC.initActionFrames = function()
+MageControl.UI.ActionDisplay.initActionFrames = function()
     initializeActionPositions()
     initializeActionFrames()
-    MC.lockActionFrames()
-    MC.registerUpdateFunction(updateAllActionDisplays, 0.1)
+    MageControl.UI.ActionDisplay.lockFrames()
+    MageControl.UpdateManager.registerUpdateFunction(updateAllActionDisplays, 0.1)
 end
 
-MC.ActionDisplay_ToggleLock = function()
-    MC.actionDisplay.isLocked = not MC.actionDisplay.isLocked
-    MageControlDB.actionDisplayLocked = MC.actionDisplay.isLocked
+MageControl.UI.ActionDisplay.toggleLock = function()
+    MageControl.UI.ActionDisplay.isLocked = not MageControl.UI.ActionDisplay.isLocked
+    MageControlDB.actionDisplayLocked = MageControl.UI.ActionDisplay.isLocked
 
-    if MC.actionDisplay.isLocked then
-        MC.lockActionFrames()
+    if MageControl.UI.ActionDisplay.isLocked then
+        MageControl.UI.ActionDisplay.lockFrames()
     else
-        MC.unlockActionFrames()
+        MageControl.UI.ActionDisplay.unlockFrames()
     end
 
-    if MC.actionDisplay.isLocked then
+    if MageControl.UI.ActionDisplay.isLocked then
         DEFAULT_CHAT_FRAME:AddMessage("MageControl: Action-Frame locked", 1.0, 1.0, 0.0)
     else
         DEFAULT_CHAT_FRAME:AddMessage("MageControl: Action-Frame unlocked - Drag to move", 1.0, 1.0, 0.0)
     end
 end
 
-MC.ActionDisplay_ResetPositions = function()
+MageControl.UI.ActionDisplay.resetPositions = function()
     MageControlDB.actionPositions = MageControlDB.actionPositions or {}
-    for buffName, defaultPos in pairs(MC.actionDisplay.defaultPositions) do
+    for buffName, defaultPos in pairs(MageControl.UI.ActionDisplay.defaultPositions) do
         MageControlDB.actionPositions[buffName] = { x = defaultPos.x, y = defaultPos.y }
-        if MC.actionDisplay.frames[buffName] then
-            MC.actionDisplay.frames[buffName]:ClearAllPoints()
-            MC.actionDisplay.frames[buffName]:SetPoint("CENTER", UIParent, "CENTER", defaultPos.x, defaultPos.y)
+        if MageControl.UI.ActionDisplay.frames[buffName] then
+            MageControl.UI.ActionDisplay.frames[buffName]:ClearAllPoints()
+            MageControl.UI.ActionDisplay.frames[buffName]:SetPoint("CENTER", UIParent, "CENTER", defaultPos.x, defaultPos.y)
         end
     end
     DEFAULT_CHAT_FRAME:AddMessage("MageControl: Action-Position reset", 1.0, 1.0, 0.0)

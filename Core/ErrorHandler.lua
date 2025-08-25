@@ -1,7 +1,9 @@
 -- MageControl Error Handling System
 -- Provides consistent error handling and recovery
 
-MC = MC or {}
+-- MageControl Error Handler - Unified Namespace
+-- All MC.* references converted to MageControl.* expert modules
+MageControl = MageControl or {}
 
 local ErrorHandler = {
     -- Error types
@@ -40,16 +42,16 @@ local ErrorHandler = {
             contextStr = " [" .. context.module .. "]"
         end
         
-        MC.Logger.error(errorType .. ": " .. message .. contextStr, "ErrorHandler")
+        MageControl.Logger.error(errorType .. ": " .. message .. contextStr, "ErrorHandler")
         
         -- Attempt recovery if possible
         if canRecover and context and context.recoveryAction then
-            MC.Logger.info("Attempting error recovery...", "ErrorHandler")
+            MageControl.Logger.info("Attempting error recovery...", "ErrorHandler")
             local success, recoveryError = pcall(context.recoveryAction)
             if success then
-                MC.Logger.info("Error recovery successful", "ErrorHandler")
+                MageControl.Logger.info("Error recovery successful", "ErrorHandler")
             else
-                MC.Logger.error("Error recovery failed: " .. tostring(recoveryError), "ErrorHandler")
+                MageControl.Logger.error("Error recovery failed: " .. tostring(recoveryError), "ErrorHandler")
             end
         end
         
@@ -123,7 +125,7 @@ local ErrorHandler = {
     -- Clear error history
     clearHistory = function()
         ErrorHandler.errorHistory = {}
-        MC.Logger.info("Error history cleared", "ErrorHandler")
+        MageControl.Logger.info("Error history cleared", "ErrorHandler")
     end,
     
     -- Check if there are recent errors of a specific type
@@ -142,7 +144,7 @@ local ErrorHandler = {
 }
 
 -- Export ErrorHandler to MC namespace
-MC.ErrorHandler = ErrorHandler
+MageControl.ErrorHandler = ErrorHandler
 
 -- Convenience functions for different error types
 ErrorHandler.handleConfigError = function(message, context)

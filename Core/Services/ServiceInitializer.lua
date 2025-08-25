@@ -9,10 +9,10 @@ local ServiceInitializer = {}
 
 -- Service initialization order (dependencies first)
 ServiceInitializer.INITIALIZATION_ORDER = {
-    "DataRepository",   -- No dependencies  
-    "EventService"      -- Depends on UpdateManager (optional)
+    -- EventService removed - was over-engineered dead code, no actual usage found
     -- RotationService removed - was dead code, replaced by direct RotationEngine.lua
     -- WoWApiService removed - redundant with Core/WoWApi.lua direct access module
+    -- DataRepository removed - redundant with Core/ConfigData.lua direct access module
 }
 
 -- Initialize all services in proper dependency order
@@ -56,11 +56,7 @@ end
 
 -- Helper function to get services directly (no registry lookup needed)
 ServiceInitializer._getServiceDirectly = function(serviceName)
-    if serviceName == "DataRepository" then
-        return MageControl.Services.Data
-    elseif serviceName == "EventService" then
-        return MageControl.Services.Events
-    end
+    -- EventService removed - was over-engineered dead code, no actual usage found
     return nil
 end
 
@@ -69,12 +65,8 @@ ServiceInitializer._initializeService = function(serviceName)
     local service = nil
     
     -- Direct access to services instead of registry lookup to avoid circular dependency
-    if serviceName == "DataRepository" then
-        service = MageControl.Services.Data
-    elseif serviceName == "EventService" then
-        service = MageControl.Services.Events
+    -- EventService removed - was over-engineered dead code, no actual usage found
     -- RotationService removed - was dead code
-    end
     
     if not service then
         return false, "Service not found: " .. serviceName
@@ -133,31 +125,10 @@ ServiceInitializer._validateServiceInterfaces = function(results)
     -- WoWApiService validation removed - now using Core/WoWApi.lua direct access module
     -- Validation for WoW API access moved to direct MageControl.WoWApi module
     
-    -- Validate Data Repository
-    local dataRepo = MageControl.Services.Data
-    if dataRepo then
-        local requiredMethods = {"getConfig", "setConfig", "getTrinketPriority", "getMinManaForArcanePower"}
-        for i, method in ipairs(requiredMethods) do
-            if not dataRepo[method] then
-                results.DataRepository.missingMethods = results.DataRepository.missingMethods or {}
-                table.insert(results.DataRepository.missingMethods, method)
-                MageControl.Logger.error("DataRepository missing required method: " .. method, "ServiceInitializer")
-            end
-        end
-    end
+    -- DataRepository validation removed - now using Core/ConfigData.lua direct access module
+    -- Configuration validation moved to direct MageControl.ConfigData module
     
-    -- Validate Event Service
-    local eventService = MageControl.Services.Events
-    if eventService then
-        local requiredMethods = {"subscribe", "publish", "EVENTS"}
-        for i, method in ipairs(requiredMethods) do
-            if not eventService[method] then
-                results.EventService.missingMethods = results.EventService.missingMethods or {}
-                table.insert(results.EventService.missingMethods, method)
-                MageControl.Logger.error("EventService missing required method: " .. method, "ServiceInitializer")
-            end
-        end
-    end
+    -- EventService validation removed - was over-engineered dead code, no actual usage found
 end
 
 -- Get service initialization status

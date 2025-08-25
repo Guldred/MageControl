@@ -14,20 +14,20 @@ end
 
 -- Check if missiles interruption is required for Arcane Surge at last second
 ConditionChecker.isMissilesInterruptionRequiredForSurge = function()
-    if not MC.state.isChanneling or MC.isHighHasteActive() then
+    if not MageControl.StateManager.current.isChanneling or MageControl.StateManager.isHighHasteActive() then
         return false
     end
 
     local earliestCancelPoint = MageControl.ConfigManager.get("rotation.minMissilesForSurgeCancel") or 4
 
-    if not MC.isInLastPossibleMissileWindow() then
+    if not MageControl.ArcaneSpecific.isInLastPossibleMissileWindow() then
         return false
     end
 
     local currentTime = GetTime()
     local currentMissileIndex = 0
-    for i = 1, table.getn(MC.ARCANE_MISSILES_FIRE_TIMES) do
-        if currentTime >= MC.ARCANE_MISSILES_FIRE_TIMES[i] then
+    for i = 1, table.getn(MageControl.ArcaneSpecific.ARCANE_MISSILES_FIRE_TIMES) do
+        if currentTime >= MageControl.ArcaneSpecific.ARCANE_MISSILES_FIRE_TIMES[i] then
             currentMissileIndex = i
         else
             break
@@ -38,9 +38,9 @@ ConditionChecker.isMissilesInterruptionRequiredForSurge = function()
         return false
     end
 
-    local arcaneSurgeCooldownRemaining = MC.getActionSlotCooldownInSeconds(MC.getActionBarSlots().ARCANE_SURGE)
+    local arcaneSurgeCooldownRemaining = MageControl.SpellCasting.getActionSlotCooldownInSeconds(MageControl.SpellCasting.getActionBarSlots().ARCANE_SURGE)
     local nextMissileIndex = currentMissileIndex + 1
-    local timeUntilNextMissile = MC.ARCANE_MISSILES_FIRE_TIMES[nextMissileIndex] - currentTime
+    local timeUntilNextMissile = MageControl.ArcaneSpecific.ARCANE_MISSILES_FIRE_TIMES[nextMissileIndex] - currentTime
     local BUFFER_WINDOW = 0.1 -- Buffer window to account for lag and timing issues
 
     local surgeCooldownReadyForNextMissile = arcaneSurgeCooldownRemaining + BUFFER_WINDOW <= timeUntilNextMissile
@@ -55,16 +55,16 @@ end
 
 -- Check if missiles interruption is required for Arcane Rupture rebuff
 ConditionChecker.isMissilesInterruptionRequiredForRuptureRebuff = function(spells, buffStates)
-    local shouldCancelWhileHighHaste = MC.isHighHasteActive()
-            and MC.state.isChanneling and
+    local shouldCancelWhileHighHaste = MageControl.StateManager.isHighHasteActive()
+            and MageControl.StateManager.current.isChanneling and
             not buffStates.arcaneRupture and
             spells.arcaneRuptureReady
 
-    local shouldCancelWhileLowHaste = not MC.isHighHasteActive()
-            and MC.state.isChanneling and
+    local shouldCancelWhileLowHaste = not MageControl.StateManager.isHighHasteActive()
+            and MageControl.StateManager.current.isChanneling and
             not buffStates.arcaneRupture and
             spells.arcaneRuptureReady and
-            not MC.isActionSlotCooldownReadyAndUsableInSeconds(MC.getActionBarSlots().ARCANE_SURGE, 1)
+            not MageControl.SpellCasting.isActionSlotCooldownReadyAndUsableInSeconds(MageControl.SpellCasting.getActionBarSlots().ARCANE_SURGE, 1)
             -- Last check is to make sure you dont use Rupture and then surge right after, which would reduce effective missiles time
             -- Ideally, we want to use Surge first, then rupture
 
@@ -73,12 +73,12 @@ end
 
 -- Check if should wait for current cast to finish
 ConditionChecker.shouldWaitForCast = function()
-    return MC.shouldWaitForCast()
+    return MageControl.SpellCasting.shouldWaitForCast()
 end
 
 -- Check if Arcane Surge is ready and low haste
 ConditionChecker.isArcaneSurgeReadyLowHaste = function(state)
-    return state.spells.arcaneSurgeReady and not MC.isHighHasteActive()
+    return state.spells.arcaneSurgeReady and not MageControl.StateManager.isHighHasteActive()
 end
 
 -- Check if clearcasting missiles should be cast
@@ -91,7 +91,7 @@ ConditionChecker.needsArcaneRuptureMaintenance = function(state)
     return state.spells.arcaneRuptureReady and
     --TODO: Check if recasting rupture is better here. Might add empty debuff time
            --not state.missilesWorthCasting and
-           not MC.state.isCastingArcaneRupture
+           not MageControl.StateManager.current.isCastingArcaneRupture
 end
 
 -- Check if missiles are worth casting
@@ -102,18 +102,18 @@ end
 -- Check if Arcane Rupture is one GCD away (for Arcane Surge)
 ConditionChecker.isArcaneRuptureOneGCDAwayForSurge = function(state)
     local timing = MageControl.ConfigManager.get("timing.GCD_BUFFER") or 1.5
-    return MC.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, timing) and
+    return MageControl.TimingCalculations.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, timing) and
             state.spells.arcaneSurgeReady and
-            not MC.isHighHasteActive()
+            not MageControl.StateManager.isHighHasteActive()
 end
 
 -- Check if Arcane Rupture is one GCD away (for Fire Blast)
 ConditionChecker.isArcaneRuptureOneGCDAwayForFireBlast = function(state)
     local timing = MageControl.ConfigManager.get("timing.GCD_BUFFER_FIREBLAST") or 1.5
-    return MC.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, timing) and
+    return MageControl.TimingCalculations.isArcaneRuptureOneGlobalAwayAfterCurrentCast(state.slots.ARCANE_RUPTURE, timing) and
             state.spells.fireblastReady and
-            not MC.checkImmunity("fire") and
-            not MC.isHighHasteActive()
+            not MageControl.ImmunityData.checkImmunity("fire") and
+            not MageControl.StateManager.isHighHasteActive()
 end
 
 -- Check if should default to missiles (fallback condition)
