@@ -2,7 +2,7 @@
 ## Title: |cff7F00FFMageControl|r
 ## Notes: |rOptimize |cff7F00FFArcane|r Mage Damage
 ## Author: Guldred, Nolin7777
-## Version: 2.0.1
+## Version: 2.0.2
 ## SavedVariables: MageControlDB
 
 # Main file
